@@ -1,0 +1,2 @@
+# Direct runtime pins are declared once in pyproject.toml.
+-e .

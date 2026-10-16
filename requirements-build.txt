@@ -1,0 +1,2 @@
+# Runtime plus the optional packaging dependency, pinned in pyproject.toml.
+-e .[build]
