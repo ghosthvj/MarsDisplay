@@ -1,7 +1,8 @@
 # Isolated loopback browser fixtures
 
-T7/S13 hardens tests only. It does not accept the pending T3 capture source or
-identify the client responsible for the historical unexpected `GET /`.
+T8/S14 adds test-owned traffic attribution to the existing T7/S13 fixture.
+It does not accept pending T3 capture source, change the capture implementation, or establish
+retrospective provenance for historical unexpected `GET /` requests.
 
 ## Run the independent helper slice
 
@@ -27,10 +28,18 @@ no application imports; it is also independent of unaccepted T3 source.
   interrupting socket reads and joining every non-daemon fixture thread.
   Session `close()` must be synchronous and bounded by its implementation.
   A cleanup error is reported, never disguised as successful disposal.
+- `request_headers` returns a fresh dictionary containing an opaque, unique
+  per-instance `X-MarsDisplay-Test-Case` marker. Explicit fixture HTTP clients
+  merge it with their own headers. It is test attribution, not authentication
+  or evidence of a client PID; neither paths nor User-Agent imply ownership.
 - `snapshot()` atomically returns frozen counts/events and resource state.
-  Every parsed GET counts, including an unexpected `/` from a non-browser
-  client. There is no reset or request-filter operation. The disabled endpoint
-  returns HTTP 302 with `Location: /`; all other GET paths serve current HTML.
+  `counts` still includes every parsed GET, including unsolicited `/` traffic.
+  `owned_counts` contains exact matching-marker traffic on **every** path;
+  `foreign_counts` contains missing, wrong and other-fixture markers. Per path,
+  raw `counts == owned_counts + foreign_counts`. There is no reset, suppression
+  or request-filter API. Unexpected owned `/` requests still fail exact counts.
+  The disabled endpoint returns HTTP 302 with `Location: /`; all other GET paths
+  serve current HTML.
 - `before_response(fixture, path)` runs after recording/counting a request.
   This internal test seam must use bounded Event waits and honor `stopping`;
   it must not wait indefinitely. Tests use it to hold an old handler while a
@@ -42,23 +51,41 @@ no application imports; it is also independent of unaccepted T3 source.
 ## Read provenance without overclaiming
 
 HTTP handler start/end events carry case/generation, lock-ordered monotonic
-timestamps, request ID, method/path, peer host/port and immutable header pairs.
+timestamps, request ID, method/path, peer host/port, immutable header pairs and
+explicit `ownership` (`owned` or `foreign`). Counters and handler-start events
+are updated under the same lock; every raw request remains observable.
 Completion events also report status or exception type. A snapshot is stable
 even while another handler is active; use it as assertion diagnostics.
 
-`instrument(Page, Route)` temporarily wraps test-supplied API classes and adds
-Page request, response and frame-navigation listeners on first `goto`. Listeners
+`instrument(Page, Route)` temporarily wraps test-supplied API classes. On first
+`goto`, it installs a page-scoped last-added fallback route that merges the test
+marker with original request headers, preserving pre-existing routing. Scoped
+`Route.fetch` and `Route.continue_` wrappers use the same default-only tagging
+when forwarding explicit header overrides, preserving methods, options and
+redirect limits. Existing identities are preserved case-insensitively, including
+wrong or other-case markers: these remain foreign at the receiving fixture.
+A default identity is added only when absent. Differently-cased duplicate marker
+keys collapse to the last caller override without changing unrelated headers.
+Only pages navigated in the scope are tagged; app source, global environment,
+page/context extra-header settings and unrelated clients are untouched.
+
+It adds Page request, response and frame-navigation listeners on first `goto`. Listeners
 remain attached through later requests, reads, viewport changes and transitions;
 subsequent `goto` calls update the page's navigation ID without double attachment.
 Navigation IDs correlate these API observations with `Route.fetch` begin/end,
 including redirect status/location. Request metadata is cached when first seen
 through public properties, avoiding teardown-time queries of dead resources.
-Original arguments, forwarded headers, results and exceptions are preserved.
+Results and exceptions are preserved. Forwarded headers differ only by the
+reserved test marker; all unrelated header values/options are preserved.
+Page request/response and route-fetch events are marked `owned` as controlled
+API observations, even if the Page event precedes route tagging. Socket events
+independently classify the marker actually received, not cached API metadata.
 
 Explicit listener ownership wraps each observed page/context/browser's public
 `close` method for the instrumentation scope. Listeners detach before the owner
-closes its live connection, including after setup or capture errors. Scope exit
-also detaches any remaining listeners and restores all wrapped methods, even on
+closes its live connection, including after setup or capture errors. The tagging
+route is removed without disturbing existing routes. Scope exit also detaches
+remaining listeners and restores all wrapped methods, even on
 exceptions. Owned sessions must close their browser before stopping its driver;
 direct driver termination without owner cleanup is not the supported lifecycle.
 Socket requests always count without filtering. This is scoped test
@@ -81,15 +108,20 @@ export QT_QPA_PLATFORM=offscreen PLAYWRIGHT_BROWSERS_PATH=0 PYTHONPATH=src:tests
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-The public trace regression navigates, changes to landscape viewport, awaits a
-browser `fetch('/')`, and captures a screenshot. It requires the later Page
-request event, exact root/display counts, zero fixture resources, and restored
-methods after browser/driver shutdown. Count failures include the full snapshot;
-no extra root request is excluded or attributed to a proven process.
+The public trace regression injects a known foreign `GET /`, navigates through
+`Route.fetch`, changes viewport, awaits a browser `fetch('/')` and screenshots.
+Exact owned counts stay `/display: 1, /: 1` despite foreign traffic; a second
+owned `/` must change them to `/display: 1, /: 2`. It reconciles all raw counts
+against all handler-start events and both partitions, checks late Page events,
+and verifies custom page/context/route headers and options. After scope exit,
+existing routes/listeners/headers still work and a new fetch is foreign.
+Cleanup leaves zero fixture resources. Failures include full immutable snapshots;
+no unknown request is silently discarded.
 
 All ten original scenarios remain: both geometries/colors, persistent capture
 without per-frame navigation, metadata/error/login/freshness checks, font/layout
 readiness, transitions, redirect prohibition and owned-browser cleanup. Strict
-request counts still include the extra reads and browser close. Fresh fixture
+owned request counts still include the extra reads and browser close. Raw and
+foreign observations remain visible in failure diagnostics. Fresh fixture
 identity prevents delayed old-case traffic from being attributed to a new case;
 it does not prove the historical extra root request's origin or fix production.

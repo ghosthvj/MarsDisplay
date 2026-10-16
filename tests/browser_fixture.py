@@ -24,6 +24,7 @@ class TraceEvent:
     navigation_id: int | None = None
     provenance: str = "socket peer only; client process unknown"
     details: tuple = ()
+    ownership: str = "unattributed"
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,8 @@ class Snapshot:
     active_threads: int
     active_connections: int
     closed: bool
+    owned_counts: tuple
+    foreign_counts: tuple
 
 
 class BrowserFixture:
@@ -50,12 +53,22 @@ class BrowserFixture:
         self._lock = Lock()
         self._html = html
         self._counts, self._events = Counter(), []
+        self._owned_counts, self._foreign_counts = Counter(), Counter()
+        self._identity = uuid4().hex
         self._workers, self._connections, self._sessions = [], set(), []
         self.stopping = Event()
         self._server = self._thread = None
         self._closed = False
         self.cleanup_seconds = 0
         self.before_response = before_response
+
+    @property
+    def request_headers(self):
+        """Fresh copy of the opaque test marker; not authentication/PID proof."""
+        return {"X-MarsDisplay-Test-Case": self._identity}
+
+    def _ownership(self, headers):
+        return "owned" if headers.get("X-MarsDisplay-Test-Case") == self._identity else "foreign"
 
     @property
     def html(self):
@@ -76,7 +89,9 @@ class BrowserFixture:
             return Snapshot(tuple(sorted(self._counts.items())), tuple(self._events),
                             sum(t.is_alive() for t in self._workers)
                             + int(self._thread is not None and self._thread.is_alive()),
-                            len(self._connections), self._closed)
+                            len(self._connections), self._closed,
+                            tuple(sorted(self._owned_counts.items())),
+                            tuple(sorted(self._foreign_counts.items())))
 
     def own(self, session):
         if not any(old is session for old in self._sessions):
@@ -89,9 +104,13 @@ class BrowserFixture:
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self):
                 fields = dict(method=self.command, path=self.path,
-                              peer=tuple(self.client_address), headers=tuple(self.headers.items()))
+                              peer=tuple(self.client_address), headers=tuple(self.headers.items()),
+                              ownership=fixture._ownership(self.headers))
                 with fixture._lock:
                     fixture._counts[self.path] += 1
+                    partition = (fixture._owned_counts if fields["ownership"] == "owned"
+                                 else fixture._foreign_counts)
+                    partition[self.path] += 1
                     fields["request_id"] = sum(fixture._counts.values())
                     fixture._events.append(TraceEvent(fixture.case, fixture.generation,
                                                       monotonic(), "handler.start", **fields))
@@ -189,14 +208,15 @@ class BrowserFixture:
 
     @contextmanager
     def instrument(self, Page, Route):
-        """Scoped test wrappers preserve arguments/results; headers are forwarded.
+        """Trace and tag only pages navigated inside this test scope.
 
-        Navigation IDs correlate API callbacks, NOT socket/process identity.
-        HTTP events retain independent request IDs and unknown client provenance.
+        A last-installed fallback route retains the page's existing routing and
+        headers. Fetch/continue overrides retain options and explicit markers.
+        Navigation IDs and opaque markers are NOT socket/process identity.
         """
         state = local()
         serial = 0
-        goto, fetch = Page.goto, Route.fetch
+        goto, fetch, continue_request = Page.goto, Route.fetch, Route.continue_
         provenance = "test API observation; not socket process identity"
         pages, owners, requests = {}, {}, {}
 
@@ -206,7 +226,7 @@ class BrowserFixture:
             if request not in requests:
                 requests[request] = dict(method=request.method, path=request.url,
                                          headers=tuple(request.headers.items()),
-                                         navigation_id=navigation_id)
+                                         navigation_id=navigation_id, ownership="owned")
             return requests[request]
 
         def record(kind, fields=None, **details):
@@ -221,6 +241,9 @@ class BrowserFixture:
             for event, callback in reversed(tuple(entry["listeners"])):
                 page.remove_listener(event, callback)
                 entry["listeners"].remove((event, callback))
+            if entry.get("tagger") is not None:
+                page.unroute("**/*", entry["tagger"])
+                entry["tagger"] = None
 
         def protect_close(owner, page):
             if owner in owners:
@@ -243,6 +266,13 @@ class BrowserFixture:
                 pages[page]["navigation"] = navigation_id
                 return
             entry = pages[page] = dict(navigation=navigation_id, listeners=[])
+
+            def tag_request(route):
+                # Installed last: fallback retains existing route handlers/options.
+                route.fallback(**tagged_options(route, {}))
+
+            page.route("**/*", tag_request)
+            entry["tagger"] = tag_request
 
             def request_seen(request):
                 record("page.request", metadata(request, entry["navigation"]))
@@ -277,7 +307,30 @@ class BrowserFixture:
                 record("page.goto.end", dict(navigation_id=state.navigation), url=url)
                 state.navigation = previous
 
+        def request_headers(request):
+            return request.all_headers() if hasattr(request, "all_headers") else request.headers
+
+        def tagged_options(route, kwargs):
+            supplied = kwargs.get("headers")
+            headers = dict(supplied if supplied is not None else request_headers(route.request))
+            marker_keys = [key for key in headers if key.lower() == "x-marsdisplay-test-case"]
+            if marker_keys:
+                # Preserve the last caller override, even with different casing.
+                for key in marker_keys[:-1]:
+                    del headers[key]
+            else:
+                headers.update(self.request_headers)
+            return {**kwargs, "headers": headers}
+
+        def traced_continue(route, *args, **kwargs):
+            if route.request.frame.page in pages:
+                kwargs = tagged_options(route, kwargs)
+            return continue_request(route, *args, **kwargs)
+
         def traced_fetch(route, *args, **kwargs):
+            if route.request.frame.page not in pages:
+                return fetch(route, *args, **kwargs)
+            kwargs = tagged_options(route, kwargs)
             fields = metadata(route.request, getattr(state, "navigation", None))
             record("route.fetch.begin", fields)
             try:
@@ -291,6 +344,7 @@ class BrowserFixture:
         with ExitStack() as patches:
             patches.enter_context(patch.object(Page, "goto", traced_goto))
             patches.enter_context(patch.object(Route, "fetch", traced_fetch))
+            patches.enter_context(patch.object(Route, "continue_", traced_continue))
             try:
                 yield
             finally:
