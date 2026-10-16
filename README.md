@@ -2,7 +2,8 @@
 
 MarsDisplay is a GPL v3 companion foundation for a future Windows 11 x64
 MARS display application. **Immutable RGB frames, in-memory simulated output,
-and local settings persistence exist today.** There is no application CLI, tray, browser capture, USB
+local settings persistence, and a GUI-independent lifecycle coordinator exist today.**
+There is no application CLI, tray, browser capture, USB
 implementation, or Windows executable yet. No screen is needed for these tests.
 
 ## Run the source tests
@@ -78,9 +79,68 @@ constructing, or loading settings never starts capture or discovers devices.
 For example, `https://mars.example/proxy/` and
 `https://mars.example/proxy/display/` both capture
 `https://mars.example/proxy/display`. This layer has no runtime-state knowledge:
-**the later lifecycle controller must enforce saving only while stopped** and
-keep application startup stopped/unconfigured rather than choosing a URL/device.
-Windows filesystem and application acceptance remain separate from Linux tests.
+the lifecycle coordinator below enforces saving only while stopped and keeps
+startup stopped/unconfigured rather than choosing a URL/device. Windows filesystem
+and application acceptance remain separate from Linux tests.
+
+## Capture lifecycle boundary (no GUI or browser yet)
+
+`mars_display.lifecycle.Coordinator(store, source_factory, transport_factory)`
+is an injectable coordinator, not an application entry point. Later application
+integration must use `SimulatedTransport` as its transport factory; device identity
+is saved only and never selects a protocol or opens USB.
+
+```python
+from mars_display.lifecycle import Coordinator
+
+# Implement a synchronous source factory in the later browser integration:
+# coordinator = Coordinator(store, source_factory, SimulatedTransport)
+# coordinator.start()         # explicit user action only
+# status = coordinator.snapshot()
+# coordinator.stop()          # nonblocking request, not an acknowledgement
+# coordinator.request_exit()  # nonblocking; poll snapshot().exit_ready
+```
+
+| Public operation | Contract |
+| --- | --- |
+| Construction | Does not load settings, start a worker, or create source/output resources. Initial state is `stopped`. |
+| `start()` | Loads saved settings; returns `True` on launch, `False` if a worker already exists (including while stopping). Missing settings raises `LifecycleError("Configure a MARS URL before starting.")`. No implicit resume. |
+| `stop()` | Cancels delays and requests cleanup. A currently blocking capture/write must return before cleanup; adapters must use bounded backend timeouts. An in-flight write may finish, but no writes/retries occur after acknowledgement. |
+| `request_exit()` | Also prevents future Start. Exit is safe only when `snapshot().exit_ready` is true. Never kills external processes. |
+| `snapshot()` | Immutable, thread-safe view; observes actual worker completion before acknowledging stopped/exit. Runtime states: `stopped`, `starting`, `running`, `retrying`, `stopping`, `error`. |
+| `save_settings(settings)` | Uses atomic `SettingsStore.save`, only in `stopped` with no live worker. Otherwise raises `LifecycleError("Settings can be saved only while stopped.")`; rejection leaves saved bytes unchanged. |
+| `wait_stopped(timeout)` | Bounded join helper for tests/non-GUI callers, not the UI thread. Returns whether the worker finished; inspect snapshot for cleanup errors. |
+
+**Source integration:** `source_factory(settings)` returns a synchronous session
+with `open()`, `read() -> SourceSample`, and `close()`. Both factories and every
+source/output call run on the same single worker, without a coordinator lock held
+across those calls. `close()` must tolerate partial `open()` failure. A factory
+that raises before returning must clean its own allocations because the coordinator
+cannot own an object it never receives.
+
+`SourceSample(state, frame=None, live_connected=None, data_stale=None)` reports
+`loading`, `ready`, `empty`, or `error`; only `ready` permits an `RGBFrame`.
+Ready without a frame is also valid. Metadata is independently boolean or unknown
+(`None`), not a server-health assessment. A reported error observation does not
+itself request reconnect; adapters raise exceptions for recoverable failures.
+Snapshots separate `source_state` from `output_state` (`simulated-open`,
+`simulated-closed`, or `error`), and expose the metadata, `latest_frame`, lifetime
+`frames_sent`, `failures`, `retries`, sanitized `error`, and worker/exit flags.
+Simulation is never reported as physical connectivity.
+
+The internal baseline is at most 1 capture/second, with synchronous backpressure
+and no frame queue. Empty/loading/error observations retain the last accepted
+frame and counter. Snapshots retain that frame even when retry replaces a closed
+output instance; there is no automatic resend, clear, reset, or power command.
+Setup/capture/write exceptions close all returned resources before retry, with
+**five additional attempts after the initial failure**, waiting exactly 1, 2, 4,
+8, 16 seconds via cancellable `Event.wait`. A successful observation/delivery
+resets the consecutive failure budget. Exhaustion remains `error` until explicit
+Start or Stop. Cleanup failure attempts both closes, latches `error`, blocks
+restart/save and withholds exit readiness; restart the application after resolving
+the owned-resource failure. Backend exception text and private URLs are never
+included in status. GUI responsiveness, browser behavior and Windows acceptance
+remain later integration proof.
 
 ## Dependencies and current verification
 
@@ -106,14 +166,15 @@ were installed successfully in a repository-local `.venv` on Linux, producing an
 editable wheel. System Python was not modified. Windows executable/ZIP packaging,
 Chromium inclusion and packaged runtime compatibility remain unverified.
 
-A Linux Qt availability probe currently fails on missing system library
-`libEGL.so.1` (`libegl1` on Debian/Ubuntu). GUI tests require that dependency;
-standard-library frame, transport and settings tests do not. No system package
-was installed automatically.
+Linux Qt offscreen availability passed after the explicitly authorized
+installation of `libegl1` and its required dependencies. A sandbox-enabled
+Chromium local screenshot also passed using the repository-local browser.
+These probes establish tooling availability, not Windows tray, real MARS,
+packaged-runtime or physical-screen acceptance.
 
 ## Deliberately deferred
 
-Later work must implement the tray/lifecycle and inspect MARS readiness and
+Later work must bind the tray to the coordinator and implement MARS readiness and
 `/display` capture contracts. MARS will continue to own content, order, dwell,
 live updates, and orientation. Local rendering must not add server-side work.
 Windows packaging must bundle Chromium and retain dependency licenses/notices;

@@ -69,10 +69,16 @@ Exact selection:
 
 Use `chain_strategy=feature-branch-chain`. This organizes local work-unit boundaries and eventual review only; no publishing authority.
 
+### S12 — Authorized Qt system prerequisite
+Exact owner selection:
+> Autorizo instalar libegl1 y sus dependencias
+
+Scope is the required system package and necessary dependencies only; no unrelated upgrades, MARS changes or blanket system authorization.
+
 ## Tasks
 
 - T1 [S1,S2,S3,S5,S7,S11] route: delegated (context backstop fired); status: done; commit: `b233d6e1f645513c359142c42e21e497b9c4b011` — 358 authored source/test/doc lines plus feature tracking: package skeleton, pinned dependency declarations, validated immutable RGB frames, bounded simulated transport, six public-interface tests and developer documentation; no tray/browser/USB implementation yet.
-- T2 [S1,S3,S4,S8,S9] route: delegated (context backstop); status: blocked (T2a verified; T2b GUI proof needs owner authorization to install missing system library libEGL.so.1/libegl1, or owner-selected Windows proof); commits: T2a recording — validated local settings/persistence complete; lifecycle/tray not implemented. Each work unit keeps its own tests/docs and local commit.
+- T2 [S1,S3,S4,S8,S9] route: delegated (context backstop); status: in_progress (T2a verified; owner authorized libegl1 installation for T2b GUI checks); commits: T2a `a4c7030df580c71d41fc12f7b2feaab85794260b` — validated local settings/persistence complete; T2b lifecycle coordinator and T2c tray remain. System Qt prerequisite is now available. Each work unit keeps its own tests/docs and local commit. T2b coordinator is verified, commit recording; T2c tray follows.
 - T3 [S1,S3,S5,S10] route: delegated when context backstop applies; status: pending; commit: pending — inspect actual MARS capture contract, persistent browser integration and controlled fixtures. Access is HTTP(S) without interactive login.
 - T4 [S1,S4,S5,S7] route: inline unless a delegation trigger fires; status: pending; commit: pending — in-memory capture in both orientations, bounded latest-frame pipeline, passive device discovery and simulated-output integration; no USB writes.
 - T5 [S1,S2,S3,S6,S7] route: inline unless a delegation trigger fires; status: pending; commit: pending — Windows packaging/workflow source, notices, artifact smoke-test recipe and usage documentation; remote execution is separately authorized.
@@ -106,3 +112,11 @@ L11 — Actual MARS capture boundary found in remote docs/external-display.md (b
 L12 — T2a RED: focused unittest exited 1 for missing settings module; GREEN: eight settings tests passed. Worker full suite and independent full suite passed all 14 tests; parent reran eight focused tests with exit 0. Independent isolated probes verified strict URL/schema rejection, unchanged bytes on bad input, atomic replacement and cleanup through read/write/fsync/replace failures. No blockers. Existing six frame/transport tests preserved; no command/option differential applies. ASSESS item1 escalation returned nativeRisk=medium and independentVerifier=true; reviewDue=false, no native review started. Windows filesystem acceptance remains pending.
 
 L13 — One Qt availability probe failed, exit 1: `ImportError: libEGL.so.1: cannot open shared object file: No such file or directory`. Diagnostic ldd on the installed PySide6 QtWidgets extension confirms only `libEGL.so.1 => not found`. No retry, workaround, system install or GUI success claim. T2b waits for owner authorization to install Debian/Ubuntu libegl1 (system paths outside repository), or an explicit alternative for obtaining Windows GUI proof. Settings is source-verified independently of this unrelated GUI prerequisite. README now records successful Linux editable install and this specific missing GUI dependency.
+
+L14 — Owner explicitly selected `Autorizo instalar libegl1 y sus dependencias` (token install_libegl1). This unblocks the system prerequisite installation, not GUI acceptance itself. Run the scoped package installation once, then a fresh Qt availability check after the environment change; do not install unrelated system packages.
+
+L15 — Authorized apt installation exited 0: libegl1 1.7.0-1+b2 and required libegl-mesa0/libwayland-client0 installed; no unrelated upgrades. After this explicit environment change, a fresh offscreen QApplication probe exited 0: `Qt offscreen application available`. The earlier missing-library blocker is resolved. Offscreen Linux Qt availability is not Windows tray acceptance. Next slices are the cancellable coordinator (T2b) and its tray binding (T2c), with their own tests/docs. Internal capture scheduling starts conservatively at 1 Hz with synchronous backpressure; it is an engineering baseline, not a hardware throughput claim or user refresh setting.
+
+L16 — T2b coordinator RED exited 1 for missing lifecycle module; GREEN13 focused tests and full27 passed. Parent reran13; independent verifier ran all27 plus three isolated concurrency probes with bounded handshakes, all exit0. Tests prove sole worker ownership, stopped-only save, cancellation, cleanup-before-stop acknowledgement, exact retry delays/exhaustion and restart, and cleanup-failure latch; no blockers. ASSESS escalated item4, returned independentVerifier=true, nativeRisk=medium, reviewDue=false. No old CLI differential applies. Coherent slice is ~780 lines including concurrency tests/docs; keep the lifecycle state machine with its proof rather than file-type splitting. GUI and Windows behavior remain separate.
+
+L17 — Repository-local Chromium headless shell installed via PLAYWRIGHT_BROWSERS_PATH=0 (Playwright revision1248 plus FFmpeg1013), exit0. A real local HTML screenshot with `chromium_sandbox=True` succeeded, exit0, 3229 PNG bytes. No TLS/sandbox bypass, production URL or USB access. Browser availability is now proven on Linux, not real MARS integration or Windows packaging.
