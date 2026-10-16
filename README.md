@@ -2,8 +2,8 @@
 
 MarsDisplay is a GPL v3 companion foundation for a future Windows 11 x64
 MARS display application. **Immutable RGB frames, in-memory simulated output,
-local settings persistence, and a GUI-independent lifecycle coordinator exist today.**
-There is no application CLI, tray, browser capture, USB
+local settings persistence, a lifecycle coordinator, and an injectable Qt tray
+shell exist today.** There is no application entry point, browser capture, USB
 implementation, or Windows executable yet. No screen is needed for these tests.
 
 ## Run the source tests
@@ -11,11 +11,13 @@ implementation, or Windows executable yet. No screen is needed for these tests.
 Use Python **3.13.x** (the engineering baseline; currently tested on Linux):
 
 ```sh
-PYTHONPATH=src python3 -m unittest discover -s tests -v
+QT_QPA_PLATFORM=offscreen PYTHONPATH=src .venv/bin/python -m unittest discover -s tests -v
 ```
 
-The tests and public imports use only the standard library. They do not require
-installed GUI/browser dependencies, a display server, network, or USB access.
+The tray tests require the pinned PySide6 dependency and Qt system libraries.
+They exercise real widgets using the offscreen Qt platform, without a display
+server, browser, network, or USB access. Other modules/tests use the standard
+library. Offscreen success does not prove Windows tray integration.
 
 ## Public interface
 
@@ -83,7 +85,7 @@ the lifecycle coordinator below enforces saving only while stopped and keeps
 startup stopped/unconfigured rather than choosing a URL/device. Windows filesystem
 and application acceptance remain separate from Linux tests.
 
-## Capture lifecycle boundary (no GUI or browser yet)
+## Capture lifecycle boundary (no browser yet)
 
 `mars_display.lifecycle.Coordinator(store, source_factory, transport_factory)`
 is an injectable coordinator, not an application entry point. Later application
@@ -139,19 +141,62 @@ resets the consecutive failure budget. Exhaustion remains `error` until explicit
 Start or Stop. Cleanup failure attempts both closes, latches `error`, blocks
 restart/save and withholds exit readiness; restart the application after resolving
 the owned-resource failure. Backend exception text and private URLs are never
-included in status. GUI responsiveness, browser behavior and Windows acceptance
-remain later integration proof.
+included in status. The tray tests exercise responsiveness with controlled
+sessions; actual browser behavior and Windows acceptance remain separate proof.
+
+## Injectable tray shell (not a runnable application yet)
+
+`mars_display.tray.create_shell(app, store, coordinator_factory)` assembles the
+tray only after acquiring a per-user `QLockFile` beside `store.path`. It returns
+`None` if another instance owns the lock, without invoking the coordinator factory.
+The caller should report “MarsDisplay is already running” and exit that launch.
+Lock/access and corrupt-configuration errors propagate to the caller for startup
+reporting; no silent configuration repair occurs. Retain the returned shell for
+its entire event loop.
+
+Future browser-entrypoint assembly (not executable until that adapter exists):
+
+```python
+from PySide6.QtWidgets import QApplication
+from mars_display.tray import create_shell
+
+# app = QApplication(...)
+# shell = create_shell(app, store, lambda: Coordinator(
+#     store, actual_browser_session_factory, SimulatedTransport))
+# if shell is not None:
+#     app.exec()
+```
+
+The factory must construct an idle coordinator using the same store; it must not
+start capture or allocate a browser. No fake session is installed in production.
+`SingleInstanceGuard(store).acquire()` / `.release()` is also available for future
+startup composition; acquire is nonblocking, repeatable for the owning guard,
+and never force-removes another live lock. Keep ownership until cleanup succeeds.
+
+| Tray action | Behavior |
+| --- | --- |
+| Status / Settings (or icon click) | Opens a temporary dialog with separate MARS source, source metadata, explicitly simulated output, lifecycle state, and lifetime frame count. Closing hides it, not the application. |
+| Save (stopped only) | Validates the MARS URL through `Settings` and saves through `Coordinator.save_settings`; invalid/active saves preserve previous settings. Saved device identity is opaque/read-only pending hardware identification, not an editable COM port or connected-device claim. |
+| Start / Stop | Explicit nonblocking coordinator requests; first launch remains stopped/unconfigured and does not automatically open the dialog. Starting/running/recovering/stopping/error reflect snapshots; no UI-thread joins or backend calls. |
+| Exit | Requests cleanup and polls `exit_ready` before releasing the lock and quitting. Uncertain cleanup keeps the app alive and displays an actionable error; it never terminates the user's normal browser. |
+
+The shell sets `QApplication.setQuitOnLastWindowClosed(False)`, generates its icon
+in code, and owns a 50 ms snapshot timer. It has no permanent normal window or
+console facility, no preview/refresh/server-selection controls, and no local
+slideshow or orientation settings. The eventual packaged Windows entrypoint must
+select windowed/no-console packaging. Actual Windows lock contention, tray menu,
+process lifetime, and no-console behavior still require Windows acceptance.
 
 ## Dependencies and current verification
 
 `pyproject.toml` is the single source of direct pins. `requirements.txt` selects
 the local editable runtime package; `requirements-build.txt` selects its `build`
-extra as well. No third-party packages are imported by the foundation itself.
+extra as well. Only the tray module imports Qt; the core remains GUI-independent.
 
 | Purpose | Selected version |
 | --- | --- |
 | Future browser rendering | Playwright 1.64.0 |
-| Future tray/UI | PySide6 6.12.0 |
+| Tray/UI | PySide6 6.12.0 |
 | Future image handling | Pillow 12.3.0 |
 | Optional future executable packaging | PyInstaller 6.22.3 |
 | Source build backend | setuptools 84.0.0 |
@@ -174,7 +219,7 @@ packaged-runtime or physical-screen acceptance.
 
 ## Deliberately deferred
 
-Later work must bind the tray to the coordinator and implement MARS readiness and
+Later work must assemble the browser entrypoint and implement MARS readiness and
 `/display` capture contracts. MARS will continue to own content, order, dwell,
 live updates, and orientation. Local rendering must not add server-side work.
 Windows packaging must bundle Chromium and retain dependency licenses/notices;
