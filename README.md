@@ -3,9 +3,44 @@
 MarsDisplay is a GPL v3 companion foundation for a future Windows 11 x64
 MARS display application. **Immutable RGB frames, in-memory simulated output,
 local settings persistence, a lifecycle coordinator, and an injectable Qt tray
-shell, and a persistent bundled Chromium capture adapter exist today.** There is
-no application entry point, USB implementation, or Windows executable yet. No
-screen is needed for these tests.
+shell, a persistent bundled Chromium capture adapter, and a GUI entrypoint exist
+today.** Output is simulated: there is no USB implementation or Windows executable
+yet. No screen is needed for these tests.
+
+## Run the application (Windows source)
+
+With the pinned runtime and package-local Chromium available, run from an
+interactive Windows x64 user session:
+
+```sh
+python -m mars_display
+```
+
+There are no product test/control flags or HTTP service. First launch stays
+stopped and unconfigured. Use the tray's **Status / Settings** to save an HTTP(S)
+MARS URL with direct access (no interactive login), then **Start**. **Stop** closes
+only the owned browser; **Exit** waits for acknowledged cleanup before releasing
+the single-instance lock. Output is always explicitly simulated, never connected
+USB. No browser launches until Start, including when settings already exist.
+
+| Launch outcome | Exit / stderr (stdout is empty) |
+| --- | --- |
+| Unsupported OS/architecture | 1: `MarsDisplay requires Windows x64; use Windows 11 x64.` |
+| No session tray | 1: `A system tray is required; run MarsDisplay in an interactive Windows session.` |
+| Duplicate instance | 0: `MarsDisplay is already running.` No second coordinator is created. |
+| Other startup failure | 1: `Cannot start MarsDisplay; check the interactive system tray and settings directory access.` |
+| Unexpected event-loop return | 1 after cleanup: `Application event loop ended unexpectedly; waiting for owned cleanup.` |
+
+Settings and lock errors use the actionable, non-secret messages described below;
+invalid files are not repaired or overwritten. Browser startup failures appear in
+the tray as `Capture or output failed; retrying.`; Stop cancels recovery. Resolve
+bundled-browser/direct-access issues before Start. Missing Qt/runtime libraries
+are startup failures, not an invitation to install system dependencies silently.
+Unsupported hosts are rejected before importing Qt or accessing user settings.
+The host admission check recognizes Windows x64; Windows 11 is the acceptance
+target, not a new version-detection framework. Fake-platform tests are branch
+proof only. Source invocation may have a console; no-console delivery requires
+future windowed packaging. Windows tray/ZIP acceptance remains pending.
 
 ## Run the source tests
 
@@ -20,7 +55,10 @@ They exercise real widgets using the offscreen Qt platform, without a display
 server or USB access. Browser tests require the pinned Playwright/Pillow packages
 and the package-local Chromium headless shell; they run real sandboxed Chromium
 against a loopback HTTP fixture only. No external MARS access is performed.
-Offscreen/Linux success does not prove Windows tray or browser integration.
+Offscreen/Linux success does not prove Windows tray or packaged-browser acceptance.
+Application tests compose the real browser, coordinator and simulated output in
+both orientations through public tray Start/Stop/Exit, using isolated settings
+and test-owned loopback traffic; foreign/raw fixture traces remain intact.
 
 ## Public interface
 
@@ -91,8 +129,8 @@ and application acceptance remain separate from Linux tests.
 ## Capture lifecycle boundary
 
 `mars_display.lifecycle.Coordinator(store, source_factory, transport_factory)`
-is an injectable coordinator, not an application entry point. Later application
-integration must use `SimulatedTransport` as its transport factory; device identity
+is an injectable coordinator, not an application entry point. Application
+assembly uses `SimulatedTransport` as its transport factory; device identity
 is saved only and never selects a protocol or opens USB.
 
 ```python
@@ -171,30 +209,27 @@ The loopback tests cover both nominal geometries and exact RGB pixels, repeated
 captures without reload, metadata rejections, fonts/layout readiness, transitions,
 independent freshness, redirect blocking and partial-setup/capture cleanup. Real
 MARS, Windows process ownership, performance and packaged-browser acceptance
-remain separate evidence. No Python GUI entrypoint is supplied in this unit.
+remain separate evidence.
 
-## Injectable tray shell (not a runnable application yet)
+## Application composition and injectable tray shell
 
 `mars_display.tray.create_shell(app, store, coordinator_factory)` assembles the
 tray only after acquiring a per-user `QLockFile` beside `store.path`. It returns
 `None` if another instance owns the lock, without invoking the coordinator factory.
-The caller should report “MarsDisplay is already running” and exit that launch.
+The entrypoint reports `MarsDisplay is already running.` and exits that launch.
 Lock/access and corrupt-configuration errors propagate to the caller for startup
 reporting; no silent configuration repair occurs. Retain the returned shell for
 its entire event loop.
 
-Future browser-entrypoint assembly (not executable until that adapter exists):
-
-```python
-from PySide6.QtWidgets import QApplication
-from mars_display.tray import create_shell
-
-# app = QApplication(...)
-# shell = create_shell(app, store, lambda: Coordinator(
-#     store, BrowserSession, SimulatedTransport))
-# if shell is not None:
-#     app.exec()
-```
+`mars_display.app.build_shell(app, store)` is the public composition helper for
+packaging and isolated tests. It checks session tray availability, then calls
+`create_shell` with an idle `Coordinator(store, BrowserSession, SimulatedTransport)`
+factory. Tests may supply an isolated `SettingsStore(path)` and patch the native
+tray availability boundary for offscreen Qt; production never installs a fake
+source or bypasses tray admission. `main()` creates QApplication and the default
+per-user store, retaining the shell for the event loop. Unexpected event-loop
+return requests owned cleanup and reuses the existing shell polling until its
+acknowledgement; cleanup uncertainty keeps ownership instead of forcing a kill.
 
 The factory must construct an idle coordinator using the same store; it must not
 start capture or allocate a browser. No fake session is installed in production.
@@ -220,7 +255,7 @@ process lifetime, and no-console behavior still require Windows acceptance.
 
 `pyproject.toml` is the single source of direct pins. `requirements.txt` selects
 the local editable runtime package; `requirements-build.txt` selects its `build`
-extra as well. Only the tray module imports Qt; the core remains GUI-independent.
+extra as well. Tray/application assembly imports Qt; the core remains GUI-independent.
 
 | Purpose | Selected version |
 | --- | --- |
@@ -248,8 +283,8 @@ packaged-runtime or physical-screen acceptance.
 
 ## Deliberately deferred
 
-Later work must assemble the ordinary GUI entrypoint with production OS/tray/
-browser availability checks and sanitized startup errors. The browser adapter
+The ordinary GUI entrypoint now composes the verified adapters; packaged runtime
+checks and actual Windows acceptance remain later work. The browser adapter
 implements the recorded version 1 `/display` contract, but has not been exercised
 against real MARS. MARS continues to own content, order, dwell, live updates and
 orientation. Local rendering must not add server-side work.
