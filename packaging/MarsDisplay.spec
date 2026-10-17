@@ -10,16 +10,20 @@ if sys.platform != 'win32':
 root = Path(SPECPATH).parent
 # Playwright's pinned hook uses collect_data_files; include the complete driver,
 # Node, package registry, inlined notices and package-local browser resources.
-a = Analysis(
-    [str(root / 'packaging/entrypoint.py')],
-    pathex=[str(root / 'src')],
-    datas=collect_data_files('playwright'),
-    hookspath=[str(root / 'packaging/hooks')],
-    hiddenimports=['mars_display.app', 'mars_display.devices'],
-    excludes=['PyQt5', 'PyQt6', 'PySide2', 'PySide6.QtWebEngineCore',
-              'PySide6.QtWebEngineWidgets', 'PySide6.QtWebEngineQuick',
-              'PySide6.QtPdf', 'PySide6.QtPdfWidgets'],
-)
+_native_spec = util.spec_from_file_location('marsdisplay_native_runtime', root / 'packaging/native_runtime.py')
+_native_runtime = util.module_from_spec(_native_spec)
+_native_spec.loader.exec_module(_native_runtime)
+with _native_runtime.external_dependencies():
+    a = Analysis(
+        [str(root / 'packaging/entrypoint.py')],
+        pathex=[str(root / 'src')],
+        datas=collect_data_files('playwright'),
+        hookspath=[str(root / 'packaging/hooks')],
+        hiddenimports=['mars_display.app', 'mars_display.devices'],
+        excludes=['PyQt5', 'PyQt6', 'PySide2', 'PySide6.QtWebEngineCore',
+                  'PySide6.QtWebEngineWidgets', 'PySide6.QtWebEngineQuick',
+                  'PySide6.QtPdf', 'PySide6.QtPdfWidgets'],
+    )
 # Hooks add their own copies during Analysis. Select only frozen runtime data;
 # never mutate SDK files or weaken the portable payload validators.
 _runtime_spec = util.spec_from_file_location('marsdisplay_runtime_files', root / 'packaging/runtime_files.py')

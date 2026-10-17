@@ -23,6 +23,7 @@ def _load(name):
 
 payload = _load('payload')
 smoke = _load('smoke')
+native_runtime = _load('native_runtime')
 
 
 def require_host():
@@ -223,9 +224,16 @@ def build(repo, *, run=None, qualify=None, smoke_check=None):
              '--workpath', str(stage / 'work'), str(repo / 'packaging/MarsDisplay.spec')],
             cwd=repo, env=env, check=True, timeout=900)
         folder = stage / 'dist/MarsDisplay'
+        instructions = source.get('packaging/PORTABLE-README.txt')
+        if not instructions:
+            raise ValueError('Missing portable prerequisite instructions')
+        with (folder / 'README.txt').open('xb') as stream:
+            stream.write(instructions)
         runtime = payload.read_tree(folder)
-        phase, smoke_status = 'layout_validation', 'not_run'
+        phase, smoke_status = 'runtime_profile', 'not_run'
         try:
+            native_runtime.assert_profile(runtime)
+            phase = 'layout_validation'
             payload._layout(runtime)
             phase, smoke_status = 'packaged_smoke', 'failed_or_unavailable'
             measurements = smoke_check(folder, stage / 'smoke')
@@ -248,7 +256,7 @@ def build(repo, *, run=None, qualify=None, smoke_check=None):
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description='Build a windowed portable ZIP on native Windows x64 (Python 3.13.x). No downloads; requires pinned SDK and package-local Chromium.',
-        epilog='Requires reviewed build/native-material/native.json (marsdisplay-native-material-v2), genuine license/source-version proof and fresh binary evidence. Missing qualification fails closed. Existing outputs are never replaced.')
+        epilog='External prerequisite: official VC++ v14 x64 14.51+; Microsoft DLLs are not bundled. Requires reviewed build/native-material/native.json (marsdisplay-native-material-v2), genuine license/source-version proof and fresh binary evidence. Missing qualification fails closed. Existing outputs are never replaced.')
     parser.parse_args(argv)
     try:
         _, archive, checksum = build(Path(__file__).absolute().parents[1])

@@ -6,9 +6,21 @@ local settings persistence, a lifecycle coordinator, and an injectable Qt tray
 shell, a persistent bundled Chromium capture adapter, and a GUI entrypoint exist
 today.** Passive USB-serial inventory/selection APIs are preparation only, not a
 physical driver. Output is simulated; no qualified Windows prototype has been
-delivered. The previous broad Windows bundle passed native startup/binary smoke,
-but the new minimal-runtime candidate is unproved and ZIP delivery remains
-blocked by native qualification. No screen is needed for these tests.
+delivered. The earlier minimized Windows bundle passed native startup/binary
+smoke, but the new external-VC++/Mesa-root-omission profile is source-only and
+unproved natively. Genuine Qt material still blocks ZIP delivery.
+
+## Windows prerequisite (selected delivery profile)
+
+Use the official current **Microsoft VC++ v14 x64 runtime, 14.51+**, installed
+manually if missing: https://aka.ms/vc14/vc_redist.x64.exe . The validated build
+used14.51; older versions are not promised compatible. Windows11 supplies OS
+UCRT/API-set DLLs. MarsDisplay's ZIP will include Python/Qt/Chromium, but not the
+selected Microsoft runtime DLLs; it has no app installer or automatic download.
+Microsoft's installer may need administrator permission. Follow root README.txt
+and keep the entire extracted folder. Missing-runtime errors can precede app
+startup; do not copy random DLLs or disable security. This profile still needs
+new native inventory/smoke and clean-machine T6 acceptance, not another red CI.
 
 ## Run the application (Windows source)
 
@@ -392,11 +404,13 @@ The owner chose a minimal app-required runtime. Stage one adds a local QtGui
 hook that delegates stock collection/validation and omits only
 `imageformats/qpdf.dll`, `imageformats/qsvg.dll`, `iconengines/qsvgicon.dll` and
 `platforminputcontexts/qtvirtualkeyboardplugin.dll` before native dependency
-closure. Required/default plugins and Network/SSL/Mesa/CRT remain; no app feature
-or parameter changes. Smaller native DLL inventory is a hypothesis, not proof
-from the earlier broad smoke. Component-version/provenance correction follows;
-the current gate's Qt-version requirement for non-Qt CRT components remains
-unfixed, not bypassed. See the packaging guide for stage-one limits.
+closure. Prior minimized CI verified that reduction and smoke. The reviewed v2
+material model separates source versions from Qt/PE/owner versions, but genuine
+inputs remain missing. The next selected profile externalizes exact known
+Microsoft roots/dependencies before closure and omits only the stock optional
+Mesa root request, retaining stock guards/ANGLE/ICU/other resources. Its final
+assertion rejects leftovers, never deletes them. No app/environment/Chromium
+change, EULA-based redistribution assumption or native qualification is implied.
 
 After Analysis, including hook-added copies, the spec excludes known Playwright
 installer flags/`.links` SDK references and exact root `py.typed` DATA for
@@ -408,9 +422,10 @@ may regenerate if Playwright validates host dependencies; no installer, download
 or auto-update was added. SDK files are not modified.
 Keep all auxiliary files; settings persist per user
 outside the extracted folder. This is an unsigned prototype, not an invitation
-to disable Windows security. No administrator/end-user installation is required.
-Minimal-candidate packaged execution/smoke, qualified ZIP and owner-run Windows
-11 acceptance remain unproved; T5 stays in progress.
+to disable Windows security. No MarsDisplay installation is required, but the
+external official VC++ prerequisite may require administrator installation.
+The external-runtime profile, qualified ZIP and owner-run Windows11 acceptance
+remain unproved; T5 stays in progress.
 
 No model-specific driver has been copied. Real protocol selection and physical
 USB testing require identified hardware; simulation must never be shown as a

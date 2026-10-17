@@ -75,7 +75,9 @@ class RuntimeFilesTests(unittest.TestCase):
         hooks.collect_data_files = Mock(return_value=initial)
         modules = {'PyInstaller': ModuleType('PyInstaller'),
                    'PyInstaller.utils': ModuleType('PyInstaller.utils'),
-                   'PyInstaller.utils.hooks': hooks}
+                   'PyInstaller.utils.hooks': hooks,
+                   'PyInstaller.building': SimpleNamespace(build_main=SimpleNamespace(find_binary_dependencies=Mock())),
+                   'PyInstaller.depend': SimpleNamespace(dylib=SimpleNamespace(include_library=Mock()))}
         namespace = {'SPECPATH': str(REPO / 'packaging'), 'Analysis': analysis,
                      'PYZ': Mock(), 'EXE': Mock(), 'COLLECT': collect}
         # Absolute SPECPATH, not cwd or a packaging import-path side effect,

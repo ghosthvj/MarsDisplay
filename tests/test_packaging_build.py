@@ -32,6 +32,7 @@ class BuildTests(unittest.TestCase):
         self.info['build']['Qt'] = '6.12.0'
         self.source = self.fixture.source()
         self.source['.github/workflows/windows-portable.yml'] = b'workflow source'
+        self.source['packaging/PORTABLE-README.txt'] = b'Synthetic portable prerequisite instructions'
         self.native = Mock(return_value=([{'name': 'native fixture'}], {'native/LICENSE': b'native text'}))
 
     def process(self, command, **kwargs):
@@ -57,6 +58,7 @@ class BuildTests(unittest.TestCase):
         def smoke(folder, scratch):
             self.events.append('smoke')
             self.assertTrue((folder / 'MarsDisplay.exe').is_file())
+            self.assertEqual((folder / 'README.txt').read_bytes(), self.source['packaging/PORTABLE-README.txt'])
             self.assertTrue(scratch.is_relative_to(self.repo / 'build'))
             if smoke_failure:
                 raise RuntimeError('synthetic startup failed')
@@ -199,6 +201,23 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(list((self.repo / 'build').iterdir()), [])
         self.assertFalse((self.repo / 'dist').exists())
 
+    def test_readme_is_staged_before_smoke_and_profile_rejects_without_publication(self):
+        folder, _, _ = self.execute()
+        self.assertEqual((folder / 'README.txt').read_bytes(), self.source['packaging/PORTABLE-README.txt'])
+        with tempfile.TemporaryDirectory() as temporary:
+            self.repo = Path(temporary)
+            self.events.clear()
+            prior = self.repo / 'dist/older.zip'; prior.parent.mkdir(); prior.write_bytes(b'old artifact')
+            self.runtime['_internal/shiboken6/VCRUNTIME140.dll'] = b'synthetic external runtime'
+            with self.assertRaisesRegex(ValueError, 'External-runtime profile'):
+                self.execute()
+            self.assertEqual(self.events, ['inspect', 'compile'])
+            self.assertEqual(prior.read_bytes(), b'old artifact')
+            self.assertEqual(list(prior.parent.iterdir()), [prior])
+            report = next((self.repo / 'build').glob('unqualified-native-*.json'))
+            self.assertEqual(json.loads(report.read_text())['failure_phase'], 'runtime_profile')
+            self.assertEqual(json.loads(report.read_text())['packaged_smoke'], {'status': 'not_run'})
+
     def test_existing_outputs_rejected_before_process_and_preserved(self):
         output = self.repo / 'dist'; output.mkdir()
         prior = output / 'MarsDisplay'; prior.mkdir()
@@ -280,7 +299,7 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn('.zip', diagnostic_step)
         self.assertNotIn('.exe', diagnostic_step)
         files = self.builder.payload.collect_source(Path('.'))
-        for name in ('packaging/build_portable.py', 'packaging/smoke.py', 'packaging/runtime_files.py', 'packaging/native_evidence.py', 'packaging/qt_plugins.py', 'packaging/hooks/hook-PySide6.QtGui.py', 'packaging/MarsDisplay.spec', '.github/workflows/windows-portable.yml'):
+        for name in ('packaging/build_portable.py', 'packaging/smoke.py', 'packaging/runtime_files.py', 'packaging/native_evidence.py', 'packaging/native_runtime.py', 'packaging/PORTABLE-README.txt', 'packaging/hooks/hook-PySide6.py', 'packaging/qt_plugins.py', 'packaging/hooks/hook-PySide6.QtGui.py', 'packaging/MarsDisplay.spec', '.github/workflows/windows-portable.yml'):
             self.assertIn(name, files)
 
 

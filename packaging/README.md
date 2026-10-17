@@ -27,6 +27,44 @@ for missing reviewed native qualification. Its measured inventory fell from
 nine dependent Qt DLLs removed, none added. This is runtime evidence, not a
 qualified ZIP; T5 remains in progress.
 
+## Selected external-runtime profile — source only
+
+The owner chose **official VC++ as an external prerequisite**, not Microsoft DLL
+conveyance. Python, Qt, Chromium, Pillow and other open-source extensions remain
+bundled. Install the current official **VC++ v14 x64 14.51+** manually if missing:
+https://aka.ms/vc14/vc_redist.x64.exe . The validated build used14.51; older
+versions are not promised compatible. Windows11 supplies OS UCRT/API-set DLLs.
+MarsDisplay has no installer/downloader, automatic license acceptance or service;
+a runtime EULA is not treated as a redistribution grant.
+
+The exact external DLL set is MSVCP140.dll/_1/_2, VCRUNTIME140.dll/_1,
+ucrtbase.dll and the api-ms-win-core-*/api-ms-win-crt-* DLL contract families.
+Case/separators are normalized, not arbitrary DLL/vendor-name substrings.
+The spec temporarily delegates pinned6.22.3 `find_binary_dependencies(binaries,
+import_packages, symlink_suppression_patterns)` and `dylib.include_library(path)`.
+It selects the **Analysis-owned root list before closure** (stock Analysis retains
+that list and extends it with results), then vetoes targeted dependencies while
+preserving default traversal and untargeted inclusion/exclusion. Both functions
+are restored in `finally`; no SDK file or environment is patched.
+
+The local base PySide6 hook executes the entire stock hook, preserving binding
+guards, shiboken/inspect/deprecated imports, ANGLE/ICU and other defaults. Only its
+exact optional `_collect_all_or_none(['opengl32sw.dll'])` request is omitted.
+The app's default raster/GDI Widgets/tray path does not request software OpenGL;
+forced Qt/RHI/OpenGL debug graphics are unsupported by this profile. Chromium
+GL/Vulkan/SwiftShader resources and the existing QtGui policy are unchanged.
+If independent native edges still require Mesa, it remains in closure and the
+final profile assertion **rejects**, never purges, it before smoke/qualification/
+publication. The same assertion rejects any known external DLL still present.
+This is bounded selection, not a general vendor/license classifier.
+
+The builder copies immutable `packaging/PORTABLE-README.txt` source bytes to the
+owned stage's root `README.txt`, exclusively, before hashing/layout/smoke. Both
+source and staged copies are inventoried; no source-collector change is needed.
+Actual Microsoft-DLL-free/Mesa-free inventory and smoke remain **unproved**.
+Host CI does not prove a clean Windows11 machine has the prerequisite; T6 owns
+that acceptance. No CI should run until genuine Qt material/provisioning is ready.
+
 ## Developer commands (native Windows x64 only)
 
 Use Python **3.13.x**, the exact `pyproject.toml` pins and an interactive session
@@ -90,8 +128,9 @@ class methods and other hooks are not changed.
 
 Selection happens **before Analysis native dependency closure**, not by deleting
 Qt DLLs after Analysis. Other families/plugins, qwindows, styles, base binding
-hooks, Core/Widgets/Network/SSL, Mesa/ANGLE/ICU and CRT support remain delegated
-to their defaults. The existing post-Analysis DATA selection below is unchanged.
+hooks and Core/Widgets/Network/SSL remain delegated. The later external-runtime
+profile above now changes only Microsoft inclusion and the optional Mesa root,
+not ANGLE/ICU, consumer code or the original four-root QtGui policy. The existing post-Analysis DATA selection below is unchanged.
 There is no invented hooksconfig key, whole-family suppression or license bypass.
 
 Run39036811563 verified removal of the four roots and Qt OpenGL/Pdf/Qml/
@@ -203,9 +242,10 @@ licensed nor unlicensed. Unavailable RECORD metadata cannot verify comparison.
 CRT source release and PE14.44 remain independent of Qt6.12. A Mesa owner6.12
 association alone cannot supply its upstream version or source proof.
 
-The mapping scope remains exactly the current **33** `.dll`/`.pyd` files beneath
-`_internal/PySide6/`; no scope expansion to Shiboken or the other 90 native files
-is made here. Their existing source/license obligations remain follow-up work.
+The mapping still covers every `.dll`/`.pyd` beneath `_internal/PySide6/` (33 in
+the previous runtime inventory); its selector is unchanged, with no expansion
+to Shiboken or outside-prefix files. The new external-runtime inventory size
+has not yet been measured. Their existing source/license obligations remain follow-up work.
 Complete manifest and raw materials travel in `notices/native/`. Genuine inputs,
 especially exact Mesa supplier archive/SBOM/build-recipe binding, are still
 missing. Synthetic tests cannot close that gap; no real manifest/qualified ZIP
@@ -404,7 +444,9 @@ from the run's Artifacts before its 7-day expiry. Extract the Actions download
 archive to obtain the actual ZIP and checksum, compare the ZIP's SHA256 using
 `Get-FileHash -Algorithm SHA256`, then extract the **entire** ZIP. Launch
 `MarsDisplay/MarsDisplay.exe`; keep `_internal`, LICENSE, notices, source and
-inventory together. No administrator/install step is required. Settings persist
+inventory together, including root README.txt. MarsDisplay needs no installer;
+the separate official VC++ installer may require administrator permission.
+Settings persist
 per user at `%LOCALAPPDATA%\MarsDisplay\settings.json`, not beside the EXE;
 replacing an extracted folder does not clear settings. The unsigned prototype
 may trigger Windows warnings: do not disable security protections. No installer,
