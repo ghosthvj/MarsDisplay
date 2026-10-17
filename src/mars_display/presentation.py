@@ -74,10 +74,10 @@ def window_stylesheet(dark: bool) -> str:
             border-radius: 4px;
             padding: 6px 10px;
         }
-        QLabel[tone="success"] {
-            color: %(success)s;
-            background: %(success_background)s;
-        }
+        QLabel[tone="success"] { color: %(success)s; }
+        QLabel#sourceBadge[tone="success"] { background: %(success_background)s; }
+        QLabel[tone="active"] { color: %(accent)s; }
+        QLabel[tone="muted"] { color: %(muted)s; }
         QLabel[tone="warning"] { color: %(warning)s; }
         QLabel[tone="error"] { color: %(error)s; }
     """ % colors

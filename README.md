@@ -328,8 +328,15 @@ starts light. The accepted 0.1.2 portable predates this UI work.
 The window groups capture status, MARS/output observations and configuration,
 with a painted monitor icon and a fixed Save footer. Its body scrolls on smaller
 windows. Values remain plain text, including saved device identity.
+The lifecycle card's **Start capture / Stop capture** button delegates to the
+same guarded tray actions. During capture/recovery/cleanup the URL is read-only
+and Save is disabled. In terminal error the primary button can restart capture;
+use tray Stop to return to editable settings. The footer explains the current
+restriction; obsolete runtime errors and saved-while-stopped feedback are cleared.
+Ready/loading/error badges use text as well as color. Lifetime frame counts use
+digit grouping only in the view, without changing counters or delivered frames.
 The native titlebar, tray actions, stopped-only settings authority and simulated
-output remain unchanged. Closing the window does not exit the application.
+output remain unchanged. Closing the window or pressing Escape does not exit.
 
 ## Application composition and injectable tray shell
 

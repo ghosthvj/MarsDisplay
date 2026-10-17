@@ -1,11 +1,13 @@
 """Offscreen widgets and public coordinator/lock contracts; no browser or USB."""
+from dataclasses import replace
 from pathlib import Path
 import tempfile
 from threading import Event
 import unittest
+from unittest.mock import patch
 
-from PySide6.QtCore import QEventLoop, QTimer, Qt
-from PySide6.QtGui import QPalette
+from PySide6.QtCore import QEvent, QEventLoop, QTimer, Qt
+from PySide6.QtGui import QKeyEvent, QPalette
 from PySide6.QtWidgets import QApplication
 
 from mars_display.frames import RGBFrame
@@ -175,8 +177,113 @@ class TrayTests(unittest.TestCase):
         self.assertGreater(dialog.scroll_area.verticalScrollBar().maximum(), 0)
         dialog.close()
         self.assertFalse(dialog.isVisible())
+        shell.show_settings()
+        APP.sendEvent(dialog, QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Escape,
+                                       Qt.KeyboardModifier.NoModifier))
+        self.assertFalse(dialog.isVisible())
         self.assertEqual(APP.quit_requests, 0)
         self.assertEqual(shell.coordinator.snapshot().state, "stopped")
+
+    def test_window_capture_button_uses_existing_start_stop_and_cleanup_guards(self):
+        shell = self.make()
+        original = self.store.path.read_bytes()
+        button = shell.dialog.capture_action
+        self.assertEqual(button.text(), "Start capture")
+        self.assertTrue(button.isEnabled())
+        button.click()
+        until(self.session.opened.is_set)
+        until(lambda: button.text() == "Stop capture")
+        self.assertEqual(shell.coordinator.snapshot().state, "starting")
+        self.session.allow_open.set()
+        until(lambda: shell.dialog.frames.text() == "1")
+        button.click()
+        self.next_sample.set()
+        until(self.session.closing.is_set)
+        until(lambda: not button.isEnabled())
+        self.assertFalse(shell.dialog.save.isEnabled())
+        self.session.allow_close.set()
+        until(lambda: shell.dialog.runtime.text() == "stopped")
+        self.assertEqual(button.text(), "Start capture")
+        self.assertTrue(button.isEnabled())
+        self.assertEqual(shell.coordinator.snapshot().frames_sent, 1)
+        self.assertEqual(self.store.path.read_bytes(), original)
+
+    def test_url_footer_and_feedback_follow_stopped_only_authority(self):
+        shell = self.make()
+        original = self.store.path.read_bytes()
+        self.assertFalse(shell.dialog.url.isReadOnly())
+        shell.dialog.save.click()
+        self.assertEqual(shell.dialog.message.text(), "Settings saved. Capture remains stopped.")
+        self.running()
+        self.assertTrue(shell.dialog.url.isReadOnly())
+        self.assertEqual(shell.dialog.hint.text(),
+                         "Capture is running. Stop capture to save changes.")
+        self.assertEqual(shell.dialog.message.text(), "")
+        self.assertEqual(shell.dialog.source.property("tone"), "success")
+        self.assertEqual(shell.dialog.runtime.property("tone"), "active")
+        self.assertEqual(self.store.path.read_bytes(), original)
+        shell.exit_action.trigger()
+        self.next_sample.set()
+        until(self.session.closing.is_set)
+        until(lambda: not shell.dialog.capture_action.isEnabled())
+        self.assertTrue(shell.dialog.url.isReadOnly())
+        self.assertFalse(shell.dialog.save.isEnabled())
+        self.assertEqual(APP.quit_requests, 0)
+        self.session.allow_close.set()
+        until(lambda: APP.quit_requests == 1)
+
+    def test_window_stop_cancels_retry_and_clears_old_runtime_error(self):
+        shell = self.make()
+        original = self.store.path.read_bytes()
+        self.session.read_error = True
+        self.session.allow_open.set()
+        self.session.allow_close.set()
+        shell.start_action.trigger()
+        until(lambda: shell.dialog.runtime.text() == "recovering (retrying)")
+        self.assertEqual(shell.dialog.capture_action.text(), "Stop capture")
+        self.assertTrue(shell.dialog.capture_action.isEnabled())
+        self.assertTrue(shell.dialog.url.isReadOnly())
+        shell.dialog.capture_action.click()
+        self.next_sample.set()
+        until(lambda: shell.dialog.runtime.text() == "stopped")
+        self.assertEqual(shell.coordinator.snapshot().retries, 1)
+        self.assertEqual(shell.coordinator.snapshot().frames_sent, 0)
+        self.assertEqual(shell.dialog.message.text(), "")
+        self.assertFalse(shell.dialog.url.isReadOnly())
+        self.assertEqual(self.store.path.read_bytes(), original)
+
+    def test_window_start_restarts_exhausted_error_without_bypassing_coordinator(self):
+        shell = self.make(wait_override=lambda cancel, seconds: cancel.is_set())
+        self.session.read_error = True
+        self.session.allow_open.set()
+        self.session.allow_close.set()
+        shell.start_action.trigger()
+        until(lambda: shell.dialog.runtime.text() == "error")
+        self.assertEqual(shell.coordinator.snapshot().failures, 6)
+        self.assertEqual(shell.dialog.capture_action.text(), "Start capture")
+        self.assertTrue(shell.dialog.capture_action.isEnabled())
+        self.assertFalse(shell.dialog.save.isEnabled())
+        self.assertTrue(shell.dialog.url.isReadOnly())
+        self.assertEqual(shell.dialog.source.property("tone"), "error")
+        self.assertEqual(shell.dialog.hint.text(),
+                         "Capture is in error. Use tray Stop to edit settings.")
+        self.session.read_error = False
+        shell.dialog.capture_action.click()
+        until(lambda: shell.coordinator.snapshot().frames_sent >= 1)
+        until(lambda: shell.dialog.runtime.text() == "running")
+        self.assertEqual(shell.dialog.message.text(), "")
+        self.assertEqual(shell.dialog.capture_action.text(), "Stop capture")
+
+    def test_lifetime_frame_formatting_only_changes_presentation(self):
+        shell = self.make()
+        original = self.store.path.read_bytes()
+        before = shell.coordinator.snapshot()
+        with patch.object(shell.coordinator, "snapshot", return_value=replace(before, frames_sent=7045)):
+            shell.refresh()
+            self.assertEqual(shell.dialog.frames.text(), "7,045")
+        self.assertEqual(shell.coordinator.snapshot(), before)
+        self.assertEqual(self.store.path.read_bytes(), original)
+        self.assertFalse(self.session.opened.is_set())
 
     def test_manual_first_run_menu_dialog_and_close(self):
         shell = self.make(configured=False)

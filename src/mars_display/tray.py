@@ -90,6 +90,14 @@ def _label(text: str = "", name: str = "") -> QLabel:
     return label
 
 
+def _tone(label: QLabel, value: str):
+    if label.property("tone") != value:
+        label.setProperty("tone", value)
+        label.style().unpolish(label)
+        label.style().polish(label)
+        label.update()
+
+
 class SettingsDialog(QDialog):
     """Native window with a scrollable status body and an always-visible footer."""
 
@@ -138,6 +146,9 @@ class SettingsDialog(QDialog):
         runtime_text.addWidget(self.runtime)
         self.capture_row.addLayout(runtime_text)
         self.capture_row.addStretch()
+        self.capture_action = QPushButton("Start capture")
+        self.capture_action.setAutoDefault(False)
+        self.capture_row.addWidget(self.capture_action)
         column.addWidget(self.runtime_card)
         self.source = _label("stopped", "sourceBadge")
         self.source.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
@@ -175,6 +186,8 @@ class SettingsDialog(QDialog):
         device_layout.addWidget(self.device)
         column.addWidget(device_card)
         self.message = _label()
+        self.message_kind = ""
+        self.message.hide()
         column.addWidget(self.message)
         column.addStretch()
         self.scroll_area.setWidget(body)
@@ -189,6 +202,12 @@ class SettingsDialog(QDialog):
         footer_row.addWidget(self.save)
         outer.addWidget(self.footer)
         self.set_dark_mode(False)
+
+    def show_message(self, text: str, kind: str = "error"):
+        self.message_kind = kind if text else ""
+        self.message.setText(text)
+        self.message.setVisible(bool(text))
+        _tone(self.message, "success" if kind == "saved" else "error")
 
     def set_dark_mode(self, dark: bool):
         self.setProperty("theme", "dark" if dark else "light")
@@ -224,6 +243,7 @@ class TrayShell(QObject):
         self.stop_action.triggered.connect(lambda: self._request(coordinator.stop))
         self.exit_action.triggered.connect(lambda: self._request(coordinator.request_exit))
         self.dialog.save.clicked.connect(self._save)
+        self.dialog.capture_action.clicked.connect(self._capture_request)
         self.tray = QSystemTrayIcon(_icon(), self)
         self.tray.setToolTip("MarsDisplay — simulated output")
         self.tray.setContextMenu(self.menu)
@@ -245,11 +265,18 @@ class TrayShell(QObject):
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
             self.show_settings()
 
+    def _capture_request(self):
+        # Use the displayed intent; never turn a queued Stop into a new Start.
+        action = (self.stop_action if self.dialog.capture_action.property("operation") == "stop"
+                  else self.start_action)
+        if action.isEnabled():
+            action.trigger()
+
     def _request(self, operation):
         try:
             operation()
         except (LifecycleError, SettingsError) as error:
-            self.dialog.message.setText(str(error))
+            self.dialog.show_message(str(error))
             self.show_settings()
         self.refresh()
 
@@ -261,10 +288,10 @@ class TrayShell(QObject):
                                 self.configured.device_identity if self.configured else None)
             self.coordinator.save_settings(settings)
         except (SettingsError, LifecycleError) as error:
-            self.dialog.message.setText(str(error))
+            self.dialog.show_message(str(error))
         else:
             self.configured = settings
-            self.dialog.message.setText("Settings saved. Capture remains stopped.")
+            self.dialog.show_message("Settings saved. Capture remains stopped.", "saved")
         self.refresh()
 
     def refresh(self):
@@ -275,7 +302,13 @@ class TrayShell(QObject):
         word = lambda value: "unknown" if value is None else "yes" if value else "no"
         self.dialog.metadata.setText(
             f"Live connected: {word(status.live_connected)}; data stale: {word(status.data_stale)}")
-        self.dialog.frames.setText(str(status.frames_sent))
+        self.dialog.frames.setText(f"{status.frames_sent:,}")
+        _tone(self.dialog.source, "success" if status.source_state == "ready" else
+              "error" if status.source_state == "error" else
+              "warning" if status.source_state == "loading" else "muted")
+        _tone(self.dialog.runtime, "active" if status.state == "running" else
+              "error" if status.state == "error" else
+              "muted" if status.state == "stopped" else "warning")
         idle = not status.worker_alive and not status.exit_requested
         # Only Coordinator knows whether an error permits retry or has a cleanup
         # latch. Let its public Start operation report the actionable rejection.
@@ -283,16 +316,37 @@ class TrayShell(QObject):
         self.stop_action.setEnabled(not status.exit_requested and status.state != "stopping"
                                     and (status.worker_alive or status.state == "error"))
         self.exit_action.setEnabled(not status.exit_requested)
-        self.dialog.save.setEnabled(idle and status.state == "stopped")
+        can_save = idle and status.state == "stopped"
+        self.dialog.save.setEnabled(can_save)
+        self.dialog.url.setReadOnly(not can_save)
+        stopping = status.worker_alive or status.state not in {"stopped", "error"}
+        action = self.stop_action if stopping else self.start_action
+        self.dialog.capture_action.setProperty("operation", "stop" if stopping else "start")
+        self.dialog.capture_action.setText("Stop capture" if stopping else "Start capture")
+        self.dialog.capture_action.setEnabled(action.isEnabled())
+        if status.exit_requested:
+            hint = "Exiting. Waiting for owned resources."
+        elif can_save:
+            hint = "Capture is stopped. Settings can be saved."
+        elif status.state == "stopping":
+            hint = "Stopping capture. Waiting for owned resources."
+        elif status.state == "error":
+            hint = "Capture is in error. Use tray Stop to edit settings."
+        else:
+            hint = f"Capture is {status.state}. Stop capture to save changes."
+        self.dialog.hint.setText(hint)
         if status.error:
             message = status.error
             if status.exit_requested and not status.worker_alive and not status.exit_ready:
                 message += (" Exit is blocked: check owned browser/output resources; "
                             "resolve cleanup before restarting MarsDisplay. "
                             "Do not close your normal browser.")
-            self.dialog.message.setText(message)
+            self.dialog.show_message(message, "runtime")
             if status.exit_requested:
                 self.dialog.show()
+        elif self.dialog.message_kind == "runtime" or (
+                self.dialog.message_kind == "saved" and status.state != "stopped"):
+            self.dialog.show_message("")
         if status.exit_ready:
             self.timer.stop()
             self.tray.hide()
