@@ -4,7 +4,50 @@ MarsDisplay is a GPL v3 Windows 11 x64 tray companion that renders MARS locally
 with bundled Chromium. Output is **simulated only**: this prototype does not
 drive a physical USB screen.
 
-## Download the verified portable prototype
+## Download the themed UI prototype
+
+[Download MarsDisplay 0.1.3 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39078344950/artifacts/12117643947)
+from the [successful native build](https://github.com/ghosthvj/MarsDisplay/actions/runs/39078344950).
+Includes the approved light/dark Qt status window, capture control and contextual
+Save footer, retaining the earlier browser-readiness and handle-disposal fixes.
+The artifact contains the application ZIP and SHA256 sidecar; retention ends
+**2026-10-24 23:19 UTC**. GitHub sign-in may be required.
+
+1. Exit the previous instance through the tray. Keep your saved settings.
+2. Extract the entire application ZIP into a separate folder; do not mix versions
+   or copy only the EXE. Keep the accepted 0.1.2 folder as a fallback.
+3. Open `MarsDisplay.exe`, check the saved URL, then use **Start capture**.
+   **Dark mode / Light mode** switches the window theme for this session only.
+   Closing the window or Escape hides it; tray **Exit** closes the application.
+
+Python, Qt and Chromium are bundled. Official **Microsoft VC++ v14 x64 14.51+**
+is still an external prerequisite if missing: https://aka.ms/vc14/vc_redist.x64.exe .
+The prototype is unsigned, not an installer: do not disable security or copy
+random DLLs to bypass an error. Output remains simulated; no USB screen is driven.
+
+**Verified delivery:** Windows CI passed 152 source tests (45.267s), native build,
+external-runtime profile, isolated startup/binary smoke, genuine-material
+qualification and source stability. The downloaded **205,561,440-byte** ZIP,
+all **1,222 file hashes** and **326 source hashes** were verified. SHA256:
+
+```text
+d7c2c461cc21e0b857fa87eae20a63cf9af86a099a4ac5fefe55e0178661e3ff
+```
+
+Exact artifact source: `e497e165bcfa4d69aafd8715b8d6cf302b6c6097`.
+Local tests, independent verification and synthetic 100%/150%/small-window views
+passed. The first Windows test run exposed premature layout measurement; the
+corrected test retains the same geometry requirement and bounded Qt event loop.
+No production timeout, threshold, runtime profile or qualification was relaxed.
+**Owner Windows 11 visual/DPI acceptance of 0.1.3 is still pending.** The owner-
+accepted testing baseline remains **0.1.2**; that acceptance is not transferred
+to the new UI or to physical hardware. Later documentation commits do not rebuild
+this artifact.
+
+<details>
+<summary>Accepted 0.1.2 baseline and historical acceptance evidence</summary>
+
+### Accepted 0.1.2 testing baseline and earlier evidence
 
 [Download MarsDisplay 0.1.2 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39065994952/artifacts/12112754920)
 from the [successful native build](https://github.com/ghosthvj/MarsDisplay/actions/runs/39065994952).
@@ -60,6 +103,8 @@ cleanup and Stop-during-retry observations are deferred, not passed. This is not
 production or physical-screen qualification.
 Windows Server CI is not Windows 11 acceptance or hardware support. Later
 documentation-only commits do not rebuild this artifact.
+
+</details>
 
 ## Run the application (Windows source)
 
@@ -318,12 +363,12 @@ independent freshness, redirect blocking and partial-setup/capture cleanup. Real
 MARS, Windows process ownership, performance and packaged-browser acceptance
 remain separate evidence.
 
-## Status window appearance (source)
+## Status window appearance
 
-The source UI offers **Dark mode / Light mode** without another framework.
+The 0.1.3 UI offers **Dark mode / Light mode** without another framework.
 Theme selection is local to the current dialog/session, initially light; it
 survives hiding the window but is not saved in `settings.json`. A new session
-starts light. The accepted 0.1.2 portable predates this UI work.
+starts light. The accepted 0.1.2 portable predates this UI; keep it as a testing fallback.
 
 The window groups capture status, MARS/output observations and configuration,
 with a painted monitor icon and a fixed Save footer. Its body scrolls on smaller

@@ -1,6 +1,33 @@
 # Windows portable build and verified delivery
 
-## Verified artifact — T5 complete for 0.1.2
+## Verified themed UI artifact — 0.1.3
+
+[Download MarsDisplay 0.1.3 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39078344950/artifacts/12117643947)
+from [run39078344950](https://github.com/ghosthvj/MarsDisplay/actions/runs/39078344950), exact source
+`e497e165bcfa4d69aafd8715b8d6cf302b6c6097`. Retention ends **2026-10-24 23:19 UTC**.
+
+| Verified evidence | Result |
+| --- | --- |
+| Native CI | 152 source tests / 45.267s; native compile, external profile, isolated packaged smoke, genuine-material qualification, source stability and upload passed. |
+| Application ZIP | 205,561,440 bytes; SHA256 `d7c2c461cc21e0b857fa87eae20a63cf9af86a099a4ac5fefe55e0178661e3ff` matches its sidecar. |
+| Payload/source | 1,223 members; all 1,222 file hashes and 326 source hashes checked. Browser, tray, presentation, tests and project version match the exact source commit. |
+| Native profile | 69 native files, 27 Qt components and 6 supplemental associations; no selected Microsoft runtime DLLs or Qt Mesa. No dependency/profile/qualification changes. |
+| UI source checks | Final local 152 tests, independent 27 tray/app tests and targeted geometry-correction verification; synthetic light/dark, 100%/150% and small-window views inspected. |
+
+No Windows code was extracted or executed on Linux. The Actions wrapper's digest
+is not the application ZIP checksum above. The first UI run39077768122 failed one
+geometry test before compilation; a test-only Qt-event synchronization correction
+preserved the original height requirement before a deferred-wrap fixture. The
+corrected run passed without a platform skip, lowered threshold or runtime change.
+
+Exit the old instance, extract the whole new ZIP into a separate folder and keep
+0.1.2 as a fallback. Existing settings persist. The theme selector is per-session,
+not a settings-format migration. Native titlebar appearance follows Windows.
+**Owner Windows11 visual/DPI acceptance of 0.1.3 remains pending.** The following
+0.1.2 acceptance is historical and is not transferred to 0.1.3. This is not a
+release, installer, production certification or physical-screen qualification.
+
+## Accepted testing baseline — 0.1.2
 
 [Download MarsDisplay 0.1.2 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39065994952/artifacts/12112754920)
 from [run39065994952](https://github.com/ghosthvj/MarsDisplay/actions/runs/39065994952), exact source
