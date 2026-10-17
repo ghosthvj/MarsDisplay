@@ -2,10 +2,10 @@
 from collections.abc import Callable
 
 from PySide6.QtCore import QLockFile, QObject, QTimer, Qt
-from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
+from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
-    QApplication, QDialog, QFormLayout, QLabel, QLineEdit, QMenu,
-    QPushButton, QSystemTrayIcon,
+    QApplication, QDialog, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMenu,
+    QPushButton, QScrollArea, QSizePolicy, QSystemTrayIcon, QVBoxLayout, QWidget,
 )
 
 from .lifecycle import Coordinator, LifecycleError
@@ -68,52 +68,127 @@ def _icon() -> QIcon:
     pixmap = QPixmap(32, 32)
     pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
-    painter.setBrush(QColor("#bd593c"))
-    painter.setPen(Qt.PenStyle.NoPen)
-    painter.drawEllipse(2, 2, 28, 28)
-    painter.setPen(QColor("white"))
-    painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "M")
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    painter.setPen(QPen(QColor("#218a9b"), 2))
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.drawRoundedRect(3, 4, 26, 18, 3, 3)
+    painter.drawLine(16, 23, 16, 27)
+    painter.drawLine(10, 28, 22, 28)
+    painter.drawLine(8, 15, 13, 15)
+    painter.drawLine(13, 15, 16, 10)
+    painter.drawLine(16, 10, 19, 17)
+    painter.drawLine(19, 17, 24, 17)
     painter.end()
     return QIcon(pixmap)
 
 
+def _label(text: str = "", name: str = "") -> QLabel:
+    label = QLabel(text)
+    label.setTextFormat(Qt.TextFormat.PlainText)
+    label.setWordWrap(True)
+    label.setObjectName(name)
+    return label
+
+
 class SettingsDialog(QDialog):
-    """A temporary status/settings window; closing only hides it."""
+    """Native window with a scrollable status body and an always-visible footer."""
 
     def __init__(self, configured: Settings | None):
         super().__init__()
         self.setWindowTitle("MarsDisplay — Status / Settings")
+        self.setWindowIcon(_icon())
         self.setObjectName("statusWindow")
-        self.setMinimumWidth(420)
-        form = QFormLayout(self)
+        self.setMinimumWidth(480)
+        self.resize(650, min(870, max(400, self.screen().availableGeometry().height() - 48)))
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        body = QWidget()
+        body.setObjectName("body")
+        column = QVBoxLayout(body)
+        column.setContentsMargins(30, 24, 30, 24)
+        column.setSpacing(14)
+        toolbar = QHBoxLayout()
+        logo = _label()
+        logo.setPixmap(self.windowIcon().pixmap(24, 24))
+        logo.setFixedSize(24, 24)
+        toolbar.addWidget(logo)
+        toolbar.addWidget(_label("MarsDisplay", "sectionHeading"))
+        toolbar.addStretch()
         self.theme_switch = QPushButton("Dark mode")
         self.theme_switch.setObjectName("themeSwitch")
         self.theme_switch.setCheckable(True)
         self.theme_switch.setAutoDefault(False)
         self.theme_switch.toggled.connect(self.set_dark_mode)
-        form.addRow("", self.theme_switch)
-        self.set_dark_mode(False)
-        self.runtime = QLabel("stopped")
-        self.source = QLabel("stopped")
-        self.output = QLabel("Simulated — simulated-closed (no USB output)")
-        self.metadata = QLabel()
-        self.frames = QLabel("0")
+        toolbar.addWidget(self.theme_switch)
+        column.addLayout(toolbar)
+        self.window_heading = _label("Status / Settings", "windowHeading")
+        column.addWidget(self.window_heading)
+        column.addWidget(_label("Monitor your connection and configure MARS.", "muted"))
+        self.runtime_card = QFrame()
+        self.runtime_card.setObjectName("lifecycleCard")
+        self.capture_row = QHBoxLayout(self.runtime_card)
+        self.capture_row.setContentsMargins(20, 16, 20, 16)
+        self.runtime = _label("stopped", "runtimeValue")
+        runtime_text = QVBoxLayout()
+        runtime_text.addWidget(_label("Capture lifecycle", "muted"))
+        runtime_text.addWidget(self.runtime)
+        self.capture_row.addLayout(runtime_text)
+        self.capture_row.addStretch()
+        column.addWidget(self.runtime_card)
+        self.source = _label("stopped", "sourceBadge")
+        self.source.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
+        self.output = _label("Simulated — simulated-closed (no USB output)")
+        self.metadata = _label()
+        self.frames = _label("0", "frames")
+        details = QGridLayout()
+        details.setColumnStretch(0, 2)
+        details.setColumnStretch(1, 3)
+        details.setHorizontalSpacing(20)
+        details.setVerticalSpacing(12)
+        for index, (title, widget) in enumerate((
+            ("MARS source state", self.source), ("Output", self.output),
+            ("Source metadata", self.metadata), ("Frames sent (lifetime)", self.frames),
+        )):
+            details.addWidget(_label(title, "muted"), index * 2, 0)
+            details.addWidget(widget, index * 2, 1)
+            line = QFrame()
+            line.setObjectName("separator")
+            line.setFixedHeight(1)
+            details.addWidget(line, index * 2 + 1, 0, 1, 2)
+        column.addLayout(details)
+        column.addWidget(_label("Configuration", "sectionHeading"))
+        column.addWidget(_label("MARS URL"))
         self.url = QLineEdit(configured.mars_url if configured else "")
-        self.device = QLabel(configured.device_identity if configured and configured.device_identity
+        self.url.setAccessibleName("MARS URL")
+        column.addWidget(self.url)
+        device_card = QFrame()
+        device_card.setObjectName("deviceCard")
+        device_layout = QVBoxLayout(device_card)
+        device_layout.setContentsMargins(18, 14, 18, 14)
+        device_layout.addWidget(_label("Saved device identity · Read-only", "muted"))
+        self.device = _label(configured.device_identity if configured and configured.device_identity
                              else "Not selected (hardware identification pending)")
-        self.message = QLabel()
-        self.message.setWordWrap(True)
-        self.save = QPushButton("Save (stopped only)")
-        for title, widget in (
-            ("Capture lifecycle", self.runtime), ("MARS source state", self.source),
-            ("Output", self.output), ("Source metadata", self.metadata),
-            ("Frames sent (lifetime)", self.frames), ("MARS URL", self.url),
-            ("Saved device identity (read-only)", self.device),
-            ("", self.save), ("", self.message),
-        ):
-            if isinstance(widget, QLabel):
-                widget.setTextFormat(Qt.TextFormat.PlainText)
-            form.addRow(title, widget)
+        device_layout.addWidget(self.device)
+        column.addWidget(device_card)
+        self.message = _label()
+        column.addWidget(self.message)
+        column.addStretch()
+        self.scroll_area.setWidget(body)
+        outer.addWidget(self.scroll_area, 1)
+        self.footer = QFrame()
+        self.footer.setObjectName("footer")
+        footer_row = QHBoxLayout(self.footer)
+        footer_row.setContentsMargins(24, 16, 24, 16)
+        self.hint = _label("Settings can be saved only while capture is stopped.", "hint")
+        footer_row.addWidget(self.hint, 1)
+        self.save = QPushButton("Save")
+        footer_row.addWidget(self.save)
+        outer.addWidget(self.footer)
+        self.set_dark_mode(False)
 
     def set_dark_mode(self, dark: bool):
         self.setProperty("theme", "dark" if dark else "light")

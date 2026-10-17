@@ -155,6 +155,29 @@ class TrayTests(unittest.TestCase):
         self.assertEqual(shell.coordinator.snapshot().frames_sent, 0)
         self.assertFalse(self.session.opened.is_set())
 
+    def test_reference_layout_keeps_native_window_plain_text_and_small_window_footer(self):
+        shell = self.make()
+        dialog = shell.dialog
+        self.assertFalse(dialog.windowFlags() & Qt.WindowType.FramelessWindowHint)
+        self.assertFalse(dialog.windowIcon().isNull())
+        self.assertTrue(dialog.scroll_area.widgetResizable())
+        self.assertTrue(dialog.footer.isAncestorOf(dialog.save))
+        self.assertFalse(dialog.scroll_area.isAncestorOf(dialog.save))
+        self.assertEqual(dialog.window_heading.text(), "Status / Settings")
+        for label in (dialog.runtime, dialog.source, dialog.output, dialog.metadata,
+                      dialog.frames, dialog.device, dialog.message):
+            self.assertEqual(label.textFormat(), Qt.TextFormat.PlainText)
+        shell.show_settings()
+        dialog.resize(600, 480)
+        APP.processEvents()
+        self.assertTrue(dialog.save.isVisible())
+        self.assertLessEqual(dialog.footer.geometry().bottom(), dialog.height())
+        self.assertGreater(dialog.scroll_area.verticalScrollBar().maximum(), 0)
+        dialog.close()
+        self.assertFalse(dialog.isVisible())
+        self.assertEqual(APP.quit_requests, 0)
+        self.assertEqual(shell.coordinator.snapshot().state, "stopped")
+
     def test_manual_first_run_menu_dialog_and_close(self):
         shell = self.make(configured=False)
         self.assertFalse(APP.quitOnLastWindowClosed())

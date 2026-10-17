@@ -325,6 +325,9 @@ Theme selection is local to the current dialog/session, initially light; it
 survives hiding the window but is not saved in `settings.json`. A new session
 starts light. The accepted 0.1.2 portable predates this UI work.
 
+The window groups capture status, MARS/output observations and configuration,
+with a painted monitor icon and a fixed Save footer. Its body scrolls on smaller
+windows. Values remain plain text, including saved device identity.
 The native titlebar, tray actions, stopped-only settings authority and simulated
 output remain unchanged. Closing the window does not exit the application.
 
