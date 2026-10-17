@@ -24,6 +24,7 @@ def _load(name):
 payload = _load('payload')
 smoke = _load('smoke')
 native_runtime = _load('native_runtime')
+native_material = _load('native_material')
 
 
 def require_host():
@@ -37,6 +38,7 @@ def python_license(sdk):
 
 def inspect_environment(repo):
     """Inspect the real native SDK only after admission; never export environment."""
+    native_material.read_inputs(repo)  # Genuine material/policy BEFORE any SDK or process work.
     from packaging.requirements import Requirement
     import playwright
     from PySide6.QtCore import qVersion
@@ -58,16 +60,19 @@ def inspect_environment(repo):
     driver = Path(playwright.__file__).parent / 'driver'
     browsers, vendor = notices.collect_vendor(driver)
     material.update(vendor)
+    native_material.preflight(repo, {'build': {'Qt': qVersion()}, 'dependencies': dependencies,
+                                     'build_dependencies': tools})
     revision = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=repo, check=True,
                               capture_output=True, text=True, timeout=10).stdout.strip()
     if not re.fullmatch('[a-f0-9]{40}', revision):
         raise ValueError('Missing exact source revision')
-    return {'version': project['version'], 'source_commit': revision, 'target': 'Windows-x64',
+    inventory = {'version': project['version'], 'source_commit': revision, 'target': 'Windows-x64',
             'build': {'Python': platform.python_version(), 'PyInstaller': metadata.version('PyInstaller'), 'Qt': qVersion()},
             'build_dependencies': tools, 'dependencies': dependencies, 'browsers': browsers,
             'runtime_components': [{'name': 'CPython', 'version': platform.python_version(),
                                     'sources': ['https://github.com/python/cpython/tree/v' + platform.python_version()],
-                                    'licenses': ['runtime/Python/LICENSE.txt']}]}, material
+                                    'licenses': ['runtime/Python/LICENSE.txt']}]}
+    return inventory, material
 
 
 def collect_native(runtime, inventory, material_root):
@@ -191,7 +196,8 @@ def build(repo, *, run=None, qualify=None, smoke_check=None):
     """Compile, smoke, qualify, then publish; retain only metadata on failure."""
     require_host()  # Before SDK imports, source reads, directories or processes.
     run = subprocess.run if run is None else run
-    qualify = collect_native if qualify is None else qualify
+    automatic_native = qualify is None
+    qualify = collect_native if automatic_native else qualify
     smoke_check = smoke.check if smoke_check is None else smoke_check
     repo = Path(repo).absolute()
     if any(path.is_symlink() for path in (repo, *repo.parents)):
@@ -241,9 +247,11 @@ def build(repo, *, run=None, qualify=None, smoke_check=None):
             inventory['packaged_smoke'] = measurements
             smoke_status = 'passed'
             phase = 'native_qualification'
-            native, native_material = qualify(runtime, inventory, work / 'native-material')
+            material_root = (native_material.prepare(repo, runtime, inventory, stage / 'native-material')
+                             if automatic_native else work / 'native-material')
+            native, native_texts = qualify(runtime, inventory, material_root)
             inventory['native_components'] = native
-            material.update(native_material)
+            material.update(native_texts)
             phase = 'source_stability'
             if payload.collect_source(repo) != source:
                 raise ValueError('Source changed during build; nothing published')
@@ -256,7 +264,7 @@ def build(repo, *, run=None, qualify=None, smoke_check=None):
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description='Build a windowed portable ZIP on native Windows x64 (Python 3.13.x). No downloads; requires pinned SDK and package-local Chromium.',
-        epilog='External prerequisite: official VC++ v14 x64 14.51+; Microsoft DLLs are not bundled. Requires reviewed build/native-material/native.json (marsdisplay-native-material-v2), genuine license/source-version proof and fresh binary evidence. Missing qualification fails closed. Existing outputs are never replaced.')
+        epilog='External prerequisite: official VC++ v14 x64 14.51+; Microsoft DLLs are not bundled. Requires verified third_party/native-material sources/policy and exact SDK RECORD preflight; stages marsdisplay-native-material-v2 with fresh binary evidence. Missing qualification fails closed. Existing outputs are never replaced.')
     parser.parse_args(argv)
     try:
         _, archive, checksum = build(Path(__file__).absolute().parents[1])

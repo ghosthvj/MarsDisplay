@@ -60,7 +60,8 @@ This is bounded selection, not a general vendor/license classifier.
 
 The builder copies immutable `packaging/PORTABLE-README.txt` source bytes to the
 owned stage's root `README.txt`, exclusively, before hashing/layout/smoke. Both
-source and staged copies are inventoried; no source-collector change is needed.
+source and staged copies are inventoried. The source collector also explicitly includes
+validated native-source inputs; it never archives the workspace or all third_party.
 Actual Microsoft-DLL-free/Mesa-free inventory and smoke remain **unproved**.
 Host CI does not prove a clean Windows11 machine has the prerequisite; T6 owns
 that acceptance. No CI should run until genuine Qt material/provisioning is ready.
@@ -88,10 +89,10 @@ artifacts yourself to a safe location; the builder never overwrites them.
 
 | Phase | Boundary |
 | --- | --- |
-| Inspect | Validate installed direct/build/backend pins; collect real dependency/vendor texts, CPython `LICENSE.txt` and PyInstaller `COPYING.txt` including its bootloader exception. |
+| Inspect | Validate genuine pinned native inputs/policy first, then selected SDK pins/RECORD before processes; collect dependency/vendor texts, CPython `LICENSE.txt` and PyInstaller bootloader exception. |
 | Compile | Pinned PyInstaller one-folder `MarsDisplay`, `entrypoint.py`, `console=False`, `upx=False`; used Qt hooks only, no collect-all Qt/WebEngine/Pdf or other bindings. |
 | Inspect stage / smoke | Read the unpacked tree, require exact runtime layout, then run that EXE and its Node/browser/FFmpeg version commands with deadlines and isolated user/temp paths. |
-| Qualify | Only after smoke, require the genuine native material mapping below. Measured-stage failures retain unqualified diagnostic metadata before owned staging is cleaned. |
+| Qualify | After smoke, prepare reviewed policy/material with fresh facts in the owned stage, then call the unchanged v2 gate independently. Measured-stage failures retain unqualified diagnostic metadata before cleanup. |
 | Publish | Only after all checks, call the existing `payload.assemble` publisher once for folder + ZIP + SHA256 sidecar. |
 
 Compiler work/cache/temp and smoke state are owned temporary directories beneath
@@ -141,8 +142,9 @@ facts were subsequently measured in run39038363658/29f18f7: 123 native files,
 101 measured PE versions/22 absent, 46 RECORD associations/77 unknown, none
 unavailable. Qt PE6.12.0.0 differs from PySide-prefix CRT14.44.35211.0; bindings
 and Mesa lack PE versions but have owner6.12.0. Owner version is not Mesa source
-release. The explicit v2 model below separates these dimensions; genuine native
-materials and exact Mesa source/build-recipe evidence remain unresolved.
+release. The explicit v2 model below separates these dimensions. Pinned Qt/PySide/OpenSSL source
+inputs and a curated external-profile policy now exist. Mesa is not licensed by
+inference: it is omitted only by the selected profile and rejected if still present.
 
 ## Frozen runtime selection, not relaxed validation
 
@@ -182,29 +184,55 @@ validation, a missing validation cache may be recreated after validation. No
 installer, downloader, automatic update or new app control is introduced; the
 app uses launch, and settings remain under `%LOCALAPPDATA%\\MarsDisplay`.
 
-## Native material is a real, unresolved gate
+## Offline native-source provisioning, then unchanged v2 gate
 
-Windows inventories and numeric/owner facts exist, but authentic component
-source/version attribution remains incomplete. Binding license texts and the
-56 registered [official source inputs](../third_party/license-material/README.md)
-are not complete native/plugin attribution. Missing/unmapped native material
-still fails before distribution. There is no legal-certification claim.
+The default builder requires [pinned primary material and reviewed policy](../third_party/native-material/README.md)
+in `third_party/native-material`, not a manual `build/native-material/native.json`.
+Missing inputs fail before SDK/process work with:
+`Missing verified native sources: third_party/native-material; Windows qualification is pending`.
+Present but invalid inputs fail with `Invalid verified native sources or policy`.
+No source text is downloaded, normalized or silently replaced. The reader checks
+registry/policy trust anchors, every raw SHA256 and git blob identity, immutable
+public source URLs, declared LicenseFile references and annotated release tags.
 
-The default builder requires reviewed local inputs at
-`build/native-material/native.json`, plus the referenced genuine native license
-texts in that directory. No fabricated/pass-through manifest is supplied. The
-workflow therefore cannot currently produce a qualified ZIP. A future explicitly
-authorized Windows diagnostic run can compile and smoke the owned internal stage,
-then remain **red** for missing native mapping while retaining useful metadata.
-Native material investigation and an evidence-provisioning decision are still
-needed before a qualified build can succeed. Do not insert synthetic material
-or treat a diagnostic upload as distribution clearance.
+The policy explicitly maps 27 expected Qt-prefix paths to qtbase, qtimageformats
+or pyside full module sources. Hashes, PE facts and exact PySide6_Essentials6.12.0
+RECORD associations were curated from historical Windows39038363658, not inferred
+from basenames. That report is never read by the builder or used as verification.
+Preflight requires live selected SDK RECORD associations before compilation.
+After profile/layout/smoke, fresh byte/PE/RECORD facts must match every policy item;
+only then is v2 material created exclusively in the owned temporary native-material
+stage. The unchanged `collect_native` measures again before the sole publisher.
+Stale/unknown paths, hashes, owners or PE facts fail; no supplier-approved flag is
+filled. Manual older build/native-material files have no authority. Test-only
+qualification injection remains explicit and has no public CLI control.
+
+All 204 raw texts/233 origin records, registry, policy, source directions and
+supplemental inventory travel in hashed notices and explicit corresponding source.
+Full-module notices retain copyrights, conditional QtUsage, versions, patents and
+alternative license terms, without claiming all optional features were compiled.
+Release references are separate version evidence, never license substitutes.
+Supplemental Shiboken's two files and four outer OpenSSL3.5.5/3.5.9 DLLs have their
+own exact fresh-fact/source inventory, outside the unchanged Qt gate. Other runtime
+obligations remain covered by existing CPython generated Windows LICENSE, full
+Node/Chromium/FFmpeg/winldd/vendor and Python-package texts and PyInstaller exception;
+unknown RECORD ownership is not automatically unlicensed.
+
+Root README.txt points to `notices/native/SOURCE-ACCESS.txt`: complete immutable
+upstream module archives (including build/configuration and vendored code), local
+application/build-hook source, retained terms and replaceable dynamic DLLs. Under
+the GPLv3 section 6(d) route the distributor must maintain equivalent source access
+next to the binary; expiry of a CI artifact is not an exemption. Mechanical binding
+is not legal certification. Policy correspondence/notice sufficiency requires
+independent semantic review; actual Windows provisioner/profile/ZIP proof remains
+pending. Do not run another deliberately diagnostic-only CI.
 
 ### Explicit native-material v2 (no implicit migration)
 
 `native.json` must use `schema: marsdisplay-native-material-v2`. Legacy,
-unknown and UNQUALIFIED diagnostic schemas are rejected; there is no automatic
-conversion or manifest generator. The unchanged missing-input error remains:
+unknown and UNQUALIFIED diagnostic schemas are rejected; there is no implicit
+conversion. Only the pinned policy provisioner creates default owned-stage material.
+Direct helper calls retain their unchanged legacy missing-input error:
 `Missing reviewed native notices: build/native-material/native.json; Windows qualification is pending`.
 
 Top-level fields are exactly:
@@ -245,11 +273,11 @@ association alone cannot supply its upstream version or source proof.
 The mapping still covers every `.dll`/`.pyd` beneath `_internal/PySide6/` (33 in
 the previous runtime inventory); its selector is unchanged, with no expansion
 to Shiboken or outside-prefix files. The new external-runtime inventory size
-has not yet been measured. Their existing source/license obligations remain follow-up work.
-Complete manifest and raw materials travel in `notices/native/`. Genuine inputs,
-especially exact Mesa supplier archive/SBOM/build-recipe binding, are still
-missing. Synthetic tests cannot close that gap; no real manifest/qualified ZIP
-has been created, and no repeated Windows CI is warranted before resolving it.
+has not yet been measured (27 is the curated expectation, not native evidence).
+Supplemental Shiboken/OpenSSL obligations are bound separately, never fed into this
+selector. Complete manifests and raw materials travel in `notices/native/`.
+Synthetic tests cannot prove Windows qualification; no real staged native.json or
+qualified ZIP has been created by this source unit.
 
 ## Exact winldd notices, not a browser exemption
 
@@ -309,7 +337,8 @@ retaining a failure diagnostic**, from the same immutable bytes as `native_files
 Its schema-v1, existing fields and failure flow stay unchanged. Separately, v2
 material admission deliberately calls the same helper afresh for required
 binaries to verify declared `binary_evidence`; it never trusts archived diagnostic
-facts. No native.json, approval flag or new CLI option is generated.
+facts. The separate pinned policy provisioner now creates owned-stage native.json;
+this evidence helper itself still creates no manifest, approval flag or CLI option.
 
 Each native path carries its matching SHA256 plus:
 

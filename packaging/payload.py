@@ -151,6 +151,15 @@ def collect_source(root):
     if legal.exists() or legal.is_symlink():
         _, material = collect_license_material(legal)
         files.update({'third_party/license-material/' + name: data for name, data in material.items()})
+    native = root / 'third_party/native-material'
+    if native.exists() or native.is_symlink():
+        # Lazy standalone load avoids import recursion; never archive third_party wholesale.
+        from importlib import util
+        spec = util.spec_from_file_location('marsdisplay_source_material', Path(__file__).with_name('native_material.py'))
+        reader = util.module_from_spec(spec)
+        spec.loader.exec_module(reader)
+        material = reader.read_inputs(root)['files']
+        files.update({'third_party/native-material/' + name: data for name, data in material.items()})
     workflow = '.github/workflows/windows-portable.yml'
     if (root / workflow).exists() or (root / workflow).is_symlink():
         files.update(read_tree(root, (workflow,)))

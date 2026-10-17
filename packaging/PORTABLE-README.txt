@@ -15,3 +15,9 @@ Missing DLL/startup error: check the official x64 VC++ runtime and full extracti
 do not copy random DLLs, disable security, or assume an unsigned prototype is trusted.
 External forced Qt/OpenGL debug graphics are unsupported; Chromium resources stay bundled.
 Packaged smoke is not Windows 11/LAN/Exit/resource acceptance or legal qualification.
+SOURCE ACCESS: see notices/native/SOURCE-ACCESS.txt for full immutable upstream
+module source archives, including build/configuration and vendored code. App and
+local build-hook source are in source/. Raw terms/copyrights are in notices/.
+Keep these source directions adjacent to the binary; redistributors must maintain
+equivalent source access under GPLv3 section 6(d), despite artifact expiry.
+Unpacked dynamic DLLs remain replaceable. No extra EULA/DRM restricts GPL/LGPL rights.

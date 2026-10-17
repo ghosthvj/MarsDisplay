@@ -8,7 +8,8 @@ today.** Passive USB-serial inventory/selection APIs are preparation only, not a
 physical driver. Output is simulated; no qualified Windows prototype has been
 delivered. The earlier minimized Windows bundle passed native startup/binary
 smoke, but the new external-VC++/Mesa-root-omission profile is source-only and
-unproved natively. Genuine Qt material still blocks ZIP delivery.
+unproved natively. Genuine pinned Qt/PySide/OpenSSL inputs and a source provisioner
+now exist; independent policy review and actual Windows qualification/ZIP remain.
 
 ## Windows prerequisite (selected delivery profile)
 
@@ -390,9 +391,10 @@ gate, isolated startup proof, workflow bootstrap/7-day retention and full ZIP
 extraction/checksum steps. The same build command now runs owned packaged smoke
 before native qualification and retains sanitized, uniquely named
 `build/unqualified-native-*.json` metadata on measurable-stage failure. A future
-explicitly authorized Windows run may remain red for missing native material
-while uploading only a clearly unqualified diagnostic; it cannot currently deliver
-a qualified ZIP. These reports contain hashes/versions/smoke status, not binaries,
+authorized Windows run must exercise the full closure pipeline, not deliberately
+remain red for missing material. Pinned-source/SDK preflight now precedes compilation;
+owned-stage policy materialization follows smoke and feeds the unchanged v2 gate.
+Actual provisioner/profile execution and qualified ZIP remain unproved. These reports contain hashes/versions/smoke status, not binaries,
 source or approval evidence. SDK/compile failure may produce no report and remains
 a failure. Owner authorization covers T5 branch pushes, Windows CI and seven-day
 test artifacts; this source correction executed none. The exact winldd1007
@@ -405,8 +407,9 @@ hook that delegates stock collection/validation and omits only
 `imageformats/qpdf.dll`, `imageformats/qsvg.dll`, `iconengines/qsvgicon.dll` and
 `platforminputcontexts/qtvirtualkeyboardplugin.dll` before native dependency
 closure. Prior minimized CI verified that reduction and smoke. The reviewed v2
-material model separates source versions from Qt/PE/owner versions, but genuine
-inputs remain missing. The next selected profile externalizes exact known
+material model separates source versions from Qt/PE/owner versions. Genuine
+pinned inputs, explicit 27-file policy and offline provisioner now exist; their
+source/notice association still needs independent semantic review. The next selected profile externalizes exact known
 Microsoft roots/dependencies before closure and omits only the stock optional
 Mesa root request, retaining stock guards/ANGLE/ICU/other resources. Its final
 assertion rejects leftovers, never deletes them. No app/environment/Chromium

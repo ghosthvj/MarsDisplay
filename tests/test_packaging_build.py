@@ -71,7 +71,9 @@ class BuildTests(unittest.TestCase):
         with patch.object(self.builder, 'require_host'), patch.object(self.builder, 'inspect_environment', inspect), patch.object(self.builder.payload, 'collect_source', side_effect=snapshots), patch.object(self.builder.payload, 'assemble', publish):
             runner = Mock(side_effect=RuntimeError('synthetic compile failed')) if compile_failure else self.process
             return self.builder.build(self.repo, run=runner,
-                                      qualify=None if default_native else qualify, smoke_check=smoke)
+                                      # Explicit legacy gate seam for synthetic diagnostic tests;
+                                      # production default now provisions owned-stage material.
+                                      qualify=self.builder.collect_native if default_native else qualify, smoke_check=smoke)
 
     def test_missing_native_mapping_retains_only_unqualified_measured_diagnostic(self):
         work = self.repo / 'build'; work.mkdir()
