@@ -134,6 +134,13 @@ def retain_diagnostic(work, inventory, runtime, phase, smoke_status):
         'native_files': {name: hashlib.sha256(data).hexdigest() for name, data in sorted(runtime.items())
                          if Path(name).suffix.lower() in {'.dll', '.pyd', '.exe'}},
     }
+    try:
+        report['native_evidence'] = _load('native_evidence').collect(
+            {name: runtime[name] for name in report['native_files']}, inventory)
+    except Exception:
+        # Supplemental diagnostics must never replace the original native error.
+        report['native_evidence'] = {name: {'sha256': digest, 'status': 'unavailable'}
+                                     for name, digest in report['native_files'].items()}
     data = (json.dumps(report, indent=2, sort_keys=True) + '\n').encode('utf-8')
     # mkstemp-backed exclusive creation; never overwrite a prior diagnostic.
     with tempfile.NamedTemporaryFile(prefix='unqualified-native-', suffix='.json', dir=work, delete=False) as stream:

@@ -102,6 +102,9 @@ class BuildTests(unittest.TestCase):
         expected = {name: hashlib.sha256(data).hexdigest() for name, data in self.runtime.items()
                     if Path(name).suffix.lower() in {'.dll', '.pyd', '.exe'}}
         self.assertEqual(report['native_files'], expected)
+        self.assertEqual(set(report['native_evidence']), set(expected))
+        for name, digest in expected.items():
+            self.assertEqual(report['native_evidence'][name]['sha256'], digest)
         for forbidden in ('private', 'secret', str(self.repo), 'traceback', 'qualification', 'license_sha256'):
             # failure_phase is a fixed category, not invented approval evidence.
             if forbidden == 'qualification':
@@ -119,6 +122,36 @@ class BuildTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Incomplete native qualification'):
             self.builder.collect_native(self.runtime, self.info, native)
 
+    def test_evidence_failure_preserves_original_rejection_and_prior_bytes(self):
+        prior = self.repo / 'build/unqualified-native-prior.json'
+        prior.parent.mkdir(); prior.write_bytes(b'prior report')
+        settings = self.repo / 'settings.json'; settings.write_bytes(b'private settings')
+        artifact = self.repo / 'dist/older.zip'
+        artifact.parent.mkdir(); artifact.write_bytes(b'prior artifact')
+        unavailable = Mock(collect=Mock(side_effect=RuntimeError('private-secret-C:/SDK')))
+        loader = self.builder._load
+        out, err = StringIO(), StringIO()
+        with patch.object(self.builder, '_load', side_effect=lambda name: unavailable if name == 'native_evidence' else loader(name)):
+            with redirect_stdout(out), redirect_stderr(err), self.assertRaisesRegex(ValueError, '^Missing reviewed native notices: build/native-material/native.json; Windows qualification is pending$'):
+                self.execute(default_native=True)
+        reports = [path for path in prior.parent.glob('unqualified-native-*.json') if path != prior]
+        self.assertEqual(len(reports), 1)
+        report = json.loads(reports[0].read_text())
+        self.assertEqual(report['schema'], 'marsdisplay-unqualified-native-v1')
+        self.assertEqual(report['status'], 'UNQUALIFIED')
+        self.assertEqual(report['failure_phase'], 'native_qualification')
+        self.assertEqual(report['packaged_smoke'], {'status': 'passed'})
+        self.assertEqual(report['native_evidence'], {name: {'sha256': digest, 'status': 'unavailable'}
+                                                    for name, digest in report['native_files'].items()})
+        self.assertEqual(out.getvalue(), '')
+        self.assertRegex(err.getvalue(), r'^Unqualified diagnostic: build/unqualified-native-[\w-]+\.json\n$')
+        self.assertNotIn('private-secret', reports[0].read_text())
+        self.assertEqual((prior.read_bytes(), settings.read_bytes(), artifact.read_bytes()),
+                         (b'prior report', b'private settings', b'prior artifact'))
+        self.assertEqual(set(prior.parent.iterdir()), {prior, reports[0]})
+        self.assertEqual(list(artifact.parent.iterdir()), [artifact])
+        self.assertEqual(self.events, ['inspect', 'compile', 'smoke'])
+
     def test_smoke_failure_retains_sanitized_unavailable_status_without_publication(self):
         with self.assertRaisesRegex(RuntimeError, 'synthetic startup failed'):
             self.execute(smoke_failure=True)
@@ -134,7 +167,8 @@ class BuildTests(unittest.TestCase):
         self.assertFalse((self.repo / 'dist').exists())
 
     def test_ordered_native_recipe_smokes_before_only_publication(self):
-        folder, archive, checksum = self.execute()
+        with patch.object(self.builder, '_load', side_effect=AssertionError('No evidence SDK/helper on successful publication')):
+            folder, archive, checksum = self.execute()
         self.assertEqual(self.events, ['inspect', 'compile', 'smoke', 'native-notices', 'publish'])
         inventory = json.loads((folder / 'inventory.json').read_text())
         self.assertEqual(inventory['build']['Node'], 'v24.fixture')
@@ -251,7 +285,7 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn('.zip', diagnostic_step)
         self.assertNotIn('.exe', diagnostic_step)
         files = self.builder.payload.collect_source(Path('.'))
-        for name in ('packaging/build_portable.py', 'packaging/smoke.py', 'packaging/runtime_files.py', 'packaging/qt_plugins.py', 'packaging/hooks/hook-PySide6.QtGui.py', 'packaging/MarsDisplay.spec', '.github/workflows/windows-portable.yml'):
+        for name in ('packaging/build_portable.py', 'packaging/smoke.py', 'packaging/runtime_files.py', 'packaging/native_evidence.py', 'packaging/qt_plugins.py', 'packaging/hooks/hook-PySide6.QtGui.py', 'packaging/MarsDisplay.spec', '.github/workflows/windows-portable.yml'):
             self.assertIn(name, files)
 
 

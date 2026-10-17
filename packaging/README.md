@@ -20,8 +20,12 @@ Qt lock-info unpack. After correcting that binding contract, broad-bundle run
 [39033278476](https://github.com/ghosthvj/MarsDisplay/actions/runs/39033278476)
 **passed native startup and binary smoke**, then failed missing native
 qualification. Its UNQUALIFIED diagnostic is not a license approval or ZIP and
-cannot satisfy the qualification schema. That broad-bundle pass does not prove
-the new minimal candidate below.
+cannot satisfy the qualification schema. The later minimized run
+**39036811563 / ad12837** also passed EXE/COLLECT and packaged smoke, failing only
+for missing reviewed native qualification. Its measured inventory fell from
+136 to 123 native files (Qt-prefix 46 to 33), with the four selected plugins and
+nine dependent Qt DLLs removed, none added. This is runtime evidence, not a
+qualified ZIP; T5 remains in progress.
 
 ## Developer commands (native Windows x64 only)
 
@@ -61,7 +65,7 @@ prior reports and artifacts are never overwritten. Successful artifacts are
 `dist/MarsDisplay/`. Abrupt termination can leave partial output; a later build
 refuses it instead of repairing or overwriting it.
 
-## Minimal Qt runtime — stage one, source candidate only
+## Minimal Qt runtime — stage one verified, qualification pending
 
 The owner selected **Minimal app-required runtime**. The app uses raster
 Core/Gui/Widgets tray drawing and Playwright Chromium rendering, not Qt PDF/SVG
@@ -90,12 +94,12 @@ hooks, Core/Widgets/Network/SSL, Mesa/ANGLE/ICU and CRT support remain delegated
 to their defaults. The existing post-Analysis DATA selection below is unchanged.
 There is no invented hooksconfig key, whole-family suppression or license bypass.
 
-A smaller native graph is expected, but disappearance of Qt Pdf/Qml/Quick/Svg/
-VirtualKeyboard libraries remains a **hypothesis until a new Windows inventory**;
-other dependency edges may retain them. The minimal candidate needs independent
-source review and a new parent-controlled Windows build/inventory/smoke. The
-previous broad smoke is not transferable proof. Component-version/provenance
-correction is the next unit; native qualification and final ZIP remain blocked.
+Run39036811563 verified removal of the four roots and Qt OpenGL/Pdf/Qml/
+QmlMeta/QmlModels/QmlWorkerScript/Quick/Svg/VirtualKeyboard DLLs. Core/Gui/Network/
+Widgets, required plugins, Mesa and CRT remained; packaged smoke passed. This is
+not normal Exit/Windows 11 acceptance or native-license approval. The diagnostic
+facts below still need actual Windows measurement before correcting the
+component-version/provenance model. No qualification gate is relaxed here.
 
 ## Frozen runtime selection, not relaxed validation
 
@@ -221,6 +225,47 @@ compilation failure before a measurable stage may produce **no report**. No
 fictitious inventory is emitted. Final publication still requires successful
 smoke, valid qualification and unchanged source; the existing publisher retains
 its exclusive-create and owned-rollback rules.
+
+## Per-file native evidence — diagnostic facts only
+
+The optional additive `native_evidence` map is computed **only while retaining a
+failure diagnostic**, from the same immutable runtime bytes as `native_files`.
+Schema-v1, original native hash map, source/version fields, failure phase and
+smoke status stay unchanged. No evidence is supplied to qualification or final
+publication, and no native.json, approval flag or new CLI option is created.
+
+Each native path carries its matching SHA256 plus:
+
+- `pe`: fixed status `measured`, `absent`, `unknown` or `unavailable`. Measured
+  `file_version` and `product_version` come from numeric unsigned DWORDs in
+  VS_FIXEDFILEINFO, as four decimal components. Missing/malformed resources or
+  an unavailable/unexpected parser never substitute Qt/package/global versions.
+- `origins`: `matched` or explicitly `unknown`, RECORD availability and sorted
+  matching distribution name/version/relative RECORD path/digest facts. Only
+  declared dependency/build-dependency identities with exact installed versions
+  and decoded RECORD SHA256 equal to runtime SHA256 are eligible. All genuine
+  matches may remain; a basename is never origin evidence.
+
+The helper lazily uses the existing Windows SDK's **pefile 2024.8.26**, without
+adding a dependency for Linux. The inspected [official tagged source](https://github.com/erocarrera/pefile/blob/v2024.8.26/pefile.py)
+confirms `PE(data=..., fast_load=True)`, resource-only `parse_data_directories`,
+a VS_FIXEDFILEINFO list with `Signature`, `FileVersionMS/LS` and
+`ProductVersionMS/LS`, and `close()`. No LoadLibrary or executable is invoked.
+All arbitrary resource strings, including CompanyName/ProductName/copyright,
+are deliberately omitted; no vendor label or licensing identity is inferred.
+
+Origins use only importlib.metadata distribution/RECORD metadata, never SDK
+binary reads or path lookup/resolution. Relative paths use the existing safe-path
+validator; no absolute paths, parent traversal, environment, direct_url, URLs
+or raw exceptions are exported. RECORD paths cannot cause symlink traversal
+because they are never followed. A hash association proves only installed
+owner association—not upstream supplier, source provenance or license coverage.
+
+Supplemental collection failure emits hash-bound `status: unavailable` entries
+and preserves the original build failure and prior files. Unknown facts are not
+qualification evidence. Actual facts for the 123-file Windows candidate require
+the next parent-controlled CI run; synthetic source tests establish no native
+version/origin proof. The current Qt-version-for-CRT gate remains unchanged.
 
 ## Packaged smoke is not Windows acceptance
 
