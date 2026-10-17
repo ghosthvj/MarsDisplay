@@ -1,0 +1,219 @@
+"""Native Windows x64 recipe. Import/help never inspect SDKs or create output."""
+import argparse
+import hashlib
+from importlib import metadata, util
+import json
+import os
+from pathlib import Path
+import platform
+import re
+import struct
+import subprocess
+import sys
+import tempfile
+import tomllib
+
+
+def _load(name):
+    spec = util.spec_from_file_location('marsdisplay_' + name, Path(__file__).with_name(name + '.py'))
+    module = util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+payload = _load('payload')
+smoke = _load('smoke')
+
+
+def require_host():
+    if sys.platform != 'win32' or platform.machine().lower() not in {'amd64', 'x86_64'} or struct.calcsize('P') != 8:
+        raise RuntimeError('Portable builds require native Windows x64; no cross-compilation is supported.')
+
+
+def python_license(sdk):
+    return {'runtime/Python/' + name: data for name, data in payload.read_tree(sdk, ('LICENSE.txt',)).items()}
+
+
+def inspect_environment(repo):
+    """Inspect the real native SDK only after admission; never export environment."""
+    from packaging.requirements import Requirement
+    import playwright
+    from PySide6.QtCore import qVersion
+    notices = _load('notices')
+    config = tomllib.loads((repo / 'pyproject.toml').read_text(encoding='utf-8'))
+    project = config['project']
+    if sys.version_info[:2] != (3, 13):
+        raise ValueError('Use the selected Python 3.13.x SDK')
+    roots = []
+    for raw in project['dependencies'] + project['optional-dependencies']['build'] + config['build-system']['requires']:
+        requirement = Requirement(raw)
+        if not re.fullmatch(r'==[^*,]+', str(requirement.specifier)) or metadata.version(requirement.name) not in requirement.specifier:
+            raise ValueError('Installed SDK does not match exact pyproject pins')
+        roots.append(requirement.name)
+    dependencies, material = notices.collect_distributions(roots[:len(project['dependencies'])])
+    tools, tool_material = notices.collect_distributions(['PyInstaller'])
+    material.update(tool_material)  # Includes COPYING.txt and the bootloader exception.
+    material.update(python_license(Path(sys.base_prefix)))
+    driver = Path(playwright.__file__).parent / 'driver'
+    browsers, vendor = notices.collect_vendor(driver)
+    material.update(vendor)
+    revision = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=repo, check=True,
+                              capture_output=True, text=True, timeout=10).stdout.strip()
+    if not re.fullmatch('[a-f0-9]{40}', revision):
+        raise ValueError('Missing exact source revision')
+    return {'version': project['version'], 'source_commit': revision, 'target': 'Windows-x64',
+            'build': {'Python': platform.python_version(), 'PyInstaller': metadata.version('PyInstaller'), 'Qt': qVersion()},
+            'build_dependencies': tools, 'dependencies': dependencies, 'browsers': browsers,
+            'runtime_components': [{'name': 'CPython', 'version': platform.python_version(),
+                                    'sources': ['https://github.com/python/cpython/tree/v' + platform.python_version()],
+                                    'licenses': ['runtime/Python/LICENSE.txt']}]}, material
+
+
+def collect_native(runtime, inventory, material_root):
+    """Fail closed without a reviewed, exact native Qt file/material mapping.
+
+    The operator supplies real Windows material in build/native-material. This
+    check binds that evidence to bytes; it does not certify completeness/legal
+    sufficiency. Binding license metadata is deliberately NOT a substitute.
+    """
+    try:
+        raw = payload.read_tree(material_root, ('native.json',))['native.json']
+    except (OSError, ValueError):
+        raise ValueError('Missing reviewed native notices: build/native-material/native.json; Windows qualification is pending') from None
+    manifest = json.loads(raw)
+    if set(manifest) != {'qualification', 'components', 'license_sha256'} or not manifest['qualification']:
+        raise ValueError('Incomplete native qualification')
+    required = {name for name in runtime if name.startswith('_internal/PySide6/') and Path(name).suffix.lower() in {'.dll', '.pyd'}}
+    components = manifest['components']
+    if not required or len(components) != len(required) or {item['path'] for item in components} != required:
+        raise ValueError('Unmapped native Qt payload; binding texts are not native coverage')
+    texts = payload.read_tree(material_root, manifest['license_sha256'])
+    for name, digest in manifest['license_sha256'].items():
+        if hashlib.sha256(texts[name]).hexdigest() != digest:
+            raise ValueError('Native license SHA256 mismatch')
+    for item in components:
+        if (set(item) != {'path', 'sha256', 'component', 'version', 'sources', 'licenses'}
+                or not item['component'] or item['version'] != inventory['build']['Qt']
+                or hashlib.sha256(runtime[item['path']]).hexdigest() != item['sha256']
+                or not item['sources'] or not item['licenses'] or not set(item['licenses']) <= texts.keys()):
+            raise ValueError('Incomplete or mismatched native component provenance')
+        for url in item['sources']:
+            payload._source_reference(url)
+    return components, {'native/native.json': raw, **{'native/' + name: data for name, data in texts.items()}}
+
+
+def retain_diagnostic(work, inventory, runtime, phase, smoke_status):
+    """Retain metadata only, never approval evidence or raw failure messages."""
+    def version(value):
+        return isinstance(value, str) and re.fullmatch(r'v?[0-9][A-Za-z0-9.!+_-]*', value)
+
+    def component(item, keys):
+        # Installed metadata may contain URLs/private license statements. Export
+        # only package/registry names and version tokens, never whole records.
+        result = {}
+        for key in keys:
+            value = item.get(key)
+            if key == 'name':
+                if isinstance(value, str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', value):
+                    result[key] = value
+            elif version(value):
+                result[key] = value
+        return result
+
+    report = {
+        'schema': 'marsdisplay-unqualified-native-v1', 'status': 'UNQUALIFIED',
+        'failure_phase': phase, 'packaged_smoke': {'status': smoke_status},
+        'source_commit': inventory['source_commit'], 'source_files': inventory['source_files'],
+        'versions': {
+            'build': {key: value for key, value in inventory['build'].items()
+                      if key in {'Python', 'PyInstaller', 'Qt', 'Node'} and version(value)},
+            'dependencies': [component(item, ('name', 'version')) for item in inventory['dependencies']],
+            'build_dependencies': [component(item, ('name', 'version')) for item in inventory.get('build_dependencies', [])],
+            'browsers': [component(item, ('name', 'revision', 'browser_version')) for item in inventory['browsers']],
+        },
+        'native_files': {name: hashlib.sha256(data).hexdigest() for name, data in sorted(runtime.items())
+                         if Path(name).suffix.lower() in {'.dll', '.pyd', '.exe'}},
+    }
+    data = (json.dumps(report, indent=2, sort_keys=True) + '\n').encode('utf-8')
+    # mkstemp-backed exclusive creation; never overwrite a prior diagnostic.
+    with tempfile.NamedTemporaryFile(prefix='unqualified-native-', suffix='.json', dir=work, delete=False) as stream:
+        stream.write(data)
+        name = Path(stream.name).name
+    print('Unqualified diagnostic: build/' + name, file=sys.stderr)
+
+
+def build(repo, *, run=None, qualify=None, smoke_check=None):
+    """Compile, smoke, qualify, then publish; retain only metadata on failure."""
+    require_host()  # Before SDK imports, source reads, directories or processes.
+    run = subprocess.run if run is None else run
+    qualify = collect_native if qualify is None else qualify
+    smoke_check = smoke.check if smoke_check is None else smoke_check
+    repo = Path(repo).absolute()
+    if any(path.is_symlink() for path in (repo, *repo.parents)):
+        raise ValueError('Symlink repository')
+    inventory, material = inspect_environment(repo)
+    version = inventory.pop('version')
+    if not re.fullmatch(r'[0-9]+(?:\.[0-9]+)*(?:[-a-zA-Z0-9.]*)', version):
+        raise ValueError('Invalid artifact version')
+    output = repo / 'dist'
+    destinations = (output / 'MarsDisplay', output / f'MarsDisplay-{version}-Windows-x64.zip',
+                    output / f'MarsDisplay-{version}-Windows-x64.zip.sha256')
+    if output.is_symlink() or any(path.exists() or path.is_symlink() for path in destinations):
+        raise FileExistsError('Portable output already exists')
+    source = payload.collect_source(repo)
+    inventory['source_files'] = {name: hashlib.sha256(data).hexdigest() for name, data in sorted(source.items())}
+    work = repo / 'build'
+    if work.is_symlink():
+        raise ValueError('Symlink build directory')
+    work.mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='portable-', dir=work) as temporary:
+        stage = Path(temporary)
+        env = {key: value for key, value in os.environ.items()
+               if not key.upper().startswith(('QT_', 'QML', 'PYTHON', 'PLAYWRIGHT_'))}
+        env['PLAYWRIGHT_BROWSERS_PATH'] = '0'
+        temporary_output = stage / 'temp'
+        temporary_output.mkdir()
+        env.update({name: str(temporary_output) for name in ('TEMP', 'TMP', 'TMPDIR')})
+        env['PYINSTALLER_CONFIG_DIR'] = str(stage / 'pyinstaller-cache')
+        run([sys.executable, '-m', 'PyInstaller', '--noconfirm', '--distpath', str(stage / 'dist'),
+             '--workpath', str(stage / 'work'), str(repo / 'packaging/MarsDisplay.spec')],
+            cwd=repo, env=env, check=True, timeout=900)
+        folder = stage / 'dist/MarsDisplay'
+        runtime = payload.read_tree(folder)
+        phase, smoke_status = 'layout_validation', 'not_run'
+        try:
+            payload._layout(runtime)
+            phase, smoke_status = 'packaged_smoke', 'failed_or_unavailable'
+            measurements = smoke_check(folder, stage / 'smoke')
+            inventory['build']['Node'] = measurements['Node']
+            inventory['packaged_smoke'] = measurements
+            smoke_status = 'passed'
+            phase = 'native_qualification'
+            native, native_material = qualify(runtime, inventory, work / 'native-material')
+            inventory['native_components'] = native
+            material.update(native_material)
+            phase = 'source_stability'
+            if payload.collect_source(repo) != source:
+                raise ValueError('Source changed during build; nothing published')
+        except Exception:
+            retain_diagnostic(work, inventory, runtime, phase, smoke_status)
+            raise
+        return payload.assemble(output, version, runtime, source, material, inventory)
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description='Build a windowed portable ZIP on native Windows x64 (Python 3.13.x). No downloads; requires pinned SDK and package-local Chromium.',
+        epilog='Requires reviewed build/native-material/native.json and genuine native license texts. Missing qualification fails closed. Existing outputs are never replaced.')
+    parser.parse_args(argv)
+    try:
+        _, archive, checksum = build(Path(__file__).absolute().parents[1])
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+        print('Portable build failed: ' + str(error), file=sys.stderr)
+        return 1
+    print(archive.name + '\n' + checksum.name)
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

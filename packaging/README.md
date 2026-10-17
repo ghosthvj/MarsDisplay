@@ -1,157 +1,183 @@
-# Portable delivery support — not a Windows build
+# Native portable build source — Windows proof pending
 
-This unit provides file/metadata helpers and a windowed bootstrap for the later
-Windows 11 x64 builder. **No executable, native build recipe, workflow, packaged
-smoke test or distributable Windows ZIP has been delivered.** T5 remains in progress.
-Synthetic test executables are arbitrary bytes, never Windows functionality proof.
+The native builder, spec, isolated executable smoke and workflow **source** now
+exist. No Windows executable/ZIP has been delivered or qualified. T5 remains in
+progress; publishing, pushing and CI execution are not authorized. Linux tests
+use synthetic SDK/EXE fixtures, never runnable Windows proof.
 
-## Builder integration
+## Developer commands (native Windows x64 only)
 
-Load these standalone modules by file path (`importlib.util.spec_from_file_location`)
-or from the builder script directory. Do not add `packaging/__init__.py`: it would
-shadow the installed `packaging` distribution used for requirement parsing.
-There is no public packaging/product command or new app option.
+Use Python **3.13.x**, the exact `pyproject.toml` pins and an interactive session
+with a real system tray. These commands describe the future authorized Windows
+run, not commands executed during Linux development:
 
-| Helper | Input and result |
-| --- | --- |
-| `payload.read_tree(root, paths=None)` | Runtime tree or exact relative file selection → path/bytes mapping; rejects links/private paths. |
-| `payload.collect_license_material(root)` | Local schema-1 legal registry → `(registry, verified_bytes)`; includes only listed files, registry and README. |
-| `payload.collect_source(repo)` | Allowlisted source/build/test/legal inputs and `.gitattributes` → path/bytes mapping. |
-| `notices.collect_distributions(roots, lookup=metadata.distribution, *, material_root=None)` | Installed runtime closure → `(inventory, license_bytes)`; exact-version local fallback only when installed license files are absent. |
-| `notices.collect_vendor(driver)` | Actual Playwright driver directory with package-local browsers → `(browser_inventory, vendor_bytes)`. |
-| `payload.assemble(output, version, runtime, source, notices, inventory)` | Validated mappings → `(folder, zip_path, sha256_path)`; does not run or authenticate an executable. |
-| `entrypoint.run(main=None, reporter=message_box)` | Deferred app import, temporary stream capture and native sanitized reporting; returns main's exit code. |
-
-The future builder must run on Windows with the pinned environment and bundled
-Chromium, collect the four direct runtime roots declared by `pyproject.toml`
-(Playwright, PySide6, Pillow, pyserial), and merge distribution/vendor notices.
-Do not use the application distribution as a dependency root: application
-provenance is the GPL LICENSE, corresponding source and source commit, not an
-invented project URL. Collect actual build-tool versions separately; build-only
-extras are not runtime dependencies. Failures identify missing license material;
-resolve them from genuine upstream material with provenance, never placeholders.
-
-## Layout and inventory contract
-
-The native recipe must supply this one-folder layout (the default headless launch
-uses Chromium headless shell, not the user's browser):
-
-```text
-MarsDisplay/
-  MarsDisplay.exe
-  _internal/PySide6/Qt/plugins/platforms/qwindows.dll
-  _internal/playwright/driver/node.exe
-  _internal/playwright/driver/package/browsers.json
-  _internal/playwright/driver/package/.local-browsers/
-    chromium_headless_shell-<revision>/chrome-headless-shell-win64/headless_shell.exe
-    ffmpeg-<revision>/ffmpeg-win64.exe
-  LICENSE
-  inventory.json
-  notices/third-party/...
-  notices/vendor/...
-  source/...
+```powershell
+python -m pip install '.[build]'
+$env:PLAYWRIGHT_BROWSERS_PATH = '0'
+python -m playwright install chromium --only-shell
+python packaging/build_portable.py --help
+python packaging/build_portable.py
+# Optional repeat check of an already unpacked built folder:
+python packaging/smoke.py dist/MarsDisplay
 ```
 
-`inventory` requires `target: "Windows-x64"`, the exact 40-hex `source_commit`,
-`build` with actual `Python`, `PyInstaller`, and bundled `Node` versions,
-`dependencies` with each installed `name`, `version`, public `sources` and raw
-license statements/file references, plus `browsers` from the vendor collector.
-The builder must measure Node's version from the bundled binary, not infer it
-from Playwright's version or a Node engine constraint. Each declared browser
-revision must contain its required Windows executable at the exact layout above;
-a stale directory containing only a README is not a match. Preserve registry browser versions verbatim;
-FFmpeg's registry has no browser version, so retain its exact revision.
-Assembly adds SHA256 hashes of all supplied files to the inventory; the inventory
-itself is covered by the final ZIP checksum. No credentials, environment dump or
-editable-install checkout URL belongs in the inventory. Exact source commit alone
-is not enough for dirty builds: the actual included source bytes remain available
-and hashed. The future builder must identify/reject unrecorded source divergence.
+The builder has no output/version override, downloader, app control flag or HTTP
+endpoint. It rejects unsupported hosts before SDK reads, processes or directory
+creation, and refuses existing folder/ZIP/checksum destinations. Move prior
+artifacts yourself to a safe location; the builder never overwrites them.
 
-Source collection includes `src`, `packaging` recipes, `tests`/fixtures with known
-source extensions, README, GPL LICENSE, `pyproject.toml`, both requirements
-files and `.gitattributes` when present. It also includes the verified
-`third_party/license-material/provenance.json`, its README and exactly its listed
-material files, including supplementary Qtbase inputs; unregistered files in that
-directory are not source inputs. It excludes task logs, Git/venv/cache data, settings, profiles, `.env`,
-cookies, tokens and credential paths. It is not a workspace archive or general
-secret scanner: the builder must inspect selected build/source inputs before
-delivery. Assembly requires build/test/source categories and root build files;
-it cannot prove that arbitrarily supplied source is complete or corresponds to
-binary machine code. Native build/smoke verification supplies that missing proof.
+| Phase | Boundary |
+| --- | --- |
+| Inspect | Validate installed direct/build/backend pins; collect real dependency/vendor texts, CPython `LICENSE.txt` and PyInstaller `COPYING.txt` including its bootloader exception. |
+| Compile | Pinned PyInstaller one-folder `MarsDisplay`, `entrypoint.py`, `console=False`, `upx=False`; used Qt hooks only, no collect-all Qt/WebEngine/Pdf or other bindings. |
+| Inspect stage / smoke | Read the unpacked tree, require exact runtime layout, then run that EXE and its Node/browser/FFmpeg version commands with deadlines and isolated user/temp paths. |
+| Qualify | Only after smoke, require the genuine native material mapping below. Measured-stage failures retain unqualified diagnostic metadata before owned staging is cleaned. |
+| Publish | Only after all checks, call the existing `payload.assemble` publisher once for folder + ZIP + SHA256 sidecar. |
 
-Use repository `build/` for native staging and `dist/` for final outputs. Assembly
-validates all paths/layout/inventory before creating output files. It rejects
-Windows-unsafe names, traversal, case-insensitive/file-directory collisions,
-symlinks (when reading trees), and existing folder/ZIP/checksum targets. It emits
-`MarsDisplay-<version>-Windows-x64.zip` with a single `MarsDisplay/` root plus
-`.zip.sha256`. Existing outputs are never replaced. Caught publication failures
-roll back only newly created outputs, and temporary directories are cleaned.
-This is not a crash-recovery transaction across three filesystem objects; a
-terminated process may leave incomplete outputs, which a later run must refuse.
+Compiler work/cache/temp and smoke state are owned temporary directories beneath
+repository `build/`; publication scratch is beneath `dist/`. Caught failures clean
+owned staging, never user data. Measurable-stage failures retain only a uniquely
+named `build/unqualified-native-*.json` diagnostic and print that relative path;
+prior reports and artifacts are never overwritten. Successful artifacts are
+`dist/MarsDisplay-<version>-Windows-x64.zip` and `.zip.sha256`, plus the unpacked
+`dist/MarsDisplay/`. Abrupt termination can leave partial output; a later build
+refuses it instead of repairing or overwriting it.
 
-## Notices and qualification limits
+## Native material is a real, unresolved gate
 
-Raw installed license texts/statements are retained without inventing SPDX labels
-or claiming legal compatibility. Metadata project URLs provide public provenance;
-URL credentials, queries and fragments are not exported. Node's driver LICENSE,
-Playwright LICENSE/NOTICE/ThirdPartyNotices, per-bundle `.LICENSE` sidecars, the
-browser registry and installed Chromium/FFmpeg license material are copied, not
-replaced by Python package metadata. Missing required material is an error.
-This inventory is preparation for review, not a completed legal audit or proof
-of all third-party corresponding-source obligations.
+The installed Windows Qt payload has **not** been inspected. Binding license
+texts and the 52 immutable [official source inputs](../third_party/license-material/README.md)
+are not complete native/plugin attribution. Missing/unmapped native material
+fails before distribution. There is no legal-certification claim.
 
-The Linux installed-material probe found Playwright/greenlet/pyee/typing_extensions
-and Pillow license files, Node's complete LICENSE, Chromium headless-shell revision
-1248 (registry browser version 156.0.8078.4) and FFmpeg revision 1013 license files.
-The installed PySide6 and pyserial distributions lack license-text files in their
-installed file lists. Collection now uses the committed
-[versioned legal inputs](../third_party/license-material/README.md) for these
-explicit mappings only: pyserial 3.5; PySide6/Essentials/Addons/shiboken6 6.12.0;
-PySide6_WebEngine/Pdf 6.12.0.140. Names are canonicalized, versions must match
-exactly, and no prefix compatibility is inferred. Other missing mappings fail.
+The default builder requires reviewed local inputs at
+`build/native-material/native.json`, plus the referenced genuine native license
+texts in that directory. No fabricated/pass-through manifest is supplied. The
+workflow therefore cannot currently produce a qualified ZIP. A future explicitly
+authorized Windows diagnostic run can compile and smoke the owned internal stage,
+then remain **red** for missing native mapping while retaining useful metadata.
+Native material investigation and an evidence-provisioning decision are still
+needed before a qualified build can succeed. Do not insert synthetic material
+or treat a diagnostic upload as distribution clearance.
 
-The default material root is resolved relative to this source module, not the
-working directory. `material_root` is an optional explicit local root for isolated
-callers/tests, not a product flag. Collection never fetches or updates material.
-Every retained material file is SHA256-checked; safe relative paths, symlinks and
-parent escape, duplicate names, source commits and public commit-pinned HTTPS
-references are checked before use. Installed license paths are anchored to
-`distribution.locate_file('')` and checked by the same selected-file reader before
-reading bytes. Absolute/traversing paths and symlinks in any ancestor are rejected.
-Installed nonempty license files take priority; unsafe, broken or empty installed
-material fails rather than silently falling back. Fake metadata fixtures must
-model `locate_file('')` as the distribution root. Real Linux symlink regressions
-are not native Windows filesystem/privilege qualification.
+Manifest schema (all paths relative, checked by `payload.read_tree`):
 
-Fallback inventory preserves installed raw license statements and project sources,
-adding `license_provenance` (matching complete registry records), `license_registry`
-and `license_qualification`. One shared `upstream/` copy contains all 52 verified
-materials plus registry/README, not six copies of binding texts. Supplementary
-records with `packages: []` are retained there and in application source, but are
-not assigned as package license coverage. Source-archive URLs and published digests
-remain registry evidence; collection does not download or authenticate archive bytes.
+- `qualification`: nonempty explanation of the review and its limits.
+- `components`: exactly one record for **every** bundled `.dll`/`.pyd` beneath
+  `_internal/PySide6/`, including binding extensions and platform/image plugins.
+  Each record has `path`, exact binary `sha256`, `component`, actual Qt `version`,
+  public HTTPS `sources`, and nonempty `licenses` pointing to the genuine texts.
+- `license_sha256`: mapping of those relative text paths to measured SHA256.
 
-The actual Linux probe collected all 12 runtime distributions without missing
-license-input mappings: 67 notice files including 54 shared upstream inputs,
-plus 10 Playwright vendor files. It retained 41 supplementary native-source records
-without assigning them as binary coverage. Qt binding texts/headers do not establish
-native Qt/WebEngine/Pdf/plugin attribution, commercial rights, selected license
-alternatives or complete corresponding-source compliance. Those remain native
-payload qualification work. Linux availability is not Windows qualification.
+All component versions must match measured `qVersion()`. Every binary/hash,
+license path/hash and source reference must validate; unknown or extra component
+mappings fail. The complete manifest/texts travel in `notices/native/`. This is
+byte/provenance binding, not an automatic legal auditor: the operator must
+actually establish native third-party attribution and corresponding-source
+sufficiency. Other SDK/native obligations must also be reviewed before delivery.
 
-## Windowed bootstrap and next unit
+## Unqualified diagnostics, not approval evidence
 
-Freeze `entrypoint.py` with windowed/no-console settings in the next native recipe.
-It prepares stdout/stderr before importing the app, reports trusted sanitized app
-stderr through a temporary native MessageBox (information for exit 0, error
-otherwise), and restores global streams on every path. Unexpected bootstrap/import
-failures discard captured text and show only
-`Cannot start MarsDisplay; check the application runtime and try again.`
-It does not change main's owned cleanup or ordinary source startup. Native dialog
-tests are mocked; successful silent startup creates no extra permanent window.
+`build/unqualified-native-<unique>.json` uses the distinct
+`marsdisplay-unqualified-native-v1` schema with `status: UNQUALIFIED`. It is
+metadata only, not a `collect_native` input, native-license mapping or claim of
+readiness. It records:
 
-Next: implement `build_portable.py`/`MarsDisplay.spec`, map actual native binary
-license/source obligations, supply measured build inventory, and prepare the isolated actual
-executable/browser smoke and inert workflow source. Actual Windows build/ZIP/smoke,
-CI execution/publication, Windows 11 tray/LAN/resource acceptance and physical
-hardware/protocol support remain separately gated and unproved.
+- Source commit and hashes of the actual selected source snapshot; no source bytes.
+- Selected installed Python/PyInstaller/dependency/Qt versions and inspected
+  browser registry revisions/versions. Node is included after successful packaged
+  version/startup smoke; unavailable measurements are not invented.
+- Every measured stage `.dll`, `.pyd` and `.exe` relative path with SHA256,
+  including files outside PySide6.
+- A fixed failure phase and honest smoke status: `passed`,
+  `failed_or_unavailable`, or `not_run` when layout validation prevented smoke.
+  Passed smoke does **not** qualify native notices or prove Windows 11 acceptance.
+
+The allowlisted report contains no environment dump, absolute SDK/private-state
+paths, source archives, raw exception strings or dependency URLs. Smoke failure
+is recorded before propagating failure, never silently promoted to ready. SDK or
+compilation failure before a measurable stage may produce **no report**. No
+fictitious inventory is emitted. Final publication still requires successful
+smoke, valid qualification and unchanged source; the existing publisher retains
+its exclusive-create and owned-rollback rules.
+
+## Packaged smoke is not Windows acceptance
+
+`smoke.check(folder, scratch)` runs only on native Windows x64. It executes the
+bundled Node `--version`, exact registry Chromium `--version` (must match declared
+browser version), and FFmpeg `-version`. No TLS/sandbox bypass or network URL is
+used. `smoke.startup` launches **the unpacked built executable**, not source main.
+
+The child receives an allowlisted OS environment, system-only PATH and isolated
+LOCALAPPDATA/APPDATA/HOME/USERPROFILE/TEMP/TMP. External Python/Qt/plugin/browser
+overrides cannot mask missing resources. Within 20 seconds it must hold its
+per-user QLockFile under its own PID, reach GUI input idle, dispatch bounded
+WM_NULL probes through owned windows, and have no visible startup/error dialog.
+Process-alive alone is insufficient; absent tray/GUI is failure, never a skip.
+It remains unconfigured/stopped, must not create settings, and only this owned
+idle process is terminated and waited for (5 seconds). No global taskkill/browser
+termination is used. Normal packaged Exit, real tray interaction, LAN capture,
+Windows 11 behavior and RAM/CPU measurements remain **T6**.
+
+## Layout, provenance and support APIs
+
+The current pinned Windows registry uses
+`chromium_headless_shell-<revision>/chrome-headless-shell-win64/chrome-headless-shell.exe`
+and `ffmpeg-<revision>/ffmpeg-win64.exe` beneath
+`_internal/playwright/driver/package/.local-browsers/`. Node is
+`_internal/playwright/driver/node.exe`; Qt's Windows hook uses
+`_internal/PySide6/plugins/platforms/qwindows.dll`. The validator retains the
+previously tested exact `headless_shell.exe` and `PySide6/Qt/plugins/` layouts;
+no arbitrary prefix/EXE is accepted. Stale-revision regression checks remain.
+
+`inventory.json` contains measured Python/PyInstaller/Qt/Node/browser versions,
+installed dependency closure and project source references, native mapping,
+source revision, hashes of actual included source (including dirty bytes), and
+relative payload hashes. No environment dump, editable `direct_url.json`, task
+logs, Git history, credentials, profiles, cookies or `.env` is collected.
+Source includes app/tests/fixtures, recipes/spec/smoke, workflow, build metadata,
+GPL LICENSE and registry-verified legal inputs. Final ZIP checksum covers inventory.
+
+Standalone modules load by file path, not `packaging/__init__.py` (which would
+shadow the installed requirement-parser distribution):
+
+| Helper | Responsibility |
+| --- | --- |
+| `payload.read_tree` / `collect_source` | Validated runtime tree / explicit corresponding-source allowlist. |
+| `payload.collect_license_material` | Exact registered version/hash/commit inputs only. |
+| `notices.collect_distributions` | Installed closure with raw texts; absent texts permit exact-version registry fallback, unsafe/broken texts never do. |
+| `notices.collect_vendor` | Node, Playwright/inlined sidecars, browser registry and actual installed browser/FFmpeg notices. |
+| `payload.assemble` | Sole exclusive folder/ZIP/checksum publisher with owned rollback, path/collision/privacy rules. |
+| `entrypoint.run` | Prepare temporary streams before app import; sanitize native startup messages; no permanent extra window. |
+
+## Workflow source and eventual retrieval
+
+`.github/workflows/windows-portable.yml` uses commit-pinned official node24
+checkout/setup-python/upload-artifact actions, Windows Server 2025 x64,
+Python 3.13, read-only contents, no persisted checkout credentials, a 30-minute
+job limit and 7-day artifact retention. Source tests use offscreen Qt; native
+build/smoke explicitly remove test-only Qt/Python overrides. On native-step
+failure, only `build/unqualified-native-*.json` uploads as the separate
+`MarsDisplay-UNQUALIFIED-native-diagnostics` artifact for seven days: no EXE,
+DLL, ZIP, source or private profile. If compilation produced no diagnostic, a
+missing-file warning does not change the failed build to success. Only total
+success permits the existing ZIP/checksum upload, with missing files treated as
+error. No secrets, production backend, screenshot service, tag or release is
+configured.
+
+Triggers are restricted to push on existing `feat/simulated-companion` and manual
+dispatch. GitHub requires the workflow on the default branch for manual dispatch;
+a first **explicitly authorized** feature-branch push can bootstrap registration
+without unapproved main changes. Neither push nor CI has been executed here.
+Server 2025 is not Windows 11 acceptance.
+
+After a future authorized successful run, download `MarsDisplay-Windows-x64`
+from the run's Artifacts before its 7-day expiry. Extract the Actions download
+archive to obtain the actual ZIP and checksum, compare the ZIP's SHA256 using
+`Get-FileHash -Algorithm SHA256`, then extract the **entire** ZIP. Launch
+`MarsDisplay/MarsDisplay.exe`; keep `_internal`, LICENSE, notices, source and
+inventory together. No administrator/install step is required. Settings persist
+per user at `%LOCALAPPDATA%\MarsDisplay\settings.json`, not beside the EXE;
+replacing an extracted folder does not clear settings. The unsigned prototype
+may trigger Windows warnings: do not disable security protections. No installer,
+service, autostart or updater is provided.

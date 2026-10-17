@@ -151,17 +151,36 @@ def collect_source(root):
     if legal.exists() or legal.is_symlink():
         _, material = collect_license_material(legal)
         files.update({'third_party/license-material/' + name: data for name, data in material.items()})
+    workflow = '.github/workflows/windows-portable.yml'
+    if (root / workflow).exists() or (root / workflow).is_symlink():
+        files.update(read_tree(root, (workflow,)))
     _validate(files)
     return files
 
 
+def browser_executable(runtime, name, revision):
+    """Resolve only pinned known Windows registry paths, never an arbitrary EXE."""
+    if not re.fullmatch('[0-9]+', revision):
+        raise ValueError('Missing exact bundled browser revision')
+    prefix = '_internal/playwright/driver/package/.local-browsers/' + name.replace('-', '_') + '-' + revision + '/'
+    executables = {'chromium-headless-shell': ('chrome-headless-shell-win64/chrome-headless-shell.exe',
+                                             'chrome-headless-shell-win64/headless_shell.exe'),
+                   'ffmpeg': ('ffmpeg-win64.exe',)}[name]
+    for executable in executables:
+        if prefix + executable in runtime:
+            return prefix + executable
+    raise ValueError('Browser inventory does not match required Windows executable')
+
+
 def _layout(runtime):
-    required = ('MarsDisplay.exe', '_internal/PySide6/Qt/plugins/platforms/qwindows.dll',
-                '_internal/playwright/driver/node.exe',
+    required = ('MarsDisplay.exe', '_internal/playwright/driver/node.exe',
                 '_internal/playwright/driver/package/browsers.json')
     if any(name not in runtime for name in required):
         raise ValueError('Missing executable, Qt platform or Playwright driver material')
-    if not any(re.fullmatch(r'_internal/playwright/driver/package/\.local-browsers/chromium_headless_shell-[0-9]+/chrome-headless-shell-win64/headless_shell.exe', name) for name in runtime):
+    if not any(name in runtime for name in ('_internal/PySide6/plugins/platforms/qwindows.dll',
+                                            '_internal/PySide6/Qt/plugins/platforms/qwindows.dll')):
+        raise ValueError('Missing Qt Windows platform resource')
+    if not any(re.fullmatch(r'_internal/playwright/driver/package/\.local-browsers/chromium_headless_shell-[0-9]+/chrome-headless-shell-win64/(?:chrome-headless-shell|headless_shell)\.exe', name) for name in runtime):
         raise ValueError('Missing bundled Windows Chromium headless shell')
     if not any(re.fullmatch(r'_internal/playwright/driver/package/\.local-browsers/ffmpeg-[0-9]+/ffmpeg-win64.exe', name) for name in runtime):
         raise ValueError('Missing bundled Windows FFmpeg')
@@ -196,11 +215,7 @@ def assemble(output, version, runtime, source, notices, inventory):
         matches = [item for item in inventory['browsers'] if item.get('name') == name]
         if len(matches) != 1 or not re.fullmatch('[0-9]+', matches[0].get('revision', '')):
             raise ValueError('Missing exact bundled browser revision')
-        prefix = '_internal/playwright/driver/package/.local-browsers/' + name.replace('-', '_') + '-' + matches[0]['revision'] + '/'
-        executable = {'chromium-headless-shell': 'chrome-headless-shell-win64/headless_shell.exe',
-                      'ffmpeg': 'ffmpeg-win64.exe'}[name]
-        if prefix + executable not in runtime:
-            raise ValueError('Browser inventory does not match required Windows executable')
+        browser_executable(runtime, name, matches[0]['revision'])
     files = dict(runtime)
     additions = {'LICENSE': source['LICENSE']}
     additions.update({'source/' + k: v for k, v in source.items()})
@@ -224,7 +239,7 @@ def assemble(output, version, runtime, source, notices, inventory):
         raise FileExistsError('Portable output already exists')
     output.mkdir(parents=True, exist_ok=True)
     published = []
-    with tempfile.TemporaryDirectory(prefix='marsdisplay-payload-') as scratch:
+    with tempfile.TemporaryDirectory(prefix='.marsdisplay-payload-', dir=output) as scratch:
         staging = Path(scratch)
         staged_zip = staging / archive.name
         with zipfile.ZipFile(staged_zip, 'w', zipfile.ZIP_DEFLATED) as zipped:

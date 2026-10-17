@@ -40,10 +40,11 @@ are startup failures, not an invitation to install system dependencies silently.
 Unsupported hosts are rejected before importing Qt or accessing user settings.
 The host admission check recognizes Windows x64; Windows 11 is the acceptance
 target, not a new version-detection framework. Fake-platform tests are branch
-proof only. Source invocation may have a console. A [windowed bootstrap and portable payload
-support library](packaging/README.md) now prepare sanitized native error reporting
-and source/notices/inventory assembly, but the actual native builder, Windows
-executable and ZIP have not been delivered. Windows tray/ZIP acceptance remains pending.
+proof only. Source invocation may have a console. The [native portable build
+source](packaging/README.md) now supplies a windowed recipe, isolated packaged
+startup smoke and restricted workflow source. No Windows executable/ZIP has been
+delivered: native material qualification and actual Windows build/smoke proof
+remain outstanding. T5 stays in progress; no CI/push/publication is authorized.
 
 ## Run the source tests
 
@@ -309,7 +310,7 @@ extra as well. Tray/application assembly imports Qt; the core remains GUI-indepe
 | Tray/UI | PySide6 6.12.0 |
 | Image decoding | Pillow 12.3.0 |
 | Passive serial descriptor metadata only | pyserial 3.5 |
-| Optional future executable packaging | PyInstaller 6.22.3 |
+| Native executable recipe (not yet Windows-qualified) | PyInstaller 6.22.3 |
 | Source build backend | setuptools 84.0.0 |
 
 The backend pin was checked against authoritative
@@ -353,8 +354,24 @@ and pyserial license texts now use explicit exact-version, hash-verified
 in notices and source. Unknown versions or altered inputs still fail. Binding
 material and supplementary Qtbase texts are not complete native/plugin coverage,
 commercial rights or a legal audit.
-Native build/spec/workflow source, portable ZIP smoke tests and owner-run Windows
-acceptance remain separate work; T5 is still in progress.
+The native build/spec/smoke/workflow source is prepared. On a future authorized
+Windows x64 host, `python packaging/build_portable.py --help` describes the
+ordinary builder; `python packaging/build_portable.py` requires the pinned SDK,
+package-local Chromium and genuinely qualified native notices before publication.
+The [packaging guide](packaging/README.md) explains the fail-closed native-material
+gate, isolated startup proof, workflow bootstrap/7-day retention and full ZIP
+extraction/checksum steps. The same build command now runs owned packaged smoke
+before native qualification and retains sanitized, uniquely named
+`build/unqualified-native-*.json` metadata on measurable-stage failure. A future
+explicitly authorized Windows run may remain red for missing native material
+while uploading only a clearly unqualified diagnostic; it cannot currently deliver
+a qualified ZIP. These reports contain hashes/versions/smoke status, not binaries,
+source or approval evidence. SDK/compile failure may produce no report and remains
+a failure. No push or CI run is authorized here. Keep all auxiliary files; settings persist per user
+outside the extracted folder. This is an unsigned prototype, not an invitation
+to disable Windows security. No administrator/end-user installation is required.
+Actual Windows build/ZIP/smoke and owner-run Windows 11 acceptance are still
+unproved; T5 remains in progress.
 
 No model-specific driver has been copied. Real protocol selection and physical
 USB testing require identified hardware; simulation must never be shown as a

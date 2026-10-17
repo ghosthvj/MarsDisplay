@@ -111,8 +111,9 @@ class AppTests(unittest.TestCase):
 
     def test_unsupported_module_command_has_exact_output_and_no_eager_qt(self):
         # Separate interpreter proves admission happens before Qt import or store construction.
-        script = ("import runpy,sys; sys.platform='linux'; "
-                  "sys.modules['PySide6']=None; runpy.run_module('mars_display',run_name='__main__')")
+        script = ("import runpy,sys; import mars_display.app as app; "
+                  "app.sys.platform='linux'; sys.modules['PySide6']=None; "
+                  "runpy.run_module('mars_display',run_name='__main__')")
         result = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True,
                                 timeout=3, env={**os.environ, "LOCALAPPDATA": self.temp})
         self.assertEqual((result.returncode, result.stdout, result.stderr),
