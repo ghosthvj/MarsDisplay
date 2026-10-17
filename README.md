@@ -3,21 +3,24 @@
 MarsDisplay is a GPL v3 companion foundation for a future Windows 11 x64
 MARS display application. **Immutable RGB frames, in-memory simulated output,
 local settings persistence, a lifecycle coordinator, and an injectable Qt tray
-shell exist today.** There is no application entry point, browser capture, USB
-implementation, or Windows executable yet. No screen is needed for these tests.
+shell, and a persistent bundled Chromium capture adapter exist today.** There is
+no application entry point, USB implementation, or Windows executable yet. No
+screen is needed for these tests.
 
 ## Run the source tests
 
 Use Python **3.13.x** (the engineering baseline; currently tested on Linux):
 
 ```sh
-QT_QPA_PLATFORM=offscreen PYTHONPATH=src .venv/bin/python -m unittest discover -s tests -v
+QT_QPA_PLATFORM=offscreen PLAYWRIGHT_BROWSERS_PATH=0 PYTHONPATH=src .venv/bin/python -m unittest discover -s tests -v
 ```
 
 The tray tests require the pinned PySide6 dependency and Qt system libraries.
 They exercise real widgets using the offscreen Qt platform, without a display
-server, browser, network, or USB access. Other modules/tests use the standard
-library. Offscreen success does not prove Windows tray integration.
+server or USB access. Browser tests require the pinned Playwright/Pillow packages
+and the package-local Chromium headless shell; they run real sandboxed Chromium
+against a loopback HTTP fixture only. No external MARS access is performed.
+Offscreen/Linux success does not prove Windows tray or browser integration.
 
 ## Public interface
 
@@ -85,7 +88,7 @@ the lifecycle coordinator below enforces saving only while stopped and keeps
 startup stopped/unconfigured rather than choosing a URL/device. Windows filesystem
 and application acceptance remain separate from Linux tests.
 
-## Capture lifecycle boundary (no browser yet)
+## Capture lifecycle boundary
 
 `mars_display.lifecycle.Coordinator(store, source_factory, transport_factory)`
 is an injectable coordinator, not an application entry point. Later application
@@ -95,8 +98,9 @@ is saved only and never selects a protocol or opens USB.
 ```python
 from mars_display.lifecycle import Coordinator
 
-# Implement a synchronous source factory in the later browser integration:
-# coordinator = Coordinator(store, source_factory, SimulatedTransport)
+from mars_display.browser import BrowserSession
+
+# coordinator = Coordinator(store, BrowserSession, SimulatedTransport)
 # coordinator.start()         # explicit user action only
 # status = coordinator.snapshot()
 # coordinator.stop()          # nonblocking request, not an acknowledgement
@@ -144,6 +148,31 @@ the owned-resource failure. Backend exception text and private URLs are never
 included in status. The tray tests exercise responsiveness with controlled
 sessions; actual browser behavior and Windows acceptance remain separate proof.
 
+## Persistent browser capture
+
+`mars_display.browser.BrowserSession(settings)` implements the worker-owned
+`SourceSession`: synchronous `open()`, `read() -> SourceSample`, and `close()`.
+Construct it on the coordinator worker. Construction starts nothing; repeated
+open/close calls are safe. One isolated Chromium browser/context/page survives
+across reads, with no per-frame navigation, extra API polling, or disk images.
+MARS still owns content, selection, order, dwell, SSE and orientation.
+
+| Boundary | Behavior |
+| --- | --- |
+| Browser ownership | Forces `PLAYWRIGHT_BROWSERS_PATH=0` before starting the driver. Uses only Playwright's bundled headless Chromium, with sandbox enabled, default TLS validation and device scale factor 1. No persistent profile, user-browser attachment, copied credentials, executable fallback or TLS bypass. |
+| Navigation | Only the owned main frame may issue requests; extra pages are closed and popup/subframe requests are rejected before forwarding, even at the same URL. Only the configured capture URL is admitted for document navigation. The initial document response is fetched once with redirects disabled, then fulfilled into the page; redirects and unsuccessful HTTP responses fail without following login paths. Main-frame subresources remain the frontend's responsibility. |
+| Readiness | Exactly one `#mars-display`, version 1, valid state/orientation/nominal width and height, boolean live flag and optional boolean stale flag; ready also requires a nonblank server ID. HTTP 200 or a login page alone is never ready. |
+| Capture | Loading/empty return no frame. Ready waits for loaded fonts and three matching animation-frame layout observations, aligns the viewport, verifies root geometry and captures only that region as PNG in memory. Pillow decodes immutable RGB bytes through `RGBFrame` validation, with a monotonic timestamp. No resizing. |
+| Transitions | Metadata and geometry are read again after capture. A state/server/orientation/geometry/freshness transition discards the frame. The next read reevaluates orientation; it never delivers a mismatched frame. |
+| Errors | `BrowserError` messages contain no URL/backend exception. Display errors and malformed/missing metadata raise for coordinator recovery. Live-disconnected/stale flags remain independent observations, never claims of server health/unreachability. |
+| Stop/cleanup | Navigation, metadata, font/layout and screenshot operations have explicit 1,500 ms timeouts per operation, not a whole-read deadline. Close releases only the owned browser and Playwright driver, including partial setup failures. Backend close has no Playwright timeout option; cleanup failure is reported rather than silently acknowledged. |
+
+The loopback tests cover both nominal geometries and exact RGB pixels, repeated
+captures without reload, metadata rejections, fonts/layout readiness, transitions,
+independent freshness, redirect blocking and partial-setup/capture cleanup. Real
+MARS, Windows process ownership, performance and packaged-browser acceptance
+remain separate evidence. No Python GUI entrypoint is supplied in this unit.
+
 ## Injectable tray shell (not a runnable application yet)
 
 `mars_display.tray.create_shell(app, store, coordinator_factory)` assembles the
@@ -162,7 +191,7 @@ from mars_display.tray import create_shell
 
 # app = QApplication(...)
 # shell = create_shell(app, store, lambda: Coordinator(
-#     store, actual_browser_session_factory, SimulatedTransport))
+#     store, BrowserSession, SimulatedTransport))
 # if shell is not None:
 #     app.exec()
 ```
@@ -195,9 +224,9 @@ extra as well. Only the tray module imports Qt; the core remains GUI-independent
 
 | Purpose | Selected version |
 | --- | --- |
-| Future browser rendering | Playwright 1.64.0 |
+| Browser rendering | Playwright 1.64.0 |
 | Tray/UI | PySide6 6.12.0 |
-| Future image handling | Pillow 12.3.0 |
+| Image decoding | Pillow 12.3.0 |
 | Optional future executable packaging | PyInstaller 6.22.3 |
 | Source build backend | setuptools 84.0.0 |
 
@@ -219,9 +248,11 @@ packaged-runtime or physical-screen acceptance.
 
 ## Deliberately deferred
 
-Later work must assemble the browser entrypoint and implement MARS readiness and
-`/display` capture contracts. MARS will continue to own content, order, dwell,
-live updates, and orientation. Local rendering must not add server-side work.
+Later work must assemble the ordinary GUI entrypoint with production OS/tray/
+browser availability checks and sanitized startup errors. The browser adapter
+implements the recorded version 1 `/display` contract, but has not been exercised
+against real MARS. MARS continues to own content, order, dwell, live updates and
+orientation. Local rendering must not add server-side work.
 Windows packaging must bundle Chromium and retain dependency licenses/notices;
 portable ZIP smoke tests and owner-run Windows acceptance remain separate work.
 
