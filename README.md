@@ -1,27 +1,40 @@
-# MarsDisplay foundation
+# MarsDisplay
 
-MarsDisplay is a GPL v3 companion foundation for a future Windows 11 x64
-MARS display application. **Immutable RGB frames, in-memory simulated output,
-local settings persistence, a lifecycle coordinator, and an injectable Qt tray
-shell, a persistent bundled Chromium capture adapter, and a GUI entrypoint exist
-today.** Passive USB-serial inventory/selection APIs are preparation only, not a
-physical driver. Output is simulated; no qualified Windows prototype has been
-delivered. The earlier minimized Windows bundle passed native startup/binary
-smoke, but the new external-VC++/Mesa-root-omission profile is source-only and
-unproved natively. Genuine pinned Qt/PySide/OpenSSL inputs and a source provisioner
-now exist; independent policy review and actual Windows qualification/ZIP remain.
+MarsDisplay is a GPL v3 Windows 11 x64 tray companion that renders MARS locally
+with bundled Chromium. Output is **simulated only**: this prototype does not
+drive a physical USB screen.
 
-## Windows prerequisite (selected delivery profile)
+## Download the verified portable prototype
 
-Use the official current **Microsoft VC++ v14 x64 runtime, 14.51+**, installed
-manually if missing: https://aka.ms/vc14/vc_redist.x64.exe . The validated build
-used14.51; older versions are not promised compatible. Windows11 supplies OS
-UCRT/API-set DLLs. MarsDisplay's ZIP will include Python/Qt/Chromium, but not the
-selected Microsoft runtime DLLs; it has no app installer or automatic download.
-Microsoft's installer may need administrator permission. Follow root README.txt
-and keep the entire extracted folder. Missing-runtime errors can precede app
-startup; do not copy random DLLs or disable security. This profile still needs
-new native inventory/smoke and clean-machine T6 acceptance, not another red CI.
+[Download MarsDisplay 0.1.0 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39049628794/artifacts/12107551102)
+from the [successful native build](https://github.com/ghosthvj/MarsDisplay/actions/runs/39049628794). The GitHub artifact
+contains the application ZIP and its SHA256 sidecar. It is retained until
+**2026-10-24 16:32 UTC**; GitHub sign-in may be required.
+
+1. If missing, manually install the official **Microsoft VC++ v14 x64 runtime,
+   14.51 or newer**: https://aka.ms/vc14/vc_redist.x64.exe .
+2. Extract the entire application ZIP and keep the folder intact.
+3. Open `MarsDisplay.exe`. It starts **stopped**. Use tray **Status / Settings**
+   to configure the MARS URL, then **Start**. Use tray **Exit** to close.
+
+Python, Qt and Chromium are bundled; Microsoft runtime DLLs and Qt Mesa are not.
+There is no MarsDisplay installer, service or automatic prerequisite download.
+The prototype is unsigned: do not disable security or copy random DLLs to bypass
+an error. Follow the included root `README.txt`.
+
+**T5 is complete for this artifact:** Windows native assembly, external-runtime
+profile, startup/binary smoke, native material qualification and publication passed.
+The downloaded 205,549,310-byte ZIP and all 1,221 inventoried file hashes were
+verified. SHA256:
+
+```text
+f304b389b02b214ee7f090e609e1035256046ddb420ffea50f248d612fffb8fb
+```
+
+The artifact's exact source commit is `211645edfcabeb8fbdd29ab1e1636fe411d94cef`.
+Later documentation-only commits do not rebuild or change that artifact.
+**T6 remains:** real Windows 11 tray/Exit/LAN/recovery and CPU/RAM measurements.
+Windows Server CI is not Windows 11 acceptance or hardware support.
 
 ## Run the application (Windows source)
 
@@ -55,18 +68,8 @@ are startup failures, not an invitation to install system dependencies silently.
 Unsupported hosts are rejected before importing Qt or accessing user settings.
 The host admission check recognizes Windows x64; Windows 11 is the acceptance
 target, not a new version-detection framework. Fake-platform tests are branch
-proof only. Source invocation may have a console. The [native portable build
-source](packaging/README.md) now supplies a windowed recipe, isolated packaged
-startup smoke and restricted workflow source. No Windows executable/ZIP has been
-delivered: native material qualification remains outstanding. T5 stays in
-progress. The owner authorized feature-branch CI/test
-artifacts. Run39029908479 completed native EXE + COLLECT but rejected SDK
-metadata. Later run39032168531 passed runtime validation and uploaded an
-**UNQUALIFIED JSON diagnostic**, not a ZIP; its smoke failed on the Qt lock-info
-return shape. After that fix, broad-bundle run39033278476 passed packaged native
-startup and binary smoke, then failed missing native qualification. This is not
-normal Exit/Windows 11 acceptance or ZIP delivery, and it does not qualify the
-new minimal candidate.
+proof only. Source invocation may have a console. The [native build and delivery guide](packaging/README.md) records the verified
+artifact, pinned provenance and remaining acceptance limits.
 
 ## Run the source tests
 
@@ -394,7 +397,7 @@ before native qualification and retains sanitized, uniquely named
 authorized Windows run must exercise the full closure pipeline, not deliberately
 remain red for missing material. Pinned-source/SDK preflight now precedes compilation;
 owned-stage policy materialization follows smoke and feeds the unchanged v2 gate.
-Actual provisioner/profile execution and qualified ZIP remain unproved. These reports contain hashes/versions/smoke status, not binaries,
+The provisioner/profile and qualified ZIP passed in native run39049628794. These reports contain hashes/versions/smoke status, not binaries,
 source or approval evidence. SDK/compile failure may produce no report and remains
 a failure. Owner authorization covers T5 branch pushes, Windows CI and seven-day
 test artifacts; this source correction executed none. The exact winldd1007
@@ -427,8 +430,9 @@ Keep all auxiliary files; settings persist per user
 outside the extracted folder. This is an unsigned prototype, not an invitation
 to disable Windows security. No MarsDisplay installation is required, but the
 external official VC++ prerequisite may require administrator installation.
-The external-runtime profile, qualified ZIP and owner-run Windows11 acceptance
-remain unproved; T5 stays in progress.
+The external-runtime profile and qualified ZIP passed native CI and download
+verification; T5 is complete for source211645e. Owner-run Windows11 acceptance
+remains T6.
 
 No model-specific driver has been copied. Real protocol selection and physical
 USB testing require identified hardware; simulation must never be shown as a

@@ -1,33 +1,37 @@
-# Native portable build source — Windows proof pending
+# Windows portable build and verified delivery
 
-The native builder, spec, isolated executable smoke and workflow **source** now
-exist. No Windows executable/ZIP has been delivered or qualified. T5 remains in
-progress. Owner-authorized feature-branch CI has started. After the first run's
-source-test failure, run **39026203729 passed Windows source tests**, then failed
-before compilation with `Missing browser license material: winldd`. Its artifact
-list was empty: no diagnostic or binary ZIP existed. Later run **39029908479**
-on `082047b` passed source tests and completed native PyInstaller EXE + COLLECT,
-then failed runtime `read_tree` validation with
-`Duplicate path or empty/non-byte material`, before smoke/report/ZIP. This proves
-Windows frozen assembly, not app execution or a usable prototype. The generic
-error does not identify which Windows file failed first. Linux SDK/EXE fixtures
-remain synthetic, never native execution proof.
+## Verified artifact — T5 complete
 
-Run [39032168531](https://github.com/ghosthvj/MarsDisplay/actions/runs/39032168531)
-subsequently passed runtime-tree validation and produced a real **UNQUALIFIED**
-JSON inventory of 136 native files. Smoke failed on the incorrect four-value
-Qt lock-info unpack. After correcting that binding contract, broad-bundle run
-[39033278476](https://github.com/ghosthvj/MarsDisplay/actions/runs/39033278476)
-**passed native startup and binary smoke**, then failed missing native
-qualification. Its UNQUALIFIED diagnostic is not a license approval or ZIP and
-cannot satisfy the qualification schema. The later minimized run
-**39036811563 / ad12837** also passed EXE/COLLECT and packaged smoke, failing only
-for missing reviewed native qualification. Its measured inventory fell from
-136 to 123 native files (Qt-prefix 46 to 33), with the four selected plugins and
-nine dependent Qt DLLs removed, none added. This is runtime evidence, not a
-qualified ZIP; T5 remains in progress.
+[Download MarsDisplay 0.1.0 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39049628794/artifacts/12107551102)
+from [run39049628794](https://github.com/ghosthvj/MarsDisplay/actions/runs/39049628794), exact source commit
+`211645edfcabeb8fbdd29ab1e1636fe411d94cef`. The artifact contains the
+application ZIP and SHA256 sidecar; retention ends **2026-10-24 16:32 UTC**.
 
-## Selected external-runtime profile — source only
+| Verified evidence | Result |
+| --- | --- |
+| Native CI | Source tests, compile, external profile, startup/binary smoke, genuine material provisioning, unchanged v2 qualification, source stability and upload passed. |
+| Download | 205,549,310-byte ZIP; SHA256 `f304b389b02b214ee7f090e609e1035256046ddb420ffea50f248d612fffb8fb` matches its sidecar. |
+| Content | 1,222 members; all 1,221 inventoried file hashes and 325 source hashes verified without executing or extracting Windows code on Linux. |
+| Native inventory | 69 files; 27 Qt components and 6 supplemental associations bound to notices/evidence; no selected Microsoft DLLs or Qt Mesa. |
+| Runtime | Python3.13.16, Qt6.12.0, PyInstaller6.22.3, Node24.21.0, Chromium156.0.8078.4, FFmpeg1013. |
+| Source access | Root README.txt points to notices/native/SOURCE-ACCESS.txt; application/build source and original notices are included. |
+
+Install official VC++ v14 x64 14.51+ manually if missing, extract the complete
+application ZIP, then open MarsDisplay.exe. Capture starts stopped; output remains
+simulated and no physical screen is driven. This is an unsigned portable prototype,
+not an installer or release. Do not disable security to run it.
+
+The successful candidate followed four corrected source/packaging defects and
+three diagnostic runs that passed startup but failed missing native inputs.
+The feature ledger preserves those failures; the old red runs are not artifact
+acceptance. No validation was bypassed to obtain the green run.
+
+**T6 remains owner-run Windows 11 acceptance:** real tray interaction, normal
+Exit, LAN/recovery and process-tree CPU/RAM measurements. Windows Server2025 CI
+and structural ZIP checks do not establish those outcomes or legal certification.
+Later documentation-only commits do not change/rebuild this verified artifact.
+
+## Selected external-runtime profile
 
 The owner chose **official VC++ as an external prerequisite**, not Microsoft DLL
 conveyance. Python, Qt, Chromium, Pillow and other open-source extensions remain
@@ -62,9 +66,10 @@ The builder copies immutable `packaging/PORTABLE-README.txt` source bytes to the
 owned stage's root `README.txt`, exclusively, before hashing/layout/smoke. Both
 source and staged copies are inventoried. The source collector also explicitly includes
 validated native-source inputs; it never archives the workspace or all third_party.
-Actual Microsoft-DLL-free/Mesa-free inventory and smoke remain **unproved**.
+The delivered artifact's Microsoft-DLL-free/Mesa-free inventory and native smoke
+are verified in run39049628794.
 Host CI does not prove a clean Windows11 machine has the prerequisite; T6 owns
-that acceptance. No CI should run until genuine Qt material/provisioning is ready.
+that acceptance. Build inputs remain mandatory before any future native build.
 
 ## Developer commands (native Windows x64 only)
 
@@ -104,7 +109,7 @@ prior reports and artifacts are never overwritten. Successful artifacts are
 `dist/MarsDisplay/`. Abrupt termination can leave partial output; a later build
 refuses it instead of repairing or overwriting it.
 
-## Minimal Qt runtime — stage one verified, qualification pending
+## Minimal Qt runtime — verified plugin-root selection
 
 The owner selected **Minimal app-required runtime**. The app uses raster
 Core/Gui/Widgets tray drawing and Playwright Chromium rendering, not Qt PDF/SVG
@@ -224,8 +229,8 @@ application/build-hook source, retained terms and replaceable dynamic DLLs. Unde
 the GPLv3 section 6(d) route the distributor must maintain equivalent source access
 next to the binary; expiry of a CI artifact is not an exemption. Mechanical binding
 is not legal certification. Policy correspondence/notice sufficiency requires
-independent semantic review; actual Windows provisioner/profile/ZIP proof remains
-pending. Do not run another deliberately diagnostic-only CI.
+independent semantic review. Native provisioner/profile/qualification and the ZIP
+are now verified in run39049628794; fixtures alone did not establish that result.
 
 ### Explicit native-material v2 (no implicit migration)
 
@@ -276,8 +281,8 @@ to Shiboken or outside-prefix files. The new external-runtime inventory size
 has not yet been measured (27 is the curated expectation, not native evidence).
 Supplemental Shiboken/OpenSSL obligations are bound separately, never fed into this
 selector. Complete manifests and raw materials travel in `notices/native/`.
-Synthetic tests cannot prove Windows qualification; no real staged native.json or
-qualified ZIP has been created by this source unit.
+Synthetic tests alone cannot prove Windows qualification. The later native
+run39049628794 executed the staged material/v2 gate and produced the verified ZIP.
 
 ## Exact winldd notices, not a browser exemption
 
