@@ -32,7 +32,9 @@ f304b389b02b214ee7f090e609e1035256046ddb420ffea50f248d612fffb8fb
 ```
 
 The artifact's exact source commit is `211645edfcabeb8fbdd29ab1e1636fe411d94cef`.
-Later documentation-only commits do not rebuild or change that artifact.
+That artifact predates the SPA-bootstrap readiness correction below. A corrected
+Windows ZIP and real first-frame acceptance are pending; source tests do not
+rebuild or change the downloaded artifact.
 **T6 remains:** real Windows 11 tray/Exit/LAN/recovery and CPU/RAM measurements.
 Windows Server CI is not Windows 11 acceptance or hardware support.
 
@@ -280,6 +282,12 @@ MARS still owns content, selection, order, dwell, SSE and orientation.
 | Transitions | Metadata and geometry are read again after capture. A state/server/orientation/geometry/freshness transition discards the frame. The next read reevaluates orientation; it never delivers a mismatched frame. |
 | Errors | `BrowserError` messages contain no URL/backend exception. Display errors and malformed/missing metadata raise for coordinator recovery. Live-disconnected/stale flags remain independent observations, never claims of server health/unreachability. |
 | Stop/cleanup | Navigation, metadata, font/layout and screenshot operations have explicit 1,500 ms timeouts per operation, not a whole-read deadline. Close releases only the owned browser and Playwright driver, including partial setup failures. Backend close has no Playwright timeout option; cleanup failure is reported rather than silently acknowledged. |
+
+A SPA may mount `#mars-display` after DOMContentLoaded. Reads now wait only while
+no root exists, within the existing 1,500 ms metadata budget; existing invalid or
+duplicate roots are rejected without waiting for repair. Permanent absence keeps
+the same metadata error. Path ownership is checked again after the wait. This
+source fix changes no retry policy or readiness/geometry requirements.
 
 The loopback tests cover both nominal geometries and exact RGB pixels, repeated
 captures without reload, metadata rejections, fonts/layout readiness, transitions,

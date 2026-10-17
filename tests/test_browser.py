@@ -8,6 +8,7 @@ from unittest.mock import patch
 from playwright.sync_api import Browser, Page, Route
 
 from browser_fixture import BrowserFixture
+from test_browser_security_regression import query_gated_html
 
 from mars_display.browser import BrowserError, BrowserSession
 from mars_display.settings import Settings
@@ -105,15 +106,28 @@ class BrowserTests(unittest.TestCase):
             (self.fixture.replace('state="ready"', 'state="error"'), "MARS reports a display error; check its display configuration."),
             (self.fixture.replace("width:320px", "width:319px"), "MARS display geometry does not match its orientation; check display layout."),
         ]
+        # Existing invalid roots must not be given time to become compatible.
+        for html, repair in (
+            (self.fixture.replace('version="1"', 'version="2"'), "document.getElementById('mars-display').dataset.displayVersion='1'"),
+            (self.fixture.replace('state="ready"', 'state="invalid"'), "document.getElementById('mars-display').dataset.displayState='ready'"),
+            (self.fixture.replace('</body>', "<script>document.body.append(document.getElementById('mars-display').cloneNode(true));</script></body>"), "document.getElementById('mars-display').remove()"),
+        ):
+            cases.append((query_gated_html(html, repair), "MARS display metadata is missing or incompatible; enable the version 1 display endpoint."))
         with patch.object(Page, "screenshot", side_effect=AssertionError("must not capture")):
             for html, message in cases:
                 with self.subTest(message=message, html=html[:40]):
                     self.session.close()
                     self.fixture_server.html = html
                     self.session.open()
+                    started = monotonic()
                     with self.assertRaises(BrowserError) as caught:
                         self.session.read()
                     self.assertEqual(str(caught.exception), message)
+                    if html.startswith('<form>'):
+                        self.assertGreaterEqual(monotonic() - started, 1.5)
+        self.assertEqual(self.requests, Counter({'/display': len(cases)}), self.request_details)
+        snapshot = self.request_details
+        self.assertEqual(Counter(dict(snapshot.counts)), Counter(dict(snapshot.owned_counts)) + Counter(dict(snapshot.foreign_counts)), snapshot)
 
     def test_disabled_redirect_is_not_followed(self):
         self.session = BrowserSession(Settings(self.url + "/disabled"))

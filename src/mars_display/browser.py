@@ -8,7 +8,9 @@ import os
 from time import monotonic
 
 from PIL import Image
-from playwright.sync_api import Error as PlaywrightError, sync_playwright
+from playwright.sync_api import (
+    Error as PlaywrightError, TimeoutError as PlaywrightTimeoutError, sync_playwright,
+)
 
 from .frames import RGBFrame
 from .lifecycle import SourceSample
@@ -140,15 +142,20 @@ class BrowserSession:
     def _metadata(self):
         if self._page.url != self._url:
             raise BrowserError("MARS left the configured display path; check direct display access.")
-        # evaluate() itself has no Playwright timeout. Use the bounded function
-        # runner even for this synchronous, fixed-size metadata read. The wrapper
-        # is truthy when the root is absent, so absence is reported immediately.
-        handle = self._page.wait_for_function(
-            "() => ({data:(" + _METADATA + ")()})", timeout=_TIMEOUT)
+        # SPA mounting may follow DOMContentLoaded. Wait only for root presence;
+        # duplicates or incompatible existing metadata must fail immediately.
+        try:
+            handle = self._page.wait_for_function(
+                "() => document.querySelectorAll('#mars-display').length === 0 "
+                "? false : ({data:(" + _METADATA + ")()})", timeout=_TIMEOUT)
+        except PlaywrightTimeoutError:
+            raise BrowserError(_METADATA_ERROR) from None
         try:
             data = handle.json_value()["data"]
         finally:
             handle.dispose()
+        if self._page.url != self._url:
+            raise BrowserError("MARS left the configured display path; check direct display access.")
         if not data or data.get("version") != "1":
             raise BrowserError(_METADATA_ERROR)
         geometry = {"portrait": ("320", "480"), "landscape": ("480", "320")}
