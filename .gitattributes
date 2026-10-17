@@ -1,0 +1,3 @@
+# Preserve verified upstream legal bytes, including their original whitespace.
+third_party/license-material/**/*.txt -text -whitespace
+third_party/license-material/provenance.json text eol=lf

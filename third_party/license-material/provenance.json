@@ -1,0 +1,753 @@
+{
+  "schema_version": 1,
+  "materials": [
+    {
+      "path": "pyserial/3.5/LICENSE.txt",
+      "sha256": "f91cb9813de6a5b142b8f7f2dede630b5134160aedaeaf55f4d6a7e2593ca3f3",
+      "source_url": "https://raw.githubusercontent.com/pyserial/pyserial/0e7634747568547b8a7f9fd0c48ed74f16af4b23/LICENSE.txt",
+      "upstream_version": "3.5",
+      "coverage": "pyserial complete upstream LICENSE.txt",
+      "packages": [
+        {
+          "name": "pyserial",
+          "version": "3.5"
+        }
+      ],
+      "source_commit": "0e7634747568547b8a7f9fd0c48ed74f16af4b23"
+    },
+    {
+      "path": "qt-for-python/6.12.0/LICENSES/Apache-2.0.txt",
+      "sha256": "e3ba223bb1423f0aad8c3dfce0fe3148db48926d41e6fbc3afbbf5ff9e1c89cb",
+      "source_url": "https://code.qt.io/cgit/pyside/pyside-setup.git/plain/LICENSES/Apache-2.0.txt?id=f50facb83fc3dc5f3240c854668c7a6dd93871b2",
+      "upstream_version": "6.12.0",
+      "coverage": "Qt for Python binding license set only; commercial reference grants no rights; native Qt/plugin coverage separate",
+      "packages": [
+        {
+          "name": "PySide6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Essentials",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Addons",
+          "version": "6.12.0"
+        },
+        {
+          "name": "shiboken6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_WebEngine",
+          "version": "6.12.0.140"
+        },
+        {
+          "name": "PySide6_Pdf",
+          "version": "6.12.0.140"
+        }
+      ],
+      "source_commit": "f50facb83fc3dc5f3240c854668c7a6dd93871b2"
+    },
+    {
+      "path": "qt-for-python/6.12.0/LICENSES/BSD-3-Clause.txt",
+      "sha256": "62803a6fcceef9091a129d7293d2469ea332b35d30f5e1bc4c628a9f35f3d29c",
+      "source_url": "https://code.qt.io/cgit/pyside/pyside-setup.git/plain/LICENSES/BSD-3-Clause.txt?id=f50facb83fc3dc5f3240c854668c7a6dd93871b2",
+      "upstream_version": "6.12.0",
+      "coverage": "Qt for Python binding license set only; commercial reference grants no rights; native Qt/plugin coverage separate",
+      "packages": [
+        {
+          "name": "PySide6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Essentials",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Addons",
+          "version": "6.12.0"
+        },
+        {
+          "name": "shiboken6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_WebEngine",
+          "version": "6.12.0.140"
+        },
+        {
+          "name": "PySide6_Pdf",
+          "version": "6.12.0.140"
+        }
+      ],
+      "source_commit": "f50facb83fc3dc5f3240c854668c7a6dd93871b2"
+    },
+    {
+      "path": "qt-for-python/6.12.0/LICENSES/GFDL-1.3-no-invariants-only.txt",
+      "sha256": "110535522396708cea37c72a802c5e7e81391139f5f7985631c93ef242b206a4",
+      "source_url": "https://code.qt.io/cgit/pyside/pyside-setup.git/plain/LICENSES/GFDL-1.3-no-invariants-only.txt?id=f50facb83fc3dc5f3240c854668c7a6dd93871b2",
+      "upstream_version": "6.12.0",
+      "coverage": "Qt for Python binding license set only; commercial reference grants no rights; native Qt/plugin coverage separate",
+      "packages": [
+        {
+          "name": "PySide6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Essentials",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Addons",
+          "version": "6.12.0"
+        },
+        {
+          "name": "shiboken6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_WebEngine",
+          "version": "6.12.0.140"
+        },
+        {
+          "name": "PySide6_Pdf",
+          "version": "6.12.0.140"
+        }
+      ],
+      "source_commit": "f50facb83fc3dc5f3240c854668c7a6dd93871b2"
+    },
+    {
+      "path": "qt-for-python/6.12.0/LICENSES/GPL-2.0-only.txt",
+      "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+      "source_url": "https://code.qt.io/cgit/pyside/pyside-setup.git/plain/LICENSES/GPL-2.0-only.txt?id=f50facb83fc3dc5f3240c854668c7a6dd93871b2",
+      "upstream_version": "6.12.0",
+      "coverage": "Qt for Python binding license set only; commercial reference grants no rights; native Qt/plugin coverage separate",
+      "packages": [
+        {
+          "name": "PySide6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Essentials",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Addons",
+          "version": "6.12.0"
+        },
+        {
+          "name": "shiboken6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_WebEngine",
+          "version": "6.12.0.140"
+        },
+        {
+          "name": "PySide6_Pdf",
+          "version": "6.12.0.140"
+        }
+      ],
+      "source_commit": "f50facb83fc3dc5f3240c854668c7a6dd93871b2"
+    },
+    {
+      "path": "qt-for-python/6.12.0/LICENSES/GPL-3.0-only.txt",
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "source_url": "https://code.qt.io/cgit/pyside/pyside-setup.git/plain/LICENSES/GPL-3.0-only.txt?id=f50facb83fc3dc5f3240c854668c7a6dd93871b2",
+      "upstream_version": "6.12.0",
+      "coverage": "Qt for Python binding license set only; commercial reference grants no rights; native Qt/plugin coverage separate",
+      "packages": [
+        {
+          "name": "PySide6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Essentials",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Addons",
+          "version": "6.12.0"
+        },
+        {
+          "name": "shiboken6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_WebEngine",
+          "version": "6.12.0.140"
+        },
+        {
+          "name": "PySide6_Pdf",
+          "version": "6.12.0.140"
+        }
+      ],
+      "source_commit": "f50facb83fc3dc5f3240c854668c7a6dd93871b2"
+    },
+    {
+      "path": "qt-for-python/6.12.0/LICENSES/LGPL-3.0-only.txt",
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+      "source_url": "https://code.qt.io/cgit/pyside/pyside-setup.git/plain/LICENSES/LGPL-3.0-only.txt?id=f50facb83fc3dc5f3240c854668c7a6dd93871b2",
+      "upstream_version": "6.12.0",
+      "coverage": "Qt for Python binding license set only; commercial reference grants no rights; native Qt/plugin coverage separate",
+      "packages": [
+        {
+          "name": "PySide6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Essentials",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Addons",
+          "version": "6.12.0"
+        },
+        {
+          "name": "shiboken6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_WebEngine",
+          "version": "6.12.0.140"
+        },
+        {
+          "name": "PySide6_Pdf",
+          "version": "6.12.0.140"
+        }
+      ],
+      "source_commit": "f50facb83fc3dc5f3240c854668c7a6dd93871b2"
+    },
+    {
+      "path": "qt-for-python/6.12.0/LICENSES/LicenseRef-Qt-Commercial.txt",
+      "sha256": "9b1f50aae6267f9d5e0ceb6775ee86450262c25ec7c0573e151fe5d3f18a4700",
+      "source_url": "https://code.qt.io/cgit/pyside/pyside-setup.git/plain/LICENSES/LicenseRef-Qt-Commercial.txt?id=f50facb83fc3dc5f3240c854668c7a6dd93871b2",
+      "upstream_version": "6.12.0",
+      "coverage": "Qt for Python binding license set only; commercial reference grants no rights; native Qt/plugin coverage separate",
+      "packages": [
+        {
+          "name": "PySide6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Essentials",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Addons",
+          "version": "6.12.0"
+        },
+        {
+          "name": "shiboken6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_WebEngine",
+          "version": "6.12.0.140"
+        },
+        {
+          "name": "PySide6_Pdf",
+          "version": "6.12.0.140"
+        }
+      ],
+      "source_commit": "f50facb83fc3dc5f3240c854668c7a6dd93871b2"
+    },
+    {
+      "path": "qt-for-python/6.12.0/LICENSES/Qt-GPL-exception-1.0.txt",
+      "sha256": "40678d338ce53cd93f8b22b281a2ecbcaa3ee65ce60b25ffb0c462b0530846b2",
+      "source_url": "https://code.qt.io/cgit/pyside/pyside-setup.git/plain/LICENSES/Qt-GPL-exception-1.0.txt?id=f50facb83fc3dc5f3240c854668c7a6dd93871b2",
+      "upstream_version": "6.12.0",
+      "coverage": "Qt for Python binding license set only; commercial reference grants no rights; native Qt/plugin coverage separate",
+      "packages": [
+        {
+          "name": "PySide6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Essentials",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Addons",
+          "version": "6.12.0"
+        },
+        {
+          "name": "shiboken6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_WebEngine",
+          "version": "6.12.0.140"
+        },
+        {
+          "name": "PySide6_Pdf",
+          "version": "6.12.0.140"
+        }
+      ],
+      "source_commit": "f50facb83fc3dc5f3240c854668c7a6dd93871b2"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/AFL-2.1.txt",
+      "sha256": "93bb4f7417aa775bab9026cc3d0af28aeb64451fc5a8ec651876785edd8eaf9b",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/AFL-2.1.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/Apache-2.0.txt",
+      "sha256": "e3ba223bb1423f0aad8c3dfce0fe3148db48926d41e6fbc3afbbf5ff9e1c89cb",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/Apache-2.0.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/BSD-2-Clause.txt",
+      "sha256": "8fda146749ca071ac9cdce2e24d25444676ea48d1f9dccc2b7c15c054b717db8",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/BSD-2-Clause.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/BSD-3-Clause.txt",
+      "sha256": "9f0490f18656c6f2435bd14f603ef0c96434d1825615363dce43abb42ed1dcce",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/BSD-3-Clause.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/BSD-4-Clause.txt",
+      "sha256": "83faa0d205c316ce3efeafee465b6a165914fb29595968c08dc6437021b7b6fd",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/BSD-4-Clause.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/BSL-1.0.txt",
+      "sha256": "3abd6471b9a9a08d65ce771143f8e278bb4c1aeb10c1c2d476935a6b049653f5",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/BSL-1.0.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/Bitstream-Vera.txt",
+      "sha256": "7a083b136e64d064794c3419751e5c7dd10d2f64c108fe5ba161eae5e5958a93",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/Bitstream-Vera.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/CC0-1.0.txt",
+      "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/CC0-1.0.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/FTL.txt",
+      "sha256": "08c135755dd589039470f1fdbb400daaabaaa50d0b366d19cebff4d22986baa1",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/FTL.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/GFDL-1.3-no-invariants-only.txt",
+      "sha256": "110535522396708cea37c72a802c5e7e81391139f5f7985631c93ef242b206a4",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/GFDL-1.3-no-invariants-only.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/GPL-2.0-only.txt",
+      "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/GPL-2.0-only.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/GPL-2.0-or-later.txt",
+      "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/GPL-2.0-or-later.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/GPL-3.0-only.txt",
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/GPL-3.0-only.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/HPND.txt",
+      "sha256": "67ac968431270291f5e9cd3ed76705e1169f57082ee102093b2543b28cef63cf",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/HPND.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/IJG.txt",
+      "sha256": "1cb448f5e2e6d3aca60943f4eee1a04675628dc0266a074a42bc1560ebc28d61",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/IJG.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/IPL-1.0.txt",
+      "sha256": "d5328e672fb1bff47ee18e890784541453380081cf3771bb7b3c06fc19c7d503",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/IPL-1.0.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/Imlib2.txt",
+      "sha256": "8846f2baba1a7f4c36f7ca19a923a000d8a21afa37cf0fe006f6ce88a6058a89",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/Imlib2.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/LGPL-2.1-or-later.txt",
+      "sha256": "1ccf09bf2f598308df4bed9cd8e9657dc5cd0973d2800318f2e241486e2edf3f",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/LGPL-2.1-or-later.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/LGPL-3.0-only.txt",
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/LGPL-3.0-only.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/Libpng.txt",
+      "sha256": "58fe669792f9b4e0740bf75ecfe90b5326128bb2ce7e27e1c342abd9db4d8ea6",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/Libpng.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/LicenseRef-BSD-3-Clause-with-PCRE2-Binary-Like-Packages-Exception.txt",
+      "sha256": "0526625fcc746a42d3f19a0ab357d3dc8479fdbe3bfd168825498f50215c7a63",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/LicenseRef-BSD-3-Clause-with-PCRE2-Binary-Like-Packages-Exception.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/LicenseRef-ICC-License.txt",
+      "sha256": "9e34ff47b3a44814e183342e7e198d127a6740e29d20e8381fba7688dafc79dd",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/LicenseRef-ICC-License.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/LicenseRef-Lcs-Telegraphics.txt",
+      "sha256": "c10225ebbd5191bfdd761b0d7752c785f2453ab665d6c454473fb12d254668aa",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/LicenseRef-Lcs-Telegraphics.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/LicenseRef-Qt-Commercial.txt",
+      "sha256": "9b1f50aae6267f9d5e0ceb6775ee86450262c25ec7c0573e151fe5d3f18a4700",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/LicenseRef-Qt-Commercial.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/LicenseRef-SHA1-Public-Domain.txt",
+      "sha256": "65d86b8ec6b1cd8b8f6e64fd8710274ba00d6a3c520e00dfdcd1c3d2071f3305",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/LicenseRef-SHA1-Public-Domain.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/Linux-syscall-note.txt",
+      "sha256": "3f9e477523febab58de8b716ccfbcf02e6ef1c8e7728953905e8558637abe2a9",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/Linux-syscall-note.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/MIT-Khronos-old.txt",
+      "sha256": "3c58021633974f9ed3c3d445a374240a5244fd039628f4d7f6f3e674bc8e6694",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/MIT-Khronos-old.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/MIT-open-group.txt",
+      "sha256": "c55d2ab72d8a4f9e9cd8fbd1379268e575e8cfa16874affa5899b75a6d754514",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/MIT-open-group.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/MIT.txt",
+      "sha256": "d040359701c01996a017d5c515678929cd1b0625e64cb86db44025fbb6cdf1fc",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/MIT.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/MPL-2.0.txt",
+      "sha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/MPL-2.0.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/Qt-GPL-exception-1.0.txt",
+      "sha256": "40678d338ce53cd93f8b22b281a2ecbcaa3ee65ce60b25ffb0c462b0530846b2",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/Qt-GPL-exception-1.0.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/SPL-1.0.txt",
+      "sha256": "f58f2f30909982445f97f1a61667261920a7caeab21ef5bea1b740f5b144d141",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/SPL-1.0.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/Unicode-3.0.txt",
+      "sha256": "80bb6294022d8764adb36a9d65ebb6bd94efb1865918a71e31e6c247607d7634",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/Unicode-3.0.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/X11.txt",
+      "sha256": "e2936c6509784b4f0ec27bac74182393866fad9422b29a70e085ff14aba87193",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/X11.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/Xerox.txt",
+      "sha256": "b6bc52205d01e10cf43dbb7b8aec06dcaa3b21d1486e7c9c0bec329ee8244d8d",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/Xerox.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/Zlib.txt",
+      "sha256": "d7e3139972874dc8abdbbfce27ec1e6f942b28279dd7d27453630a8b4610e080",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/Zlib.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/blessing.txt",
+      "sha256": "592db1199aab67aafe4515db9808b420db122083807c5329b2f061951e79acbe",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/blessing.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qtbase/6.12.0/LICENSES/libpng-2.0.txt",
+      "sha256": "7317e078e2d3b5d7ba5a6159e650945153262b44b76f6700f8e9edb261c5143e",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/LICENSES/libpng-2.0.txt?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "upstream_version": "6.12.0",
+      "coverage": "Qtbase license texts; actual native binary/third-party attribution mapping still required",
+      "packages": [],
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9"
+    },
+    {
+      "path": "qt-for-python/6.12.0/headers/pyside.cpp.header.txt",
+      "sha256": "7179cf99a48ff97f5ce95c1bce57919ef584cdd7906bdac8a5d415e659a75c16",
+      "source_url": "https://code.qt.io/cgit/pyside/pyside-setup.git/plain/sources/pyside6/libpyside/pyside.cpp?id=f50facb83fc3dc5f3240c854668c7a6dd93871b2",
+      "source_commit": "f50facb83fc3dc5f3240c854668c7a6dd93871b2",
+      "source_file_sha256": "1f21ca591de01501649196aba5a471f30ecfb8ad4ea54a634881477d093b586b",
+      "source_excerpt": "unchanged leading copyright/license comment header only",
+      "upstream_version": "6.12.0",
+      "packages": [
+        {
+          "name": "PySide6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Essentials",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Addons",
+          "version": "6.12.0"
+        },
+        {
+          "name": "shiboken6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_WebEngine",
+          "version": "6.12.0.140"
+        },
+        {
+          "name": "PySide6_Pdf",
+          "version": "6.12.0.140"
+        }
+      ],
+      "coverage": "source file copyright/license header; not complete native binary coverage"
+    },
+    {
+      "path": "qt-for-python/6.12.0/headers/basewrapper.cpp.header.txt",
+      "sha256": "821765b507bfca7d43a833d6ce9bc391dbb12d55831e13a4cdebf722ce8ce6f7",
+      "source_url": "https://code.qt.io/cgit/pyside/pyside-setup.git/plain/sources/shiboken6/libshiboken/basewrapper.cpp?id=f50facb83fc3dc5f3240c854668c7a6dd93871b2",
+      "source_commit": "f50facb83fc3dc5f3240c854668c7a6dd93871b2",
+      "source_file_sha256": "199a86e6daf4447ff77b364e1dd3da9fcbc8bbf4299bcf6bf4ee95eaaa9c15af",
+      "source_excerpt": "unchanged leading copyright/license comment header only",
+      "upstream_version": "6.12.0",
+      "packages": [
+        {
+          "name": "PySide6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Essentials",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_Addons",
+          "version": "6.12.0"
+        },
+        {
+          "name": "shiboken6",
+          "version": "6.12.0"
+        },
+        {
+          "name": "PySide6_WebEngine",
+          "version": "6.12.0.140"
+        },
+        {
+          "name": "PySide6_Pdf",
+          "version": "6.12.0.140"
+        }
+      ],
+      "coverage": "source file copyright/license header; not complete native binary coverage"
+    },
+    {
+      "path": "qtbase/6.12.0/headers/qglobal.cpp.header.txt",
+      "sha256": "865441d415573eb9446b298df1537bbc17c3815449449c850be9e944008a0399",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/src/corelib/global/qglobal.cpp?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "source_file_sha256": "fe7d15175bedd462392223326192d6dd6ab2e2f1ce7dc2fb3d087c77fa8ace8a",
+      "source_excerpt": "unchanged leading copyright/license comment header only",
+      "upstream_version": "6.12.0",
+      "packages": [],
+      "coverage": "source file copyright/license header; not complete native binary coverage"
+    },
+    {
+      "path": "qtbase/6.12.0/headers/qguiapplication.cpp.header.txt",
+      "sha256": "a45833a88133e34ca0654d75e46f39dcdeac548ca67815396f2824ae554c917e",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/src/gui/kernel/qguiapplication.cpp?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "source_file_sha256": "a89d0b514c939c00436aca301e02a91a56efa2794c52a11b2a5b01aa56bf6166",
+      "source_excerpt": "unchanged leading copyright/license comment header only",
+      "upstream_version": "6.12.0",
+      "packages": [],
+      "coverage": "source file copyright/license header; not complete native binary coverage"
+    },
+    {
+      "path": "qtbase/6.12.0/headers/qapplication.cpp.header.txt",
+      "sha256": "7179cf99a48ff97f5ce95c1bce57919ef584cdd7906bdac8a5d415e659a75c16",
+      "source_url": "https://code.qt.io/cgit/qt/qtbase.git/plain/src/widgets/kernel/qapplication.cpp?id=025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "source_commit": "025bdad181de241e81bf853c8a2d7bf3d19261a9",
+      "source_file_sha256": "3775ea392eebbe98e5f11816e66ebb32e7a67591e5dd73c3e2d2097713aa21c4",
+      "source_excerpt": "unchanged leading copyright/license comment header only",
+      "upstream_version": "6.12.0",
+      "packages": [],
+      "coverage": "source file copyright/license header; not complete native binary coverage"
+    }
+  ],
+  "source_archives": [
+    {
+      "component": "pyserial",
+      "version": "3.5",
+      "url": "https://files.pythonhosted.org/packages/1e/7d/ae3f0a63f41e4d2f6cb66a5b57197850f919f59e558159a4dd3a818f5082/pyserial-3.5.tar.gz",
+      "sha256": "3c77e014170dfffbd816e6ffc205e9842efb10be9f58ec16d3e8675b4925cddb"
+    },
+    {
+      "component": "QtForPython",
+      "version": "6.12.0",
+      "url": "https://download.qt.io/official_releases/QtForPython/pyside6/PySide6-6.12.0-src/pyside-setup-everywhere-src-6.12.0.tar.xz",
+      "sha256": "099c1a597cf33c1b000e11cf68a0b82d216fb802bf81726efc720394f10c7751"
+    }
+  ],
+  "qualification": "Authentic versioned source material, not blanket binary coverage or legal approval."
+}
