@@ -2,8 +2,9 @@
 
 The native builder, spec, isolated executable smoke and workflow **source** now
 exist. No Windows executable/ZIP has been delivered or qualified. T5 remains in
-progress; publishing, pushing and CI execution are not authorized. Linux tests
-use synthetic SDK/EXE fixtures, never runnable Windows proof.
+progress. Owner-authorized feature-branch CI has started; its first run failed
+in source integration tests before native compilation. No qualified artifact
+exists. Linux SDK/EXE fixtures are synthetic, never runnable Windows proof.
 
 ## Developer commands (native Windows x64 only)
 
@@ -168,7 +169,13 @@ configured.
 Triggers are restricted to push on existing `feat/simulated-companion` and manual
 dispatch. GitHub requires the workflow on the default branch for manual dispatch;
 a first **explicitly authorized** feature-branch push can bootstrap registration
-without unapproved main changes. Neither push nor CI has been executed here.
+without unapproved main changes. The first authorized run
+[39024652172](https://github.com/ghosthvj/MarsDisplay/actions/runs/39024652172)
+installed the Windows SDK/browser but failed a source integration wait before
+compilation. The test now scopes cleanup to each orientation and uses a bounded
+15-second first/restarted-frame budget with selected-state diagnostics; exact
+RGB, request counts and settings checks remain. Production timeouts/retries
+are unchanged. A new-commit run is required; this is not a successful build.
 Server 2025 is not Windows 11 acceptance.
 
 After a future authorized successful run, download `MarsDisplay-Windows-x64`

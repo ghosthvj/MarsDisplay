@@ -44,7 +44,9 @@ proof only. Source invocation may have a console. The [native portable build
 source](packaging/README.md) now supplies a windowed recipe, isolated packaged
 startup smoke and restricted workflow source. No Windows executable/ZIP has been
 delivered: native material qualification and actual Windows build/smoke proof
-remain outstanding. T5 stays in progress; no CI/push/publication is authorized.
+remain outstanding. T5 stays in progress. The owner authorized feature-branch
+CI/test artifacts; the first Windows run failed in source integration tests,
+before native compilation. No ZIP was published.
 
 ## Run the source tests
 
@@ -63,6 +65,10 @@ Offscreen/Linux success does not prove Windows tray or packaged-browser acceptan
 Application tests compose the real browser, coordinator and simulated output in
 both orientations through public tray Start/Stop/Exit, using isolated settings
 and test-owned loopback traffic; foreign/raw fixture traces remain intact.
+Each orientation releases its owned shell in `finally`, including assertion
+failures. First/restarted-frame waits allow a bounded 15-second cold-start
+budget and report selected state/counters on timeout, never frame bytes or
+URLs. This changes test orchestration, not production timeouts or retries.
 
 ## Public interface
 

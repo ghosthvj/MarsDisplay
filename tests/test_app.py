@@ -23,7 +23,7 @@ from mars_display.tray import SingleInstanceGuard
 APP = None  # Construct lazily so other Qt suites can share their application.
 
 
-def until(predicate, milliseconds=4000):
+def until(predicate, milliseconds=4000, diagnostics=None):
     loop = QEventLoop()
     poll, deadline = QTimer(), QTimer()
     poll.setInterval(5)
@@ -37,7 +37,10 @@ def until(predicate, milliseconds=4000):
     poll.stop()
     deadline.stop()
     if not predicate():
-        raise AssertionError("Application condition was not acknowledged before deadline")
+        message = "Application condition was not acknowledged before deadline"
+        if diagnostics is not None:
+            message += "; " + diagnostics()
+        raise AssertionError(message)
 
 
 class AppTests(unittest.TestCase):
@@ -164,10 +167,55 @@ class AppTests(unittest.TestCase):
             shell.coordinator.request_exit.assert_called_once()
             shell.refresh.assert_called_once()
 
+    def test_wait_deadline_reports_selected_state(self):
+        with self.assertRaises(AssertionError) as caught:
+            until(lambda: False, milliseconds=0,
+                  diagnostics=lambda: "state=starting, frames=0")
+        self.assertEqual(str(caught.exception),
+                         "Application condition was not acknowledged before deadline; state=starting, frames=0")
+
+    def test_failed_orientation_releases_shell_before_next_admission(self):
+        case = AppTests("test_real_browser_tray_start_stop_exit_both_orientations")
+        captured = []
+        factory = build_shell
+
+        def record(*args, **kwargs):
+            shell = factory(*args, **kwargs)
+            if shell is not None:
+                captured.append(shell)
+            return shell
+
+        result = unittest.TestResult()
+        try:
+            with patch("test_app.build_shell", side_effect=record), patch.object(
+                BrowserSession, "open", side_effect=RuntimeError("controlled startup failure")
+            ), patch("test_app.until", side_effect=AssertionError("controlled wait failure")):
+                case.run(result)
+            self.assertEqual(len(result.errors), 0,
+                             [trace.splitlines()[-1] for _, trace in result.errors])
+            self.assertEqual(len(result.failures), 2, result.failures)
+            self.assertEqual(len(captured), 2)
+            self.assertIsNone(case.shell)
+            for shell in captured:
+                self.assertFalse(shell.coordinator.snapshot().worker_alive)
+                self.assertTrue(shell.coordinator.snapshot().exit_ready)
+        finally:
+            # The RED version loses its first shell; keep the probe's worker owned.
+            for shell in captured:
+                if shell.coordinator.snapshot().worker_alive:
+                    shell.coordinator.request_exit()
+                    self.assertTrue(shell.coordinator.wait_stopped(3))
+                    shell.refresh()
+                    shell.timer.stop()
+                    shell.tray.hide()
+                    shell.dialog.hide()
+                    shell.deleteLater()
+
     def test_real_browser_tray_start_stop_exit_both_orientations(self):
         html = Path(__file__).with_name("fixtures").joinpath("display.html").read_text()
         for landscape in (False, True):
             with self.subTest(landscape=landscape):
+                self.assertIsNone(self.shell, "Previous orientation still owns resources")
                 content = html.replace('connected="true"', 'connected="false"').replace('stale="false"', 'stale="true"')
                 if landscape:
                     content = content.replace("portrait", "landscape").replace("320", "TEMP").replace("480", "320").replace("TEMP", "480")
@@ -184,46 +232,59 @@ class AppTests(unittest.TestCase):
 
                         with patch.object(Browser, "new_context", record):
                             self.shell = build_shell(APP, self.store)
-                            self.assertEqual(owned, [])
-                            self.assertEqual(fixture.snapshot().owned_counts, ())
-                            self.shell.start_action.trigger()
-                            pulses = []
-                            QTimer.singleShot(0, lambda: pulses.append("responsive"))
-                            until(lambda: self.shell.coordinator.snapshot().frames_sent >= 1)
-                            self.assertEqual(pulses, ["responsive"])
-                            status = self.shell.coordinator.snapshot()
-                            self.assertEqual((status.source_state, status.output_state), ("ready", "simulated-open"))
-                            self.assertEqual((status.live_connected, status.data_stale), (False, True))
-                            frame = status.latest_frame
-                            self.assertEqual((frame.width, frame.height), (480, 320) if landscape else (320, 480))
-                            self.assertEqual(frame.rgb, bytes((17, 34, 51)) * (320 * 480))
-                            self.shell.stop_action.trigger()
-                            until(lambda: not self.shell.coordinator.snapshot().worker_alive)
-                            stopped = self.shell.coordinator.snapshot()
-                            self.assertEqual((stopped.state, stopped.output_state), ("stopped", "simulated-closed"))
-                            self.assertTrue(owned)
-                            self.assertTrue(all(not browser.is_connected() for browser in owned))
-                            self.shell.refresh()
-                            self.assertEqual(self.shell.dialog.source.text(), "stopped")
-                            self.assertEqual(self.store.path.read_bytes(), original)
-                            self.assertEqual(self.shell.coordinator.snapshot().frames_sent, stopped.frames_sent)
-                            self.shell.start_action.trigger()
-                            until(lambda: self.shell.coordinator.snapshot().frames_sent > stopped.frames_sent)
-                            with patch.object(APP, "quit") as quit_app:
-                                self.shell.exit_action.trigger()
-                                until(lambda: quit_app.called)
-                            self.assertTrue(self.shell.coordinator.snapshot().exit_ready)
-                            self.assertTrue(all(not browser.is_connected() for browser in owned))
-                            after_exit = self.shell.coordinator.snapshot().frames_sent
-                            self.shell.refresh()
-                            self.assertEqual(self.shell.coordinator.snapshot().frames_sent, after_exit)
-                            self.admitted()
-                            snapshot = fixture.snapshot()
-                            self.assertEqual(dict(snapshot.owned_counts), {"/display": 2}, snapshot)
-                            self.assertEqual(Counter(dict(snapshot.counts)), Counter(dict(snapshot.owned_counts)) + Counter(dict(snapshot.foreign_counts)))
-                            self.assertEqual(self.store.path.read_bytes(), original)
-                            self.dispose()
-                            self.shell = None
+                            self.assertIsNotNone(self.shell)
+
+                            def diagnostic():
+                                status = self.shell.coordinator.snapshot()
+                                return (f"state={status.state}, source={status.source_state}, "
+                                        f"output={status.output_state}, frames={status.frames_sent}, "
+                                        f"failures={status.failures}, retries={status.retries}, "
+                                        f"worker_alive={status.worker_alive}, error={status.error!r}")
+
+                            try:
+                                self.assertEqual(owned, [])
+                                self.assertEqual(fixture.snapshot().owned_counts, ())
+                                self.shell.start_action.trigger()
+                                pulses = []
+                                QTimer.singleShot(0, lambda: pulses.append("responsive"))
+                                until(lambda: self.shell.coordinator.snapshot().frames_sent >= 1,
+                                      milliseconds=15000, diagnostics=diagnostic)
+                                self.assertEqual(pulses, ["responsive"])
+                                status = self.shell.coordinator.snapshot()
+                                self.assertEqual((status.source_state, status.output_state), ("ready", "simulated-open"))
+                                self.assertEqual((status.live_connected, status.data_stale), (False, True))
+                                frame = status.latest_frame
+                                self.assertEqual((frame.width, frame.height), (480, 320) if landscape else (320, 480))
+                                self.assertEqual(frame.rgb, bytes((17, 34, 51)) * (320 * 480))
+                                self.shell.stop_action.trigger()
+                                until(lambda: not self.shell.coordinator.snapshot().worker_alive, diagnostics=diagnostic)
+                                stopped = self.shell.coordinator.snapshot()
+                                self.assertEqual((stopped.state, stopped.output_state), ("stopped", "simulated-closed"))
+                                self.assertTrue(owned)
+                                self.assertTrue(all(not browser.is_connected() for browser in owned))
+                                self.shell.refresh()
+                                self.assertEqual(self.shell.dialog.source.text(), "stopped")
+                                self.assertEqual(self.store.path.read_bytes(), original)
+                                self.assertEqual(self.shell.coordinator.snapshot().frames_sent, stopped.frames_sent)
+                                self.shell.start_action.trigger()
+                                until(lambda: self.shell.coordinator.snapshot().frames_sent > stopped.frames_sent,
+                                      milliseconds=15000, diagnostics=diagnostic)
+                                with patch.object(APP, "quit") as quit_app:
+                                    self.shell.exit_action.trigger()
+                                    until(lambda: quit_app.called, diagnostics=diagnostic)
+                                self.assertTrue(self.shell.coordinator.snapshot().exit_ready)
+                                self.assertTrue(all(not browser.is_connected() for browser in owned))
+                                after_exit = self.shell.coordinator.snapshot().frames_sent
+                                self.shell.refresh()
+                                self.assertEqual(self.shell.coordinator.snapshot().frames_sent, after_exit)
+                                self.admitted()
+                                snapshot = fixture.snapshot()
+                                self.assertEqual(dict(snapshot.owned_counts), {"/display": 2}, snapshot)
+                                self.assertEqual(Counter(dict(snapshot.counts)), Counter(dict(snapshot.owned_counts)) + Counter(dict(snapshot.foreign_counts)))
+                                self.assertEqual(self.store.path.read_bytes(), original)
+                            finally:
+                                self.dispose()
+                                self.shell = None
 
     def test_browser_startup_failure_is_sanitized_and_stop_cancels_recovery(self):
         self.store.save(Settings("https://private.example"))
