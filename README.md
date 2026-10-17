@@ -46,10 +46,12 @@ source](packaging/README.md) now supplies a windowed recipe, isolated packaged
 startup smoke and restricted workflow source. No Windows executable/ZIP has been
 delivered: native material qualification and packaged execution/smoke remain
 outstanding. T5 stays in progress. The owner authorized feature-branch CI/test
-artifacts. Latest run39029908479 passed source tests and completed native
-PyInstaller EXE + COLLECT, then runtime validation failed before smoke/report/ZIP
-with `Duplicate path or empty/non-byte material`. No artifact was delivered;
-assembly is not successful application execution or Windows 11 acceptance.
+artifacts. Run39029908479 completed native EXE + COLLECT but rejected SDK
+metadata. Later run39032168531 passed runtime validation and uploaded an
+**UNQUALIFIED JSON diagnostic**, not a ZIP; its smoke failed on the Qt lock-info
+return shape. The source fix preserves PID ownership/held-lock/GUI checks and
+requires a new Windows run. Assembly or a diagnostic report is not successful
+application execution or Windows 11 acceptance.
 
 ## Run the source tests
 

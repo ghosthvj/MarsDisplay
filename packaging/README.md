@@ -13,6 +13,13 @@ Windows frozen assembly, not app execution or a usable prototype. The generic
 error does not identify which Windows file failed first. Linux SDK/EXE fixtures
 remain synthetic, never native execution proof.
 
+Run [39032168531](https://github.com/ghosthvj/MarsDisplay/actions/runs/39032168531)
+subsequently passed runtime-tree validation and produced a real **UNQUALIFIED**
+JSON inventory of 136 native files. Smoke failed on the incorrect four-value
+Qt lock-info unpack. The source correction uses the real three-value binding;
+a new Windows run is required. That report is not a native-license approval or
+ZIP, and it cannot satisfy the qualification input schema.
+
 ## Developer commands (native Windows x64 only)
 
 Use Python **3.13.x**, the exact `pyproject.toml` pins and an interactive session
@@ -185,6 +192,10 @@ LOCALAPPDATA/APPDATA/HOME/USERPROFILE/TEMP/TMP. External Python/Qt/plugin/browse
 overrides cannot mask missing resources. Within 20 seconds it must hold its
 per-user QLockFile under its own PID, reach GUI input idle, dispatch bounded
 WM_NULL probes through owned windows, and have no visible startup/error dialog.
+The pinned PySide6 API returns `(pid, hostname, appname)` from
+`QLockFile.getLockInfo()`—not the C++ Boolean plus output values. A real binding
+regression checks that contract; missing/nonpositive/foreign PID information
+cannot reach GUI readiness checks, and the lock must still be held.
 Process-alive alone is insufficient; absent tray/GUI is failure, never a skip.
 It remains unconfigured/stopped, must not create settings, and only this owned
 idle process is terminated and waited for (5 seconds). No global taskkill/browser

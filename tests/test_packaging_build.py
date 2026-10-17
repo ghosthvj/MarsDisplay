@@ -310,13 +310,43 @@ class SmokeTests(unittest.TestCase):
             self.assertTrue(run.call_args_list[1].args[0][0].endswith('headless_shell.exe'))
             startup.assert_called_once_with(root, root / 'isolated')
 
+    def test_native_probe_uses_installed_qt_lock_info_contract(self):
+        import os
+        from PySide6.QtCore import QLockFile
+        process = Mock(pid=os.getpid(), _handle=456)
+        process.poll.return_value = None
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            settings = root / 'settings.json'
+            settings.write_bytes(b'unchanged existing settings')
+            lock_path = root / 'owned.lock'
+            owner = QLockFile(str(lock_path))
+            self.assertTrue(owner.tryLock(0))
+            try:
+                info = QLockFile(str(lock_path)).getLockInfo()
+                self.assertEqual(len(info), 3)
+                self.assertEqual(info[0], process.pid)
+                boundary = Mock(side_effect=RuntimeError('controlled Win32 boundary'))
+                with patch.object(self.smoke.ctypes, 'WinDLL', boundary, create=True):
+                    with self.assertRaisesRegex(RuntimeError, '^controlled Win32 boundary$'):
+                        self.smoke.native_ready(process, lock_path)
+                    boundary.assert_called_once_with('user32', use_last_error=True)
+                    owner.unlock()
+                    boundary.reset_mock()
+                    self.assertFalse(self.smoke.native_ready(process, lock_path))
+                    boundary.assert_not_called()
+                self.assertEqual(settings.read_bytes(), b'unchanged existing settings')
+                self.assertEqual(list(root.iterdir()), [settings])
+            finally:
+                owner.unlock()
+
     def test_native_probe_rejects_dialog_wrong_lock_and_hung_gui(self):
         # Synthetic Win32 API boundary only. No native GUI proof is claimed.
         from PySide6 import QtCore
         process = Mock(pid=123, _handle=456)
         process.poll.return_value = None
         lock = Mock()
-        lock.getLockInfo.return_value = (True, 123, 'fixture', 'MarsDisplay')
+        lock.getLockInfo.return_value = (123, 'fixture', 'MarsDisplay')
         lock.tryLock.return_value = False
         user32 = Mock()
         user32.WaitForInputIdle.return_value = 0
@@ -333,7 +363,7 @@ class SmokeTests(unittest.TestCase):
             user32.IsWindowVisible.return_value = False
             user32.SendMessageTimeoutW.return_value = 0
             self.assertFalse(self.smoke.native_ready(process, Path('fixture.lock')))
-            lock.getLockInfo.return_value = (True, 999, 'fixture', 'other')
+            lock.getLockInfo.return_value = (999, 'fixture', 'other')
             self.assertFalse(self.smoke.native_ready(process, Path('fixture.lock')))
         lock.unlock.assert_not_called()
 

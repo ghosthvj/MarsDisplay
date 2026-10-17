@@ -45,8 +45,8 @@ def native_ready(process, lock_path):
     from PySide6.QtCore import QLockFile
     lock = QLockFile(str(lock_path))
     lock.setStaleLockTime(0)
-    valid, pid, _, _ = lock.getLockInfo()
-    if not valid or pid != process.pid:
+    pid, _, _ = lock.getLockInfo()
+    if pid <= 0 or pid != process.pid:
         return False
     if lock.tryLock(0):
         lock.unlock()
