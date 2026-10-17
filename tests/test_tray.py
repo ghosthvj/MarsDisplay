@@ -6,8 +6,8 @@ from threading import Event
 import unittest
 from unittest.mock import patch
 
-from PySide6.QtCore import QEvent, QEventLoop, QTimer, Qt
-from PySide6.QtGui import QKeyEvent, QPalette
+from PySide6.QtCore import QEvent, QEventLoop, QPointF, QTimer, Qt
+from PySide6.QtGui import QKeyEvent, QMouseEvent, QPalette
 from PySide6.QtWidgets import QApplication
 
 from mars_display.frames import RGBFrame
@@ -214,6 +214,34 @@ class TrayTests(unittest.TestCase):
         self.assertEqual(button.text(), "Start capture")
         self.assertTrue(button.isEnabled())
         self.assertEqual(shell.coordinator.snapshot().frames_sent, 1)
+        self.assertEqual(self.store.path.read_bytes(), original)
+
+    def test_stop_press_cannot_turn_into_restart_if_capture_exhausts_before_release(self):
+        shell = self.make(wait_override=lambda cancel, seconds: cancel.is_set())
+        self.session.allow_open.set()
+        self.session.allow_close.set()
+        shell.start_action.trigger()
+        until(lambda: shell.coordinator.snapshot().state == "running")
+        shell.show_settings()
+        APP.processEvents()
+        button = shell.dialog.capture_action
+        position = QPointF(button.rect().center())
+        APP.sendEvent(button, QMouseEvent(QEvent.Type.MouseButtonPress, position, position,
+                                         Qt.MouseButton.LeftButton, Qt.MouseButton.LeftButton,
+                                         Qt.KeyboardModifier.NoModifier))
+        self.assertTrue(button.isDown())
+        self.session.read_error = True
+        until(lambda: shell.dialog.runtime.text() == "error")
+        self.assertEqual(button.text(), "Start capture")
+        retained = shell.coordinator.snapshot().frames_sent
+        original = self.store.path.read_bytes()
+        self.session.read_error = False
+        APP.sendEvent(button, QMouseEvent(QEvent.Type.MouseButtonRelease, position, position,
+                                         Qt.MouseButton.LeftButton, Qt.MouseButton.NoButton,
+                                         Qt.KeyboardModifier.NoModifier))
+        self.assertEqual(shell.coordinator.snapshot().state, "stopped")
+        self.assertFalse(shell.coordinator.snapshot().worker_alive)
+        self.assertEqual(shell.coordinator.snapshot().frames_sent, retained)
         self.assertEqual(self.store.path.read_bytes(), original)
 
     def test_url_footer_and_feedback_follow_stopped_only_authority(self):

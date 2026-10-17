@@ -329,7 +329,9 @@ The window groups capture status, MARS/output observations and configuration,
 with a painted monitor icon and a fixed Save footer. Its body scrolls on smaller
 windows. Values remain plain text, including saved device identity.
 The lifecycle card's **Start capture / Stop capture** button delegates to the
-same guarded tray actions. During capture/recovery/cleanup the URL is read-only
+same guarded tray actions. Its intent is fixed when pressed, so a Stop cannot
+become an unintended restart if recovery finishes before mouse release.
+During capture/recovery/cleanup the URL is read-only
 and Save is disabled. In terminal error the primary button can restart capture;
 use tray Stop to return to editable settings. The footer explains the current
 restriction; obsolete runtime errors and saved-while-stopped feedback are cleared.

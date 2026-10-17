@@ -242,6 +242,8 @@ class TrayShell(QObject):
         self.stop_action.triggered.connect(lambda: self._request(coordinator.stop))
         self.exit_action.triggered.connect(lambda: self._request(coordinator.request_exit))
         self.dialog.save.clicked.connect(self._save)
+        self._capture_intent = None
+        self.dialog.capture_action.pressed.connect(self._capture_pressed)
         self.dialog.capture_action.clicked.connect(self._capture_request)
         self.tray = QSystemTrayIcon(_icon(), self)
         self.tray.setToolTip("MarsDisplay — simulated output")
@@ -264,11 +266,15 @@ class TrayShell(QObject):
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
             self.show_settings()
 
+    def _capture_pressed(self):
+        # Preserve intent across worker state changes between press and release.
+        self._capture_intent = (
+            self.stop_action if self.dialog.capture_action.property("operation") == "stop"
+            else self.start_action)
+
     def _capture_request(self):
-        # Use the displayed intent; never turn a queued Stop into a new Start.
-        action = (self.stop_action if self.dialog.capture_action.property("operation") == "stop"
-                  else self.start_action)
-        if action.isEnabled():
+        action, self._capture_intent = self._capture_intent, None
+        if action is not None and action.isEnabled():
             action.trigger()
 
     def _request(self, operation):
