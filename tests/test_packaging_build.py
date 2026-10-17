@@ -119,7 +119,7 @@ class BuildTests(unittest.TestCase):
         # Diagnostic schema must not become an accepted native-material mapping.
         native = self.repo / 'native-rejection'; native.mkdir()
         (native / 'native.json').write_bytes(reports[0].read_bytes())
-        with self.assertRaisesRegex(ValueError, 'Incomplete native qualification'):
+        with self.assertRaisesRegex(ValueError, 'Unsupported native material schema'):
             self.builder.collect_native(self.runtime, self.info, native)
 
     def test_evidence_failure_preserves_original_rejection_and_prior_bytes(self):
@@ -231,25 +231,20 @@ class BuildTests(unittest.TestCase):
         native = self.repo / 'material'; native.mkdir()
         with self.assertRaisesRegex(ValueError, 'native'):
             self.builder.collect_native(self.runtime, self.info, native)
-        name = '_internal/PySide6/plugins/platforms/qwindows.dll'
-        (native / 'LICENSE.txt').write_bytes(b'actual native fixture legal text')
-        record = {'path': name, 'sha256': hashlib.sha256(self.runtime[name]).hexdigest(),
-                  'component': 'Qt platform fixture', 'version': '6.12.0',
-                  'sources': ['https://example.org/qt/source'], 'licenses': ['LICENSE.txt']}
-        manifest = {'qualification': 'Manually reviewed fixture, not legal certification', 'components': [record],
-                    'license_sha256': {'LICENSE.txt': hashlib.sha256((native / 'LICENSE.txt').read_bytes()).hexdigest()}}
-        (native / 'native.json').write_text(json.dumps(manifest))
-        items, texts = self.builder.collect_native(self.runtime, self.info, native)
-        self.assertEqual(items, [record])
-        self.assertEqual(texts['native/LICENSE.txt'], b'actual native fixture legal text')
-        for change in ('hash', 'missing', 'source'):
-            bad = json.loads(json.dumps(manifest))
-            if change == 'hash': bad['components'][0]['sha256'] = '0' * 64
-            elif change == 'missing': bad['components'] = []
-            else: bad['components'][0]['sources'] = ['https://user:private@example.org/']
-            (native / 'native.json').write_text(json.dumps(bad))
-            with self.subTest(change=change), self.assertRaises(ValueError):
-                self.builder.collect_native(self.runtime, self.info, native)
+        from test_packaging_native_material import material_fixture
+        manifest, facts = material_fixture(native, self.runtime)
+        with patch.object(self.builder, '_load', return_value=Mock(collect=Mock(return_value=facts))):
+            items, texts = self.builder.collect_native(self.runtime, self.info, native)
+            self.assertEqual(items, manifest['components'])
+            self.assertEqual(texts['native/LICENSE.txt'], (native / 'LICENSE.txt').read_bytes())
+            for change in ('hash', 'missing', 'source'):
+                bad = json.loads(json.dumps(manifest))
+                if change == 'hash': bad['components'][0]['sha256'] = '0' * 64
+                elif change == 'missing': bad['components'] = []
+                else: bad['components'][0]['sources'] = ['https://user:private@example.org/']
+                (native / 'native.json').write_text(json.dumps(bad))
+                with self.subTest(change=change), self.assertRaises(ValueError):
+                    self.builder.collect_native(self.runtime, self.info, native)
 
     def test_invalid_version_and_changed_source_do_not_publish(self):
         self.info['version'] = '../escape'

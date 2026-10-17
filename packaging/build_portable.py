@@ -81,24 +81,61 @@ def collect_native(runtime, inventory, material_root):
     except (OSError, ValueError):
         raise ValueError('Missing reviewed native notices: build/native-material/native.json; Windows qualification is pending') from None
     manifest = json.loads(raw)
-    if set(manifest) != {'qualification', 'components', 'license_sha256'} or not manifest['qualification']:
+    if (not isinstance(manifest, dict) or manifest.get('schema') != 'marsdisplay-native-material-v2'
+            or set(manifest) != {'schema', 'qt_release', 'qualification', 'components', 'material_sha256'}):
+        raise ValueError('Unsupported native material schema; expected marsdisplay-native-material-v2')
+    if not isinstance(manifest['qualification'], str) or not manifest['qualification'].strip():
         raise ValueError('Incomplete native qualification')
+    if manifest['qt_release'] != inventory['build']['Qt']:
+        raise ValueError('Native Qt release does not match build inventory')
     required = {name for name in runtime if name.startswith('_internal/PySide6/') and Path(name).suffix.lower() in {'.dll', '.pyd'}}
     components = manifest['components']
-    if not required or len(components) != len(required) or {item['path'] for item in components} != required:
+    if (not isinstance(components, list) or not required or len(components) != len(required)
+            or any(not isinstance(item, dict) or not isinstance(item.get('path'), str) for item in components)
+            or {item['path'] for item in components} != required):
         raise ValueError('Unmapped native Qt payload; binding texts are not native coverage')
-    texts = payload.read_tree(material_root, manifest['license_sha256'])
-    for name, digest in manifest['license_sha256'].items():
+    materials = manifest['material_sha256']
+    if (not isinstance(materials, dict) or not materials
+            or any(not isinstance(digest, str) or not re.fullmatch('[a-f0-9]{64}', digest) for digest in materials.values())):
+        raise ValueError('Native material SHA256 mismatch')
+    texts = payload.read_tree(material_root, materials)
+    for name, digest in materials.items():
         if hashlib.sha256(texts[name]).hexdigest() != digest:
-            raise ValueError('Native license SHA256 mismatch')
+            raise ValueError('Native material SHA256 mismatch')
     for item in components:
-        if (set(item) != {'path', 'sha256', 'component', 'version', 'sources', 'licenses'}
-                or not item['component'] or item['version'] != inventory['build']['Qt']
+        if (set(item) != {'path', 'sha256', 'component', 'version', 'sources', 'licenses', 'version_evidence', 'binary_evidence'}
+                or not isinstance(item['component'], str) or not item['component'].strip()
+                or not isinstance(item['version'], str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9.+_!~-]{0,127}', item['version'])
                 or hashlib.sha256(runtime[item['path']]).hexdigest() != item['sha256']
-                or not item['sources'] or not item['licenses'] or not set(item['licenses']) <= texts.keys()):
+                or not isinstance(item['binary_evidence'], dict)
+                or not isinstance(item['sources'], list) or not item['sources']
+                or any(not isinstance(url, str) for url in item['sources'])):
+            raise ValueError('Incomplete or mismatched native component provenance')
+        for field in ('licenses', 'version_evidence'):
+            references = item[field]
+            if (not isinstance(references, list) or not references
+                    or any(not isinstance(name, str) or name not in texts for name in references)):
+                raise ValueError('Incomplete or mismatched native component provenance')
+        if set(item['licenses']) & set(item['version_evidence']):
             raise ValueError('Incomplete or mismatched native component provenance')
         for url in item['sources']:
             payload._source_reference(url)
+    # Admission above binds reviewed source claims to raw material, not PE/owner
+    # version inference. Verification below always measures current runtime bytes.
+    try:
+        fresh = _load('native_evidence').collect({name: runtime[name] for name in sorted(required)}, inventory)
+        valid = isinstance(fresh, dict) and set(fresh) == required
+        for item in components:
+            fact = fresh.get(item['path'], {})
+            valid = (valid and fact.get('sha256') == item['sha256']
+                     and fact.get('pe', {}).get('status') in {'measured', 'absent'}
+                     and fact.get('origins', {}).get('record_status') == 'available'
+                     and fact.get('origins', {}).get('status') in {'matched', 'unknown'}
+                     and item['binary_evidence'] == fact)
+    except Exception:
+        valid = False
+    if not valid:
+        raise ValueError('Native binary evidence does not match verifiable current facts')
     return components, {'native/native.json': raw, **{'native/' + name: data for name, data in texts.items()}}
 
 
@@ -211,7 +248,7 @@ def build(repo, *, run=None, qualify=None, smoke_check=None):
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description='Build a windowed portable ZIP on native Windows x64 (Python 3.13.x). No downloads; requires pinned SDK and package-local Chromium.',
-        epilog='Requires reviewed build/native-material/native.json and genuine native license texts. Missing qualification fails closed. Existing outputs are never replaced.')
+        epilog='Requires reviewed build/native-material/native.json (marsdisplay-native-material-v2), genuine license/source-version proof and fresh binary evidence. Missing qualification fails closed. Existing outputs are never replaced.')
     parser.parse_args(argv)
     try:
         _, archive, checksum = build(Path(__file__).absolute().parents[1])

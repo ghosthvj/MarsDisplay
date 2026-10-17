@@ -98,8 +98,12 @@ Run39036811563 verified removal of the four roots and Qt OpenGL/Pdf/Qml/
 QmlMeta/QmlModels/QmlWorkerScript/Quick/Svg/VirtualKeyboard DLLs. Core/Gui/Network/
 Widgets, required plugins, Mesa and CRT remained; packaged smoke passed. This is
 not normal Exit/Windows 11 acceptance or native-license approval. The diagnostic
-facts below still need actual Windows measurement before correcting the
-component-version/provenance model. No qualification gate is relaxed here.
+facts were subsequently measured in run39038363658/29f18f7: 123 native files,
+101 measured PE versions/22 absent, 46 RECORD associations/77 unknown, none
+unavailable. Qt PE6.12.0.0 differs from PySide-prefix CRT14.44.35211.0; bindings
+and Mesa lack PE versions but have owner6.12.0. Owner version is not Mesa source
+release. The explicit v2 model below separates these dimensions; genuine native
+materials and exact Mesa source/build-recipe evidence remain unresolved.
 
 ## Frozen runtime selection, not relaxed validation
 
@@ -141,8 +145,8 @@ app uses launch, and settings remain under `%LOCALAPPDATA%\\MarsDisplay`.
 
 ## Native material is a real, unresolved gate
 
-The broad Windows inventory has been inspected, but component attribution and
-the component-version model remain incomplete. Binding license texts and the
+Windows inventories and numeric/owner facts exist, but authentic component
+source/version attribution remains incomplete. Binding license texts and the
 56 registered [official source inputs](../third_party/license-material/README.md)
 are not complete native/plugin attribution. Missing/unmapped native material
 still fails before distribution. There is no legal-certification claim.
@@ -157,23 +161,55 @@ Native material investigation and an evidence-provisioning decision are still
 needed before a qualified build can succeed. Do not insert synthetic material
 or treat a diagnostic upload as distribution clearance.
 
-Manifest schema (all paths relative, checked by `payload.read_tree`):
+### Explicit native-material v2 (no implicit migration)
 
-- `qualification`: nonempty explanation of the review and its limits.
-- `components`: exactly one record for **every** bundled `.dll`/`.pyd` beneath
-  `_internal/PySide6/`, including binding extensions and platform/image plugins.
-  Each record has `path`, exact binary `sha256`, `component`, actual Qt `version`,
-  public HTTPS `sources`, and nonempty `licenses` pointing to the genuine texts.
-- `license_sha256`: mapping of those relative text paths to measured SHA256.
+`native.json` must use `schema: marsdisplay-native-material-v2`. Legacy,
+unknown and UNQUALIFIED diagnostic schemas are rejected; there is no automatic
+conversion or manifest generator. The unchanged missing-input error remains:
+`Missing reviewed native notices: build/native-material/native.json; Windows qualification is pending`.
 
-The current gate incorrectly requires every listed component version to match
-`qVersion()`, including non-Qt CRT components. Correcting that model/provenance
-is the **next unit**, not part of this plugin policy. Do not fabricate Qt versions
-for other components or supply a pass-through manifest. Binary/hash, license
-path/hash and source checks remain fail-closed; unknown or extra mappings fail. The complete manifest/texts travel in `notices/native/`. This is
-byte/provenance binding, not an automatic legal auditor: the operator must
-actually establish native third-party attribution and corresponding-source
-sufficiency. Other SDK/native obligations must also be reviewed before delivery.
+Top-level fields are exactly:
+
+- `schema`: the v2 ID above.
+- `qt_release`: exact `inventory.build.Qt` stack release, not a label for CRT,
+  Mesa or every component's source release.
+- `qualification`: nonempty manual-review explanation and limitations.
+- `material_sha256`: nonempty relative path→SHA256 map covering genuine license
+  texts **and separately referenced source-version proof documents**. The strict
+  reader verifies exact nonempty bytes, safe paths and absence of symlinks.
+- `components`: exactly one record for each required PySide-prefix native file.
+
+Each component has exactly `path`, binary `sha256`, `component`, `version`,
+`sources`, `licenses`, `version_evidence` and `binary_evidence`:
+
+- `version` is the manually reviewed **upstream source release** claim (a bounded
+  1–128-character ASCII version token). It is not inferred from Qt, PE numeric
+  values, a basename or the installed wheel's version.
+- `sources` are nonempty public HTTPS source references. `licenses` and
+  `version_evidence` are nonempty lists referencing hashed material; their paths
+  must be disjoint. Version evidence must genuinely support the exact source
+  release and binary/source correspondence, not substitute PE/RECORD diagnostics
+  or generic license text. **Human semantic/authenticity review is required**:
+  structural checks bind claims to bytes but cannot certify what a document proves.
+- `binary_evidence` must equal a **fresh** `native_evidence.collect` record from
+  current runtime bytes, including SHA256, PE status/versions and all RECORD-owner
+  matches. Measurement runs only after manifest/schema/material admission; a
+  downloaded diagnostic, cached inventory or caller claim is never verification.
+
+Explicit fresh PE `absent` is legitimate, for example for bindings; `unknown` or
+`unavailable` cannot verify a required comparison. RECORD `unknown` with
+`record_status: available` stays explicitly unknown, neither automatically
+licensed nor unlicensed. Unavailable RECORD metadata cannot verify comparison.
+CRT source release and PE14.44 remain independent of Qt6.12. A Mesa owner6.12
+association alone cannot supply its upstream version or source proof.
+
+The mapping scope remains exactly the current **33** `.dll`/`.pyd` files beneath
+`_internal/PySide6/`; no scope expansion to Shiboken or the other 90 native files
+is made here. Their existing source/license obligations remain follow-up work.
+Complete manifest and raw materials travel in `notices/native/`. Genuine inputs,
+especially exact Mesa supplier archive/SBOM/build-recipe binding, are still
+missing. Synthetic tests cannot close that gap; no real manifest/qualified ZIP
+has been created, and no repeated Windows CI is warranted before resolving it.
 
 ## Exact winldd notices, not a browser exemption
 
@@ -228,11 +264,12 @@ its exclusive-create and owned-rollback rules.
 
 ## Per-file native evidence — diagnostic facts only
 
-The optional additive `native_evidence` map is computed **only while retaining a
-failure diagnostic**, from the same immutable runtime bytes as `native_files`.
-Schema-v1, original native hash map, source/version fields, failure phase and
-smoke status stay unchanged. No evidence is supplied to qualification or final
-publication, and no native.json, approval flag or new CLI option is created.
+The additive diagnostic `native_evidence` field is still computed **only while
+retaining a failure diagnostic**, from the same immutable bytes as `native_files`.
+Its schema-v1, existing fields and failure flow stay unchanged. Separately, v2
+material admission deliberately calls the same helper afresh for required
+binaries to verify declared `binary_evidence`; it never trusts archived diagnostic
+facts. No native.json, approval flag or new CLI option is generated.
 
 Each native path carries its matching SHA256 plus:
 
@@ -263,9 +300,10 @@ owner association—not upstream supplier, source provenance or license coverage
 
 Supplemental collection failure emits hash-bound `status: unavailable` entries
 and preserves the original build failure and prior files. Unknown facts are not
-qualification evidence. Actual facts for the 123-file Windows candidate require
-the next parent-controlled CI run; synthetic source tests establish no native
-version/origin proof. The current Qt-version-for-CRT gate remains unchanged.
+source-version proof or legal approval. Run39038363658 measured real facts for
+123 native files, but those archived facts are not current verification inputs.
+The v2 model requires fresh facts plus separately supported source claims;
+synthetic tests establish neither native facts nor genuine material sufficiency.
 
 ## Packaged smoke is not Windows acceptance
 
