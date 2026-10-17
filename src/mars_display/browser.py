@@ -187,7 +187,8 @@ class BrowserSession:
                 self._page.set_viewport_size(size)
             # Fonts and three matching animation-frame layout observations are
             # bounded; no network-idle wait (MARS keeps an SSE connection).
-            self._page.wait_for_function(_SETTLED, polling="raf", timeout=_TIMEOUT)
+            settled_handle = self._page.wait_for_function(_SETTLED, polling="raf", timeout=_TIMEOUT)
+            settled_handle.dispose()
             before = self._metadata()
             if before["state"] != "ready" or any(before[k] != data[k] for k in
                                                       ("orientation", "width", "height", "server")):

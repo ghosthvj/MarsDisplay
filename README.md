@@ -6,6 +6,10 @@ drive a physical USB screen.
 
 ## Download the verified portable prototype
 
+**Memory correction pending delivery:** source 0.1.2 releases the temporary
+Playwright layout-wait handle after every capture. The 0.1.1 download below
+predates this fix and retains one handle per captured frame until Stop.
+
 [Download MarsDisplay 0.1.1 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39055573997/artifacts/12109691322)
 from the [successful native build](https://github.com/ghosthvj/MarsDisplay/actions/runs/39055573997).
 This corrects premature metadata rejection when MARS mounts its display root
@@ -37,10 +41,20 @@ all **1,221 file hashes** and **325 source hashes** were verified. SHA256:
 Exact artifact source: `5d0de48b4f08c38a33c5027195e18841fe2c86d4`.
 A real MARS capture passed with the corrected source on Linux. Owner Windows
 screenshots show running/ready, live connected, non-stale data and increasing
-frame counts, but do not identify the tested ZIP version.
-**T6 remains partial:** confirm that version, normal Stop/Exit and owned-process
-cleanup, network recovery, and sustained CPU/RAM for the whole Node/Chromium
-process tree. The observed 36.7 MB / 0% snapshot is not aggregate resource proof.
+frame counts; the owner confirmed these tests used the delivered 0.1.1 ZIP.
+The owner also confirmed Start, Stop, restart and normal Exit. Screenshots show
+the lifetime frame count retained across Stop/restart (30 to 36).
+Later owner screenshots show unreachable-source retry exhaustion with unchanged
+frames, capture resumed after URL restoration, and Ethernet-loss/live restoration
+with appropriate stale flags. The owner confirmed both observed Node processes
+disappear after Stop. Separate snapshots suggest an initial combined 184–186 MB,
+not a simultaneous total or sustained benchmark. The same EXE PID later grew
+from 34–36.4 MB to 42.6–42.7 MB and then 45.9 MB at 3,671 frames.
+A local isolated reproduction confirmed one retained layout-wait handle per
+capture; source 0.1.2 corrects that retention without changing rendering policy.
+**T6 remains partial:** sustained whole-process CPU/RAM, remaining Chromium/Exit
+cleanup and Stop-during-retry cancellation still need evidence. Source object
+lifetime checks do not establish the corrected Windows working-set bound.
 Windows Server CI is not Windows 11 acceptance or hardware support. Later
 documentation-only commits do not rebuild this artifact.
 
@@ -284,7 +298,7 @@ MARS still owns content, selection, order, dwell, SSE and orientation.
 | Browser ownership | Forces `PLAYWRIGHT_BROWSERS_PATH=0` before starting the driver. Uses only Playwright's bundled headless Chromium, with sandbox enabled, default TLS validation and device scale factor 1. No persistent profile, user-browser attachment, copied credentials, executable fallback or TLS bypass. |
 | Navigation | Only the owned main frame may issue requests; extra pages are closed and popup/subframe requests are rejected before forwarding, even at the same URL. Only the configured capture URL is admitted for document navigation. The initial document response is fetched once with redirects disabled, then fulfilled into the page; redirects and unsuccessful HTTP responses fail without following login paths. Main-frame subresources remain the frontend's responsibility. |
 | Readiness | Exactly one `#mars-display`, version 1, valid state/orientation/nominal width and height, boolean live flag and optional boolean stale flag; ready also requires a nonblank server ID. HTTP 200 or a login page alone is never ready. |
-| Capture | Loading/empty return no frame. Ready waits for loaded fonts and three matching animation-frame layout observations, aligns the viewport, verifies root geometry and captures only that region as PNG in memory. Pillow decodes immutable RGB bytes through `RGBFrame` validation, with a monotonic timestamp. No resizing. |
+| Capture | Loading/empty return no frame. Ready waits for loaded fonts and three matching animation-frame layout observations, releases the temporary wait handle, aligns the viewport, verifies root geometry and captures only that region as PNG in memory. Pillow decodes immutable RGB bytes through `RGBFrame` validation, with a monotonic timestamp. No resizing. |
 | Transitions | Metadata and geometry are read again after capture. A state/server/orientation/geometry/freshness transition discards the frame. The next read reevaluates orientation; it never delivers a mismatched frame. |
 | Errors | `BrowserError` messages contain no URL/backend exception. Display errors and malformed/missing metadata raise for coordinator recovery. Live-disconnected/stale flags remain independent observations, never claims of server health/unreachability. |
 | Stop/cleanup | Navigation, metadata, font/layout and screenshot operations have explicit 1,500 ms timeouts per operation, not a whole-read deadline. Close releases only the owned browser and Playwright driver, including partial setup failures. Backend close has no Playwright timeout option; cleanup failure is reported rather than silently acknowledged. |
@@ -387,7 +401,7 @@ API tests do not qualify native enumeration or any physical driver.
 
 The GUI composes the browser and simulated transport. The version 1 `/display`
 contract has now produced a real MARS frame with corrected source; owner Windows
-screenshots also show ongoing capture, with exact ZIP identity still to confirm.
+screenshots also show ongoing capture, confirmed by the owner as the 0.1.1 ZIP.
 MARS continues to own content, selection, order, dwell, live updates and orientation.
 No server-side rendering, extra product control endpoint or protocol was added.
 

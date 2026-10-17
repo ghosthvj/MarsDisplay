@@ -1,5 +1,7 @@
 """Real bundled Chromium against loopback only; no MARS or user profile."""
 from collections import Counter
+import gc
+import weakref
 from pathlib import Path
 from time import monotonic
 import unittest
@@ -72,6 +74,36 @@ class BrowserTests(unittest.TestCase):
                 self.assertEqual(len(fetches), 1 + int(landscape), events)
                 self.assertTrue(all(dict(e.details)["status"] == 200 for e in fetches), events)
                 self.assertTrue(all(e.navigation_id is not None for e in fetches), events)
+
+    def test_capture_releases_temporary_wait_handles_before_session_close(self):
+        observed = []
+        original_wait = Page.wait_for_function
+
+        def observe_wait(page, *args, **kwargs):
+            handle = original_wait(page, *args, **kwargs)
+            observed.append(weakref.ref(handle))
+            return handle
+
+        self.session.open()
+        previous = monotonic()
+        with patch.object(Page, "wait_for_function", observe_wait):
+            for _ in range(20):
+                sample = self.session.read()
+                self.assertEqual(sample.state, "ready")
+                self.assertEqual((sample.live_connected, sample.data_stale), (True, False))
+                self.assertEqual((sample.frame.width, sample.frame.height), (320, 480))
+                self.assertEqual(sample.frame.rgb, bytes((17, 34, 51)) * (320 * 480))
+                self.assertLessEqual(previous, sample.frame.captured_at)
+                previous = sample.frame.captured_at
+        gc.collect()
+        self.assertTrue(observed, "Observe the real public wait API, not a fake capture")
+        self.assertEqual(sum(reference() is not None for reference in observed), 0,
+                         "Temporary wait handles must not accumulate until Stop")
+        self.assertEqual(self.requests, Counter({"/display": 1}), self.request_details)
+        snapshot = self.request_details
+        self.assertEqual(Counter(dict(snapshot.counts)),
+                         Counter(dict(snapshot.owned_counts)) + Counter(dict(snapshot.foreign_counts)))
+        self.session.close()
 
     def test_loading_empty_and_independent_freshness(self):
         for state, live, stale in (("loading", "false", "true"), ("empty", "true", "false")):
