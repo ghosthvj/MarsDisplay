@@ -5,7 +5,7 @@ from PySide6.QtCore import QLockFile, QObject, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QDialog, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMenu,
-    QPushButton, QScrollArea, QSizePolicy, QSystemTrayIcon, QVBoxLayout, QWidget,
+    QPushButton, QScrollArea, QSystemTrayIcon, QVBoxLayout, QWidget,
 )
 
 from .lifecycle import Coordinator, LifecycleError
@@ -144,14 +144,12 @@ class SettingsDialog(QDialog):
         runtime_text = QVBoxLayout()
         runtime_text.addWidget(_label("Capture lifecycle", "muted"))
         runtime_text.addWidget(self.runtime)
-        self.capture_row.addLayout(runtime_text)
-        self.capture_row.addStretch()
+        self.capture_row.addLayout(runtime_text, 1)
         self.capture_action = QPushButton("Start capture")
         self.capture_action.setAutoDefault(False)
         self.capture_row.addWidget(self.capture_action)
         column.addWidget(self.runtime_card)
         self.source = _label("stopped", "sourceBadge")
-        self.source.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
         self.output = _label("Simulated — simulated-closed (no USB output)")
         self.metadata = _label()
         self.frames = _label("0", "frames")
@@ -165,7 +163,8 @@ class SettingsDialog(QDialog):
             ("Source metadata", self.metadata), ("Frames sent (lifetime)", self.frames),
         )):
             details.addWidget(_label(title, "muted"), index * 2, 0)
-            details.addWidget(widget, index * 2, 1)
+            alignment = Qt.AlignmentFlag.AlignLeft if index == 0 else Qt.AlignmentFlag(0)
+            details.addWidget(widget, index * 2, 1, alignment)
             line = QFrame()
             line.setObjectName("separator")
             line.setFixedHeight(1)

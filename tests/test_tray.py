@@ -173,8 +173,16 @@ class TrayTests(unittest.TestCase):
         dialog.resize(600, 480)
         APP.processEvents()
         self.assertTrue(dialog.save.isVisible())
+        self.assertGreaterEqual(dialog.output.width(), 200)
+        self.assertGreaterEqual(dialog.metadata.width(), 200)
         self.assertLessEqual(dialog.footer.geometry().bottom(), dialog.height())
         self.assertGreater(dialog.scroll_area.verticalScrollBar().maximum(), 0)
+        with patch.object(shell.coordinator, "snapshot", return_value=replace(
+                shell.coordinator.snapshot(), state="retrying", worker_alive=True)):
+            shell.refresh()
+            APP.processEvents()
+            self.assertGreaterEqual(dialog.runtime.height(),
+                                    dialog.runtime.heightForWidth(dialog.runtime.width()))
         dialog.close()
         self.assertFalse(dialog.isVisible())
         shell.show_settings()
