@@ -45,8 +45,9 @@ source](packaging/README.md) now supplies a windowed recipe, isolated packaged
 startup smoke and restricted workflow source. No Windows executable/ZIP has been
 delivered: native material qualification and actual Windows build/smoke proof
 remain outstanding. T5 stays in progress. The owner authorized feature-branch
-CI/test artifacts; the first Windows run failed in source integration tests,
-before native compilation. No ZIP was published.
+CI/test artifacts. After the first source-test failure, Windows run39026203729
+passed source tests but failed before compilation on missing winldd legal
+material; its artifact list was empty. No Windows executable/ZIP was delivered.
 
 ## Run the source tests
 
@@ -373,7 +374,13 @@ explicitly authorized Windows run may remain red for missing native material
 while uploading only a clearly unqualified diagnostic; it cannot currently deliver
 a qualified ZIP. These reports contain hashes/versions/smoke status, not binaries,
 source or approval evidence. SDK/compile failure may produce no report and remains
-a failure. No push or CI run is authorized here. Keep all auxiliary files; settings persist per user
+a failure. Owner authorization covers T5 branch pushes, Windows CI and seven-day
+test artifacts; this source correction executed none. The exact winldd1007
+`PrintDeps.exe` notice fallback now retains the embedded core beta's verified
+root texts and complete source with both MIT and Apache-2.0 headers, plus build
+provenance—not a whole-Playwright exemption or native Qt qualification. See the
+packaging guide for the exact core/commit distinction and fail-closed checks.
+Keep all auxiliary files; settings persist per user
 outside the extracted folder. This is an unsigned prototype, not an invitation
 to disable Windows security. No administrator/end-user installation is required.
 Actual Windows build/ZIP/smoke and owner-run Windows 11 acceptance are still

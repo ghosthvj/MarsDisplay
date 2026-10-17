@@ -2,9 +2,11 @@
 
 The native builder, spec, isolated executable smoke and workflow **source** now
 exist. No Windows executable/ZIP has been delivered or qualified. T5 remains in
-progress. Owner-authorized feature-branch CI has started; its first run failed
-in source integration tests before native compilation. No qualified artifact
-exists. Linux SDK/EXE fixtures are synthetic, never runnable Windows proof.
+progress. Owner-authorized feature-branch CI has started. After the first run's
+source-test failure, run **39026203729 passed Windows source tests**, then failed
+before compilation with `Missing browser license material: winldd`. Its artifact
+list was empty: no diagnostic or binary ZIP existed. Linux SDK/EXE fixtures are
+synthetic, never runnable Windows proof.
 
 ## Developer commands (native Windows x64 only)
 
@@ -47,7 +49,7 @@ refuses it instead of repairing or overwriting it.
 ## Native material is a real, unresolved gate
 
 The installed Windows Qt payload has **not** been inspected. Binding license
-texts and the 52 immutable [official source inputs](../third_party/license-material/README.md)
+texts and the 56 registered [official source inputs](../third_party/license-material/README.md)
 are not complete native/plugin attribution. Missing/unmapped native material
 fails before distribution. There is no legal-certification claim.
 
@@ -76,6 +78,32 @@ mappings fail. The complete manifest/texts travel in `notices/native/`. This is
 byte/provenance binding, not an automatic legal auditor: the operator must
 actually establish native third-party attribution and corresponding-source
 sufficiency. Other SDK/native obligations must also be reviewed before delivery.
+
+## Exact winldd notices, not a browser exemption
+
+Windows Playwright installs the hermetic dependency tool
+`package/.local-browsers/winldd-1007/PrintDeps.exe`. The pinned Python package
+1.64.0 embeds **playwright-core 1.64.0-beta-1791568591000**, whose official npm
+source gitHead is `1b2924712024804936dbcfe9fabaa655d52325e5`, not the stable
+JavaScript 1.64.0 tag. Do not infer source identity from the Python pin alone.
+
+`collect_vendor(driver, *, material_root=None)` retains installed local tool
+legal texts first. Only their absence permits the exact core/revision/source
+mapping: verified root LICENSE/NOTICE, complete PrintDeps.cpp retaining Julien
+Waechter's MIT text **and** Microsoft's Apache-2.0 header, and BUILD_NUMBER1007.
+The build-number file is provenance, never labeled a license. All four raw files,
+commit-pinned URLs and hashes travel with notices/source. Their supplementary
+registry mappings stay `packages: []`, never whole-Playwright fallback coverage.
+The registered set now contains 56 raw inputs plus registry/README (58 shared
+files). The original 52 raw inputs are unchanged.
+
+Missing/unknown/mismatched core, tool revision, executable or immutable material
+fails closed. Empty, broken, unsafe or altered installed texts cannot select
+fallback. `material_root` is a local fixture seam, not a CLI option, downloader
+or bypass. A declared winldd inventory must contain exactly one numeric revision
+with its exact `PrintDeps.exe`; stale README-only paths do not count. Chromium
+headless shell and FFmpeg remain mandatory. This source correction supplies no
+native Qt qualification, actual Windows build/smoke or legal certification.
 
 ## Unqualified diagnostics, not approval evidence
 
@@ -175,8 +203,16 @@ installed the Windows SDK/browser but failed a source integration wait before
 compilation. The test now scopes cleanup to each orientation and uses a bounded
 15-second first/restarted-frame budget with selected-state diagnostics; exact
 RGB, request counts and settings checks remain. Production timeouts/retries
-are unchanged. A new-commit run is required; this is not a successful build.
-Server 2025 is not Windows 11 acceptance.
+are unchanged. The second authorized run
+[39026203729](https://github.com/ghosthvj/MarsDisplay/actions/runs/39026203729)
+passed source tests but stopped during precompile vendor collection on winldd's
+missing legal material; artifacts were `[]`, despite the missing-file upload
+step succeeding. The bounded source correction above addresses that exact
+notice gap, not native Qt qualification. A subsequent parent-controlled run is
+still needed; no Windows compilation, packaged smoke or ZIP success is claimed.
+Owner authorization covers T5 branch pushes/CI and seven-day test artifacts;
+none was executed by this correction worker. Server 2025 is not Windows 11
+acceptance.
 
 After a future authorized successful run, download `MarsDisplay-Windows-x64`
 from the run's Artifacts before its 7-day expiry. Extract the Actions download

@@ -165,7 +165,8 @@ def browser_executable(runtime, name, revision):
     prefix = '_internal/playwright/driver/package/.local-browsers/' + name.replace('-', '_') + '-' + revision + '/'
     executables = {'chromium-headless-shell': ('chrome-headless-shell-win64/chrome-headless-shell.exe',
                                              'chrome-headless-shell-win64/headless_shell.exe'),
-                   'ffmpeg': ('ffmpeg-win64.exe',)}[name]
+                   'ffmpeg': ('ffmpeg-win64.exe',),
+                   'winldd': ('PrintDeps.exe',)}[name]
     for executable in executables:
         if prefix + executable in runtime:
             return prefix + executable
@@ -211,7 +212,8 @@ def assemble(output, version, runtime, source, notices, inventory):
     if any(not item.get('name') or not item.get('version') or not item.get('sources')
            for item in inventory['dependencies']):
         raise ValueError('Missing dependency version/source inventory')
-    for name in ('chromium-headless-shell', 'ffmpeg'):
+    optional_winldd = ('winldd',) if any(item.get('name') == 'winldd' for item in inventory['browsers']) else ()
+    for name in ('chromium-headless-shell', 'ffmpeg') + optional_winldd:
         matches = [item for item in inventory['browsers'] if item.get('name') == name]
         if len(matches) != 1 or not re.fullmatch('[0-9]+', matches[0].get('revision', '')):
             raise ValueError('Missing exact bundled browser revision')

@@ -224,7 +224,7 @@ class NoticeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp, patch('os.getcwd', return_value=temp):
             inventory, material = notices.collect_distributions(['pyserial'], lambda _: self.missing_wheel())
         self.assertEqual(inventory[0]['license_provenance'][0]['source_commit'], '0e7634747568547b8a7f9fd0c48ed74f16af4b23')
-        self.assertEqual(len(material), 54)
+        self.assertEqual(len(material), 58)  # 56 immutable inputs plus registry/README.
 
     def test_installed_license_precedes_unavailable_fallback(self):
         notices = load('notices')

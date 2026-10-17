@@ -95,12 +95,64 @@ def collect_distributions(roots, lookup=metadata.distribution, *, material_root=
     return sorted(inventory, key=lambda item: canonicalize_name(item['name'])), material
 
 
-def collect_vendor(driver):
+_WINLDD_CORE = '1.64.0-beta-1791568591000'
+_WINLDD_COMMIT = '1b2924712024804936dbcfe9fabaa655d52325e5'
+# Exact primary inputs, never a generic browser or whole-package exemption.
+_WINLDD_INPUTS = {
+    'LICENSE.txt': ('LICENSE', '45873d00a0dd243596deb4aa23b2493b3d1f0671921bf2538ea431d7380220eb',
+                    'winldd 1007 root Apache-2.0 license; tool-specific supplementary input'),
+    'NOTICE.txt': ('NOTICE', '6d602191187b35b9b01d2cffa01c8469c2c8d9de8a96f1bf868e0f264f51c81d',
+                   'winldd 1007 root attribution notice; tool-specific supplementary input'),
+    'PrintDeps.cpp.txt': ('browser_patches/winldd/PrintDeps.cpp', 'c1521493a6ef81c53dcd19dc5a9e845ec07d9c395acc49678a512c50f0586260',
+                          'Complete winldd 1007 source retaining Julien Waechter MIT and Microsoft Apache-2.0 headers'),
+    'BUILD_NUMBER.txt': ('browser_patches/winldd/BUILD_NUMBER', '7e3b7c72086e2735a656c73b95093d5803cd16d195079a6315b5ad89102c4388',
+                         'Provenance only: upstream winldd build number 1007, not a license text'),
+}
+
+
+def _winldd_material(driver, item, installed, material_root):
+    if item['revision'] != '1007' or item.get('revisionOverrides'):
+        raise ValueError('Unmapped winldd revision')
+    executable = 'package/.local-browsers/winldd-1007/PrintDeps.exe'
+    selected = _payload.read_tree(driver, ('package/package.json', executable))
+    core = json.loads(selected['package/package.json'])
+    if (not isinstance(core, dict) or core.get('name') != 'playwright-core'
+            or core.get('version') != _WINLDD_CORE
+            or core.get('gitHead', _WINLDD_COMMIT) != _WINLDD_COMMIT):
+        raise ValueError('Unmapped Playwright core identity for winldd')
+    registry, upstream = _payload.collect_license_material(
+        _DEFAULT_MATERIAL_ROOT if material_root is None else material_root)
+    prefix = 'playwright-core/' + _WINLDD_CORE + '/winldd/'
+    records = []
+    for name, (source, digest, coverage) in _WINLDD_INPUTS.items():
+        expected = {'path': prefix + name, 'sha256': digest,
+                    'source_url': 'https://raw.githubusercontent.com/microsoft/playwright/' + _WINLDD_COMMIT + '/' + source,
+                    'source_commit': _WINLDD_COMMIT, 'upstream_version': _WINLDD_CORE,
+                    'packages': [], 'coverage': coverage}
+        if [record for record in registry['materials'] if record['path'] == prefix + name] != [expected]:
+            raise ValueError('Missing or mismatched immutable winldd source provenance')
+        records.append(expected)
+    for name in ('LICENSE', 'NOTICE'):
+        if installed['vendor/package/' + name] != upstream[prefix + name + '.txt']:
+            raise ValueError('Installed Playwright root material does not match winldd source')
+    references = ['upstream/' + prefix + name for name in _WINLDD_INPUTS]
+    return references[:3], {'upstream/' + name: data for name, data in upstream.items()}, {
+        'core': {'name': core['name'], 'version': core['version']},
+        'source_commit': _WINLDD_COMMIT, 'executable': executable,
+        'provenance_files': references, 'license_provenance': records,
+        'license_registry': 'upstream/provenance.json',
+        'license_qualification': registry['qualification'],
+    }
+
+
+def collect_vendor(driver, *, material_root=None):
     """Require Node, Playwright and each installed browser/FFmpeg's raw notices.
 
     Inspect package-local browsers only. Registry revisions are copied exactly;
     absent browser installations are omitted, but headless Chromium and FFmpeg
     are mandatory for this application's default Playwright launch mode.
+    Only absent winldd legal files may use the exact core/source mapping above;
+    material_root is an isolated local fixture seam, never a downloader or flag.
     """
     driver = Path(driver)
     required = ('LICENSE', 'package/LICENSE', 'package/NOTICE', 'package/ThirdPartyNotices.txt', 'package/browsers.json')
@@ -109,7 +161,7 @@ def collect_vendor(driver):
         path = driver / name
         if path.is_symlink() or not path.is_file() or not path.stat().st_size:
             raise ValueError(f'Missing vendor material: {name}')
-        material['vendor/' + name] = path.read_bytes()
+        material['vendor/' + name] = _payload.read_tree(driver, (name,))[name]
     # Playwright's ThirdPartyNotices points to these per-bundle inlined licenses.
     for path in sorted((driver / 'package/lib').rglob('*')):
         if path.is_symlink():
@@ -136,16 +188,19 @@ def collect_vendor(driver):
             if path.is_symlink():
                 raise ValueError('Symlink vendor material')
             if path.is_file() and _license_file(path):
-                key = 'vendor/' + path.relative_to(driver).as_posix()
-                data = path.read_bytes()
-                if data:
-                    material[key] = data
-                    licenses.append(key)
+                relative = path.relative_to(driver).as_posix()
+                key = 'vendor/' + relative
+                material[key] = _payload.read_tree(driver, (relative,))[relative]
+                licenses.append(key)
+        provenance = {}
+        if not licenses and name == 'winldd':
+            licenses, fallback, provenance = _winldd_material(driver, item, material, material_root)
+            material.update(fallback)
         if not licenses:
             raise ValueError(f'Missing browser license material: {name}')
         inventory.append({'name': name, 'revision': revision,
                           'browser_version': item.get('browserVersion'), 'licenses': licenses,
-                          'registry': 'vendor/package/browsers.json'})
+                          'registry': 'vendor/package/browsers.json', **provenance})
     if not {'chromium-headless-shell', 'ffmpeg'} <= {item['name'] for item in inventory}:
         raise ValueError('Missing Chromium/FFmpeg registry entries')
     return inventory, material

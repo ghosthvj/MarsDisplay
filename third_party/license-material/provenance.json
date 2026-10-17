@@ -733,6 +733,42 @@
       "upstream_version": "6.12.0",
       "packages": [],
       "coverage": "source file copyright/license header; not complete native binary coverage"
+    },
+    {
+      "path": "playwright-core/1.64.0-beta-1791568591000/winldd/LICENSE.txt",
+      "sha256": "45873d00a0dd243596deb4aa23b2493b3d1f0671921bf2538ea431d7380220eb",
+      "source_url": "https://raw.githubusercontent.com/microsoft/playwright/1b2924712024804936dbcfe9fabaa655d52325e5/LICENSE",
+      "source_commit": "1b2924712024804936dbcfe9fabaa655d52325e5",
+      "upstream_version": "1.64.0-beta-1791568591000",
+      "packages": [],
+      "coverage": "winldd 1007 root Apache-2.0 license; tool-specific supplementary input"
+    },
+    {
+      "path": "playwright-core/1.64.0-beta-1791568591000/winldd/NOTICE.txt",
+      "sha256": "6d602191187b35b9b01d2cffa01c8469c2c8d9de8a96f1bf868e0f264f51c81d",
+      "source_url": "https://raw.githubusercontent.com/microsoft/playwright/1b2924712024804936dbcfe9fabaa655d52325e5/NOTICE",
+      "source_commit": "1b2924712024804936dbcfe9fabaa655d52325e5",
+      "upstream_version": "1.64.0-beta-1791568591000",
+      "packages": [],
+      "coverage": "winldd 1007 root attribution notice; tool-specific supplementary input"
+    },
+    {
+      "path": "playwright-core/1.64.0-beta-1791568591000/winldd/PrintDeps.cpp.txt",
+      "sha256": "c1521493a6ef81c53dcd19dc5a9e845ec07d9c395acc49678a512c50f0586260",
+      "source_url": "https://raw.githubusercontent.com/microsoft/playwright/1b2924712024804936dbcfe9fabaa655d52325e5/browser_patches/winldd/PrintDeps.cpp",
+      "source_commit": "1b2924712024804936dbcfe9fabaa655d52325e5",
+      "upstream_version": "1.64.0-beta-1791568591000",
+      "packages": [],
+      "coverage": "Complete winldd 1007 source retaining Julien Waechter MIT and Microsoft Apache-2.0 headers"
+    },
+    {
+      "path": "playwright-core/1.64.0-beta-1791568591000/winldd/BUILD_NUMBER.txt",
+      "sha256": "7e3b7c72086e2735a656c73b95093d5803cd16d195079a6315b5ad89102c4388",
+      "source_url": "https://raw.githubusercontent.com/microsoft/playwright/1b2924712024804936dbcfe9fabaa655d52325e5/browser_patches/winldd/BUILD_NUMBER",
+      "source_commit": "1b2924712024804936dbcfe9fabaa655d52325e5",
+      "upstream_version": "1.64.0-beta-1791568591000",
+      "packages": [],
+      "coverage": "Provenance only: upstream winldd build number 1007, not a license text"
     }
   ],
   "source_archives": [
