@@ -2,34 +2,43 @@
 
 ## Verified artifact — T5 complete
 
-[Download MarsDisplay 0.1.0 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39049628794/artifacts/12107551102)
-from [run39049628794](https://github.com/ghosthvj/MarsDisplay/actions/runs/39049628794), exact source commit
-`211645edfcabeb8fbdd29ab1e1636fe411d94cef`. The artifact contains the
-application ZIP and SHA256 sidecar; retention ends **2026-10-24 16:32 UTC**.
+[Download MarsDisplay 0.1.1 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39055573997/artifacts/12109691322)
+from [run39055573997](https://github.com/ghosthvj/MarsDisplay/actions/runs/39055573997), exact source
+`5d0de48b4f08c38a33c5027195e18841fe2c86d4`. The artifact contains the
+application ZIP and SHA256 sidecar; retention ends **2026-10-24 17:54 UTC**.
+This build contains the bounded SPA display-root readiness correction; the
+previous 0.1.0 artifact does not.
 
 | Verified evidence | Result |
 | --- | --- |
-| Native CI | Source tests, compile, external profile, startup/binary smoke, genuine material provisioning, unchanged v2 qualification, source stability and upload passed. |
-| Download | 205,549,310-byte ZIP; SHA256 `f304b389b02b214ee7f090e609e1035256046ddb420ffea50f248d612fffb8fb` matches its sidecar. |
-| Content | 1,222 members; all 1,221 inventoried file hashes and 325 source hashes verified without executing or extracting Windows code on Linux. |
+| Native CI | 143 source tests passed in 49.084s, then compile, external profile, startup/binary smoke, genuine-material provisioning, unchanged v2 qualification, source stability and upload passed. |
+| Download | 205,550,469-byte ZIP; SHA256 `84769fa48f091323a4d7598fb12358d725c4a2cc6ef6a96fa7f504f75b7a4fc4` matches its sidecar. |
+| Content | 1,222 members; all 1,221 file hashes and 325 source hashes verified without executing or extracting Windows code on Linux; browser source/version match the source commit. |
 | Native inventory | 69 files; 27 Qt components and 6 supplemental associations bound to notices/evidence; no selected Microsoft DLLs or Qt Mesa. |
 | Runtime | Python3.13.16, Qt6.12.0, PyInstaller6.22.3, Node24.21.0, Chromium156.0.8078.4, FFmpeg1013. |
 | Source access | Root README.txt points to notices/native/SOURCE-ACCESS.txt; application/build source and original notices are included. |
 
-Install official VC++ v14 x64 14.51+ manually if missing, extract the complete
-application ZIP, then open MarsDisplay.exe. Capture starts stopped; output remains
-simulated and no physical screen is driven. This is an unsigned portable prototype,
-not an installer or release. Do not disable security to run it.
+Exit the old instance, install official VC++ v14 x64 14.51+ manually if missing,
+and extract the complete new application ZIP into a separate folder. Do not mix
+versions or copy just MarsDisplay.exe. Existing per-user settings persist. Open
+the new EXE, check settings and Start explicitly; output remains simulated and no
+physical screen is driven. This is unsigned, not an installer or release. Do not
+disable security to run it.
 
-The successful candidate followed four corrected source/packaging defects and
-three diagnostic runs that passed startup but failed missing native inputs.
-The feature ledger preserves those failures; the old red runs are not artifact
-acceptance. No validation was bypassed to obtain the green run.
+The earlier four corrected defects and three missing-input diagnostic runs remain
+recorded in the feature ledger. The first qualified artifact was 0.1.0/run39049628794;
+0.1.1 addresses the later owner-reported capture bootstrap race. A local monitor
+initially failed because unqualified Python was absent; the feature push succeeded
+and monitoring attached to the same run. No duplicate workflow or validation bypass
+was used.
 
-**T6 remains owner-run Windows 11 acceptance:** real tray interaction, normal
-Exit, LAN/recovery and process-tree CPU/RAM measurements. Windows Server2025 CI
-and structural ZIP checks do not establish those outcomes or legal certification.
-Later documentation-only commits do not change/rebuild this verified artifact.
+**T6 remains partial:** owner Windows screenshots show running/ready, live,
+non-stale data and increasing frames; the tested ZIP version is not visible.
+Normal Stop/Exit, owned-browser cleanup, LAN/recovery and sustained whole-process-
+tree CPU/RAM still require owner evidence. A 36.7 MB / 0% process snapshot is not
+the aggregate Node/Chromium cost. Windows Server2025 CI and ZIP checks are not
+Windows11 acceptance or legal certification. Later documentation-only commits
+do not change/rebuild the artifact.
 
 ## Selected external-runtime profile
 
@@ -277,8 +286,8 @@ association alone cannot supply its upstream version or source proof.
 
 The mapping still covers every `.dll`/`.pyd` beneath `_internal/PySide6/` (33 in
 the previous runtime inventory); its selector is unchanged, with no expansion
-to Shiboken or outside-prefix files. The new external-runtime inventory size
-has not yet been measured (27 is the curated expectation, not native evidence).
+to Shiboken or outside-prefix files. The external-runtime inventory now measures 27 Qt-prefix files in the qualified
+build, within 69 total native files; this is measured evidence, not just policy expectation.
 Supplemental Shiboken/OpenSSL obligations are bound separately, never fed into this
 selector. Complete manifests and raw materials travel in `notices/native/`.
 Synthetic tests alone cannot prove Windows qualification. The later native
@@ -432,7 +441,7 @@ shadow the installed requirement-parser distribution):
 | `payload.assemble` | Sole exclusive folder/ZIP/checksum publisher with owned rollback, path/collision/privacy rules. |
 | `entrypoint.run` | Prepare temporary streams before app import; sanitize native startup messages; no permanent extra window. |
 
-## Workflow source and eventual retrieval
+## Workflow and artifact retrieval
 
 `.github/workflows/windows-portable.yml` uses commit-pinned official node24
 checkout/setup-python/upload-artifact actions, Windows Server 2025 x64,
@@ -466,14 +475,13 @@ notice gap, not native Qt qualification. Run
 then passed source tests and prebuild winldd collection, and completed Windows
 EXE/one-folder assembly. Runtime validation failed before smoke/diagnostic, so
 again no artifact was uploaded. Subsequent runtime DATA and lock-info fixes led
-to the broad native smoke pass in39033278476 described above, but native
-qualification and ZIP delivery remain absent. The new minimal candidate has
-not been built or smoked; it requires fresh parent-controlled Windows evidence.
-Owner authorization covers T5 branch pushes/CI and seven-day test artifacts;
-none was executed by this correction worker. Server 2025 is not Windows 11
-acceptance.
+to the broad native smoke pass in39033278476 described above. Later qualified
+runs39049628794 (0.1.0) and39055573997 (0.1.1) executed the complete minimal
+external-runtime pipeline and produced verified ZIPs. Owner authorization covers
+feature-branch pushes/CI and seven-day test artifacts, not main/PR/release/installer
+or hardware work. Server2025 is not Windows11 acceptance.
 
-After a future authorized successful run, download `MarsDisplay-Windows-x64`
+After a successful authorized run, download `MarsDisplay-Windows-x64`
 from the run's Artifacts before its 7-day expiry. Extract the Actions download
 archive to obtain the actual ZIP and checksum, compare the ZIP's SHA256 using
 `Get-FileHash -Algorithm SHA256`, then extract the **entire** ZIP. Launch

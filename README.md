@@ -6,37 +6,43 @@ drive a physical USB screen.
 
 ## Download the verified portable prototype
 
-[Download MarsDisplay 0.1.0 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39049628794/artifacts/12107551102)
-from the [successful native build](https://github.com/ghosthvj/MarsDisplay/actions/runs/39049628794). The GitHub artifact
-contains the application ZIP and its SHA256 sidecar. It is retained until
-**2026-10-24 16:32 UTC**; GitHub sign-in may be required.
+[Download MarsDisplay 0.1.1 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39055573997/artifacts/12109691322)
+from the [successful native build](https://github.com/ghosthvj/MarsDisplay/actions/runs/39055573997).
+This corrects premature metadata rejection when MARS mounts its display root
+after DOMContentLoaded. The artifact contains the application ZIP and SHA256
+sidecar; retention ends **2026-10-24 17:54 UTC**. GitHub sign-in may be required.
 
-1. If missing, manually install the official **Microsoft VC++ v14 x64 runtime,
-   14.51 or newer**: https://aka.ms/vc14/vc_redist.x64.exe .
-2. Extract the entire application ZIP and keep the folder intact.
-3. Open `MarsDisplay.exe`. It starts **stopped**. Use tray **Status / Settings**
-   to configure the MARS URL, then **Start**. Use tray **Exit** to close.
+1. Exit the previous MarsDisplay instance. Keep existing user settings.
+2. If missing, manually install official **Microsoft VC++ v14 x64, 14.51+**:
+   https://aka.ms/vc14/vc_redist.x64.exe .
+3. Extract the entire new application ZIP into a separate folder; do not mix
+   versions or copy only the EXE. Keep all auxiliary files.
+4. Open `MarsDisplay.exe`. It starts **stopped**. Use tray **Status / Settings**
+   to check the saved MARS URL, then **Start**. Use tray **Exit** to close.
 
-Python, Qt and Chromium are bundled; Microsoft runtime DLLs and Qt Mesa are not.
-There is no MarsDisplay installer, service or automatic prerequisite download.
+Python, Qt and Chromium are bundled; selected Microsoft runtime DLLs and Qt Mesa
+are not. There is no MarsDisplay installer or automatic prerequisite download.
 The prototype is unsigned: do not disable security or copy random DLLs to bypass
 an error. Follow the included root `README.txt`.
 
-**T5 is complete for this artifact:** Windows native assembly, external-runtime
-profile, startup/binary smoke, native material qualification and publication passed.
-The downloaded 205,549,310-byte ZIP and all 1,221 inventoried file hashes were
-verified. SHA256:
+**T5 is complete for 0.1.1:** native CI passed all 143 source tests, assembly,
+external-runtime profile, startup/binary smoke, native-material qualification,
+source stability and publication. The downloaded **205,550,469-byte** ZIP,
+all **1,221 file hashes** and **325 source hashes** were verified. SHA256:
 
 ```text
-f304b389b02b214ee7f090e609e1035256046ddb420ffea50f248d612fffb8fb
+84769fa48f091323a4d7598fb12358d725c4a2cc6ef6a96fa7f504f75b7a4fc4
 ```
 
-The artifact's exact source commit is `211645edfcabeb8fbdd29ab1e1636fe411d94cef`.
-That artifact predates the SPA-bootstrap readiness correction below. A corrected
-Windows ZIP and real first-frame acceptance are pending; source tests do not
-rebuild or change the downloaded artifact.
-**T6 remains:** real Windows 11 tray/Exit/LAN/recovery and CPU/RAM measurements.
-Windows Server CI is not Windows 11 acceptance or hardware support.
+Exact artifact source: `5d0de48b4f08c38a33c5027195e18841fe2c86d4`.
+A real MARS capture passed with the corrected source on Linux. Owner Windows
+screenshots show running/ready, live connected, non-stale data and increasing
+frame counts, but do not identify the tested ZIP version.
+**T6 remains partial:** confirm that version, normal Stop/Exit and owned-process
+cleanup, network recovery, and sustained CPU/RAM for the whole Node/Chromium
+process tree. The observed 36.7 MB / 0% snapshot is not aggregate resource proof.
+Windows Server CI is not Windows 11 acceptance or hardware support. Later
+documentation-only commits do not rebuild this artifact.
 
 ## Run the application (Windows source)
 
@@ -347,7 +353,7 @@ extra as well. Tray/application assembly imports Qt; the core remains GUI-indepe
 | Tray/UI | PySide6 6.12.0 |
 | Image decoding | Pillow 12.3.0 |
 | Passive serial descriptor metadata only | pyserial 3.5 |
-| Native executable recipe (not yet Windows-qualified) | PyInstaller 6.22.3 |
+| Native executable recipe (native CI verified; owner acceptance is T6) | PyInstaller 6.22.3 |
 | Source build backend | setuptools 84.0.0 |
 
 The backend pin was checked against authoritative
@@ -359,8 +365,8 @@ are not a complete transitive lock. The pinned editable package and build extra
 were installed successfully in a repository-local `.venv` on Linux, producing an
 editable wheel. System Python was not modified. Windows EXE/one-folder assembly
 and the broad bundle's native startup/binary smoke have since succeeded in CI.
-The new minimal candidate still needs fresh Windows inventory/smoke; native
-qualification and ZIP delivery remain blocked.
+The minimal external-runtime profile, fresh native inventory/smoke, qualification
+and downloaded 0.1.1 ZIP are now verified. Owner-run acceptance remains partial.
 
 Linux Qt offscreen availability passed after the explicitly authorized
 installation of `libegl1` and its required dependencies. A sandbox-enabled
@@ -379,68 +385,25 @@ API tests do not qualify native enumeration or any physical driver.
 
 ## Deliberately deferred
 
-The ordinary GUI entrypoint now composes the verified adapters; packaged runtime
-checks and actual Windows acceptance remain later work. The browser adapter
-implements the recorded version 1 `/display` contract, but has not been exercised
-against real MARS. MARS continues to own content, order, dwell, live updates and
-orientation. Local rendering must not add server-side work.
-Windows packaging must bundle Chromium and retain dependency licenses/notices.
-The [portable support APIs](packaging/README.md) validate synthetic layouts, collect
-installed metadata/vendor material and include corresponding application source;
-they do not compile or qualify a Windows executable. Missing installed Qt-binding
-and pyserial license texts now use explicit exact-version, hash-verified
-[upstream material](third_party/license-material/README.md), retained with provenance
-in notices and source. Unknown versions or altered inputs still fail. Binding
-material and supplementary Qtbase texts are not complete native/plugin coverage,
-commercial rights or a legal audit.
-The native build/spec/smoke/workflow source is prepared. On a future authorized
-Windows x64 host, `python packaging/build_portable.py --help` describes the
-ordinary builder; `python packaging/build_portable.py` requires the pinned SDK,
-package-local Chromium and genuinely qualified native notices before publication.
-The [packaging guide](packaging/README.md) explains the fail-closed native-material
-gate, isolated startup proof, workflow bootstrap/7-day retention and full ZIP
-extraction/checksum steps. The same build command now runs owned packaged smoke
-before native qualification and retains sanitized, uniquely named
-`build/unqualified-native-*.json` metadata on measurable-stage failure. A future
-authorized Windows run must exercise the full closure pipeline, not deliberately
-remain red for missing material. Pinned-source/SDK preflight now precedes compilation;
-owned-stage policy materialization follows smoke and feeds the unchanged v2 gate.
-The provisioner/profile and qualified ZIP passed in native run39049628794. These reports contain hashes/versions/smoke status, not binaries,
-source or approval evidence. SDK/compile failure may produce no report and remains
-a failure. Owner authorization covers T5 branch pushes, Windows CI and seven-day
-test artifacts; this source correction executed none. The exact winldd1007
-`PrintDeps.exe` notice fallback now retains the embedded core beta's verified
-root texts and complete source with both MIT and Apache-2.0 headers, plus build
-provenance—not a whole-Playwright exemption or native Qt qualification. See the
-packaging guide for the exact core/commit distinction and fail-closed checks.
-The owner chose a minimal app-required runtime. Stage one adds a local QtGui
-hook that delegates stock collection/validation and omits only
-`imageformats/qpdf.dll`, `imageformats/qsvg.dll`, `iconengines/qsvgicon.dll` and
-`platforminputcontexts/qtvirtualkeyboardplugin.dll` before native dependency
-closure. Prior minimized CI verified that reduction and smoke. The reviewed v2
-material model separates source versions from Qt/PE/owner versions. Genuine
-pinned inputs, explicit 27-file policy and offline provisioner now exist; their
-source/notice association still needs independent semantic review. The next selected profile externalizes exact known
-Microsoft roots/dependencies before closure and omits only the stock optional
-Mesa root request, retaining stock guards/ANGLE/ICU/other resources. Its final
-assertion rejects leftovers, never deletes them. No app/environment/Chromium
-change, EULA-based redistribution assumption or native qualification is implied.
+The GUI composes the browser and simulated transport. The version 1 `/display`
+contract has now produced a real MARS frame with corrected source; owner Windows
+screenshots also show ongoing capture, with exact ZIP identity still to confirm.
+MARS continues to own content, selection, order, dwell, live updates and orientation.
+No server-side rendering, extra product control endpoint or protocol was added.
 
-After Analysis, including hook-added copies, the spec excludes known Playwright
-installer flags/`.links` SDK references and exact root `py.typed` DATA for
-playwright, PySide6, shiboken6, PIL, pyee and greenlet only. These static typing
-markers are not frozen runtime resources, even when nonempty. Unknown packages,
-nested files and non-DATA entries remain. Runtime resources/legal material and
-the strict empty-file validator are preserved. Validation cache
-may regenerate if Playwright validates host dependencies; no installer, download
-or auto-update was added. SDK files are not modified.
-Keep all auxiliary files; settings persist per user
-outside the extracted folder. This is an unsigned prototype, not an invitation
-to disable Windows security. No MarsDisplay installation is required, but the
-external official VC++ prerequisite may require administrator installation.
-The external-runtime profile and qualified ZIP passed native CI and download
-verification; T5 is complete for source211645e. Owner-run Windows11 acceptance
-remains T6.
+Native assembly, smoke, fresh source/notice bindings and portable delivery are
+verified for 0.1.1. The [packaging guide](packaging/README.md) records the selected
+minimal external-runtime profile, immutable upstream source inputs, strict v2
+qualification and complete extraction instructions. Those mechanical checks and
+independent source/policy reviews are not legal certification. Original notices,
+corresponding source, Chromium resources and validation gates remain included.
+No driver, DLL or source-version identity was inferred from a filename.
+
+Owner-run Windows 11 acceptance is still T6: normal Stop/Exit, owned-browser
+cleanup, LAN/recovery and aggregate sustained resource measurements. Keep all
+auxiliary files; settings persist per user outside the extracted folder. The
+unsigned prototype needs no MarsDisplay installer, but the separate official
+VC++ prerequisite may require administrator installation.
 
 No model-specific driver has been copied. Real protocol selection and physical
 USB testing require identified hardware; simulation must never be shown as a
