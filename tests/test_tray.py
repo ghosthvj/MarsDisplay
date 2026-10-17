@@ -4,14 +4,15 @@ import tempfile
 from threading import Event
 import unittest
 
-from PySide6.QtCore import QEventLoop, QTimer
+from PySide6.QtCore import QEventLoop, QTimer, Qt
+from PySide6.QtGui import QPalette
 from PySide6.QtWidgets import QApplication
 
 from mars_display.frames import RGBFrame
 from mars_display.lifecycle import Coordinator, SourceSample
 from mars_display.settings import Settings, SettingsStore
 from mars_display.transport import SimulatedTransport
-from mars_display.tray import SingleInstanceGuard, create_shell
+from mars_display.tray import SettingsDialog, SingleInstanceGuard, create_shell
 
 
 class Application(QApplication):
@@ -127,6 +128,32 @@ class TrayTests(unittest.TestCase):
         self.session.allow_open.set()
         until(self.waiting.is_set)
         until(lambda: self.shell.dialog.frames.text() == "1")
+
+    def test_light_dark_theme_is_local_and_does_not_persist_or_start_capture(self):
+        shell = self.make()
+        dialog = shell.dialog
+        original = self.store.path.read_bytes()
+        self.assertEqual(dialog.property("theme"), "light")
+        dialog.ensurePolished()
+        light = dialog.palette().color(QPalette.ColorRole.Window).name()
+        dialog.theme_switch.click()
+        APP.processEvents()
+        self.assertEqual(dialog.property("theme"), "dark")
+        self.assertNotEqual(dialog.palette().color(QPalette.ColorRole.Window).name(), light)
+        self.assertEqual(dialog.theme_switch.text(), "Light mode")
+        dialog.close()
+        shell.show_settings()
+        self.assertEqual(dialog.property("theme"), "dark")
+        dialog.theme_switch.click()
+        self.assertEqual(dialog.property("theme"), "light")
+        self.assertEqual(dialog.theme_switch.text(), "Dark mode")
+        fresh = SettingsDialog(self.store.load())
+        self.assertEqual(fresh.property("theme"), "light")
+        fresh.deleteLater()
+        self.assertEqual(self.store.path.read_bytes(), original)
+        self.assertEqual(shell.coordinator.snapshot().state, "stopped")
+        self.assertEqual(shell.coordinator.snapshot().frames_sent, 0)
+        self.assertFalse(self.session.opened.is_set())
 
     def test_manual_first_run_menu_dialog_and_close(self):
         shell = self.make(configured=False)

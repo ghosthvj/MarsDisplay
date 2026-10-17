@@ -318,6 +318,16 @@ independent freshness, redirect blocking and partial-setup/capture cleanup. Real
 MARS, Windows process ownership, performance and packaged-browser acceptance
 remain separate evidence.
 
+## Status window appearance (source)
+
+The source UI offers **Dark mode / Light mode** without another framework.
+Theme selection is local to the current dialog/session, initially light; it
+survives hiding the window but is not saved in `settings.json`. A new session
+starts light. The accepted 0.1.2 portable predates this UI work.
+
+The native titlebar, tray actions, stopped-only settings authority and simulated
+output remain unchanged. Closing the window does not exit the application.
+
 ## Application composition and injectable tray shell
 
 `mars_display.tray.create_shell(app, store, coordinator_factory)` assembles the

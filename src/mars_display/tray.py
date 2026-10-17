@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 )
 
 from .lifecycle import Coordinator, LifecycleError
+from .presentation import window_stylesheet
 from .settings import Settings, SettingsError, SettingsStore, SettingsStoreError
 
 
@@ -82,8 +83,16 @@ class SettingsDialog(QDialog):
     def __init__(self, configured: Settings | None):
         super().__init__()
         self.setWindowTitle("MarsDisplay — Status / Settings")
+        self.setObjectName("statusWindow")
         self.setMinimumWidth(420)
         form = QFormLayout(self)
+        self.theme_switch = QPushButton("Dark mode")
+        self.theme_switch.setObjectName("themeSwitch")
+        self.theme_switch.setCheckable(True)
+        self.theme_switch.setAutoDefault(False)
+        self.theme_switch.toggled.connect(self.set_dark_mode)
+        form.addRow("", self.theme_switch)
+        self.set_dark_mode(False)
         self.runtime = QLabel("stopped")
         self.source = QLabel("stopped")
         self.output = QLabel("Simulated — simulated-closed (no USB output)")
@@ -105,6 +114,12 @@ class SettingsDialog(QDialog):
             if isinstance(widget, QLabel):
                 widget.setTextFormat(Qt.TextFormat.PlainText)
             form.addRow(title, widget)
+
+    def set_dark_mode(self, dark: bool):
+        self.setProperty("theme", "dark" if dark else "light")
+        self.setStyleSheet(window_stylesheet(dark))
+        self.theme_switch.setText("Light mode" if dark else "Dark mode")
+        self.theme_switch.setAccessibleName(self.theme_switch.text())
 
 
 class TrayShell(QObject):
