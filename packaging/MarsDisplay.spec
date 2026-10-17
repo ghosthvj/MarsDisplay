@@ -1,5 +1,6 @@
 # Native Windows recipe, invoked only through build_portable.py.
 from pathlib import Path
+from importlib import util
 import sys
 from PyInstaller.utils.hooks import collect_data_files
 
@@ -18,6 +19,13 @@ a = Analysis(
               'PySide6.QtWebEngineWidgets', 'PySide6.QtWebEngineQuick',
               'PySide6.QtPdf', 'PySide6.QtPdfWidgets'],
 )
+# Hooks add their own copies during Analysis. Select only frozen runtime data;
+# never mutate SDK files or weaken the portable payload validators.
+_runtime_spec = util.spec_from_file_location('marsdisplay_runtime_files', root / 'packaging/runtime_files.py')
+_runtime_files = util.module_from_spec(_runtime_spec)
+_runtime_spec.loader.exec_module(_runtime_files)
+a.datas = _runtime_files.select_runtime_data(a.datas)
+
 # Pinned PyInstaller Qt hooks collect the used Core/Gui/Widgets native modules
 # and PySide6/plugins/platforms/qwindows.dll on Windows. Do not collect_all Qt.
 pyz = PYZ(a.pure)

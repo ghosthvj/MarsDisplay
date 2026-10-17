@@ -5,8 +5,13 @@ exist. No Windows executable/ZIP has been delivered or qualified. T5 remains in
 progress. Owner-authorized feature-branch CI has started. After the first run's
 source-test failure, run **39026203729 passed Windows source tests**, then failed
 before compilation with `Missing browser license material: winldd`. Its artifact
-list was empty: no diagnostic or binary ZIP existed. Linux SDK/EXE fixtures are
-synthetic, never runnable Windows proof.
+list was empty: no diagnostic or binary ZIP existed. Later run **39029908479**
+on `082047b` passed source tests and completed native PyInstaller EXE + COLLECT,
+then failed runtime `read_tree` validation with
+`Duplicate path or empty/non-byte material`, before smoke/report/ZIP. This proves
+Windows frozen assembly, not app execution or a usable prototype. The generic
+error does not identify which Windows file failed first. Linux SDK/EXE fixtures
+remain synthetic, never native execution proof.
 
 ## Developer commands (native Windows x64 only)
 
@@ -45,6 +50,44 @@ prior reports and artifacts are never overwritten. Successful artifacts are
 `dist/MarsDisplay-<version>-Windows-x64.zip` and `.zip.sha256`, plus the unpacked
 `dist/MarsDisplay/`. Abrupt termination can leave partial output; a later build
 refuses it instead of repairing or overwriting it.
+
+## Frozen runtime selection, not relaxed validation
+
+`runtime_files.select_runtime_data(entries)` is a pure DATA TOC filter loaded by
+absolute spec-relative file path, without a `packaging` package/import-path
+change. The spec applies it to `a.datas` **after Analysis and before COLLECT**:
+Playwright's pinned hooks also add copies, so filtering only the initial
+`collect_data_files` list is insufficient.
+
+Only these installer/cache destinations beneath
+`playwright/driver/package/.local-browsers/` are excluded:
+
+- The `.links/` subtree, containing build-install SDK references.
+- `INSTALLATION_COMPLETE` and `DEPENDENCIES_VALIDATED` directly beneath numeric
+  revision browser/tool directories, such as `chromium_headless_shell-1248`,
+  `ffmpeg-1013` and `winldd-1007`.
+
+The exact package-root `py.typed` DATA file is also excluded for **playwright,
+PySide6, shiboken6, PIL, pyee and greenlet** only, whether empty or nonempty.
+These PEP 561 markers serve static type checkers, not the frozen application.
+Package/file spelling is compared case-insensitively for the Windows target;
+unknown packages, nested/deeper `py.typed` files and non-DATA entries are retained.
+This is not a generic filename glob or an empty-file exception.
+
+Windows TOC separators are normalized for comparison only. Original kept tuples,
+order, bytes and SDK files are unchanged; Node, driver, browser/FFmpeg/PrintDeps,
+registry, Qt resources and all legal/real data remain intact. Similarly named
+files elsewhere or deeper in a resource tree are not excluded. Arbitrary empty
+files, empty legal texts and empty required executables still fail the unchanged
+payload reader; no empty-file bypass or blanket removal is added.
+
+The pinned local SDK contains compatible empty installer flags, `.links`
+references and an empty `playwright/py.typed`; structural copy tests reproduce
+the same reader error and cover nonempty root markers too. This is not
+identification of the first failing Windows file. If Playwright performs host
+validation, a missing validation cache may be recreated after validation. No
+installer, downloader, automatic update or new app control is introduced; the
+app uses launch, and settings remain under `%LOCALAPPDATA%\\MarsDisplay`.
 
 ## Native material is a real, unresolved gate
 
@@ -103,7 +146,7 @@ fallback. `material_root` is a local fixture seam, not a CLI option, downloader
 or bypass. A declared winldd inventory must contain exactly one numeric revision
 with its exact `PrintDeps.exe`; stale README-only paths do not count. Chromium
 headless shell and FFmpeg remain mandatory. This source correction supplies no
-native Qt qualification, actual Windows build/smoke or legal certification.
+native Qt qualification, packaged execution/smoke or legal certification.
 
 ## Unqualified diagnostics, not approval evidence
 
@@ -208,8 +251,13 @@ are unchanged. The second authorized run
 passed source tests but stopped during precompile vendor collection on winldd's
 missing legal material; artifacts were `[]`, despite the missing-file upload
 step succeeding. The bounded source correction above addresses that exact
-notice gap, not native Qt qualification. A subsequent parent-controlled run is
-still needed; no Windows compilation, packaged smoke or ZIP success is claimed.
+notice gap, not native Qt qualification. Run
+[39029908479](https://github.com/ghosthvj/MarsDisplay/actions/runs/39029908479)
+then passed source tests and prebuild winldd collection, and completed Windows
+EXE/one-folder assembly. Runtime validation failed before smoke/diagnostic, so
+again no artifact was uploaded. The scoped selection correction above needs a
+subsequent parent-controlled run; packaged execution, native Qt qualification
+and ZIP success remain unproved.
 Owner authorization covers T5 branch pushes/CI and seven-day test artifacts;
 none was executed by this correction worker. Server 2025 is not Windows 11
 acceptance.

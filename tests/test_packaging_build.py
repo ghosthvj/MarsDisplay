@@ -251,7 +251,7 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn('.zip', diagnostic_step)
         self.assertNotIn('.exe', diagnostic_step)
         files = self.builder.payload.collect_source(Path('.'))
-        for name in ('packaging/build_portable.py', 'packaging/smoke.py', 'packaging/MarsDisplay.spec', '.github/workflows/windows-portable.yml'):
+        for name in ('packaging/build_portable.py', 'packaging/smoke.py', 'packaging/runtime_files.py', 'packaging/MarsDisplay.spec', '.github/workflows/windows-portable.yml'):
             self.assertIn(name, files)
 
 

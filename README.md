@@ -5,8 +5,9 @@ MARS display application. **Immutable RGB frames, in-memory simulated output,
 local settings persistence, a lifecycle coordinator, and an injectable Qt tray
 shell, a persistent bundled Chromium capture adapter, and a GUI entrypoint exist
 today.** Passive USB-serial inventory/selection APIs are preparation only, not a
-physical driver. Output is simulated; there is no Windows executable yet.
-No screen is needed for these tests.
+physical driver. Output is simulated; no qualified Windows prototype has been
+delivered. Native frozen assembly has succeeded, but packaged execution and
+ZIP delivery remain unproved. No screen is needed for these tests.
 
 ## Run the application (Windows source)
 
@@ -43,11 +44,12 @@ target, not a new version-detection framework. Fake-platform tests are branch
 proof only. Source invocation may have a console. The [native portable build
 source](packaging/README.md) now supplies a windowed recipe, isolated packaged
 startup smoke and restricted workflow source. No Windows executable/ZIP has been
-delivered: native material qualification and actual Windows build/smoke proof
-remain outstanding. T5 stays in progress. The owner authorized feature-branch
-CI/test artifacts. After the first source-test failure, Windows run39026203729
-passed source tests but failed before compilation on missing winldd legal
-material; its artifact list was empty. No Windows executable/ZIP was delivered.
+delivered: native material qualification and packaged execution/smoke remain
+outstanding. T5 stays in progress. The owner authorized feature-branch CI/test
+artifacts. Latest run39029908479 passed source tests and completed native
+PyInstaller EXE + COLLECT, then runtime validation failed before smoke/report/ZIP
+with `Duplicate path or empty/non-byte material`. No artifact was delivered;
+assembly is not successful application execution or Windows 11 acceptance.
 
 ## Run the source tests
 
@@ -327,8 +329,9 @@ x64 wheels per the initial dependency investigation; wheel availability is **not
 installation, interoperability, or Windows acceptance evidence. These declarations
 are not a complete transitive lock. The pinned editable package and build extra
 were installed successfully in a repository-local `.venv` on Linux, producing an
-editable wheel. System Python was not modified. Windows executable/ZIP packaging,
-Chromium inclusion and packaged runtime compatibility remain unverified.
+editable wheel. System Python was not modified. Windows EXE/one-folder assembly
+has since succeeded in CI, but runtime validation prevented packaged execution
+and ZIP delivery; bundled runtime compatibility remains unverified.
 
 Linux Qt offscreen availability passed after the explicitly authorized
 installation of `libegl1` and its required dependencies. A sandbox-enabled
@@ -380,11 +383,19 @@ test artifacts; this source correction executed none. The exact winldd1007
 root texts and complete source with both MIT and Apache-2.0 headers, plus build
 provenance—not a whole-Playwright exemption or native Qt qualification. See the
 packaging guide for the exact core/commit distinction and fail-closed checks.
+After Analysis, including hook-added copies, the spec excludes known Playwright
+installer flags/`.links` SDK references and exact root `py.typed` DATA for
+playwright, PySide6, shiboken6, PIL, pyee and greenlet only. These static typing
+markers are not frozen runtime resources, even when nonempty. Unknown packages,
+nested files and non-DATA entries remain. Runtime resources/legal material and
+the strict empty-file validator are preserved. Validation cache
+may regenerate if Playwright validates host dependencies; no installer, download
+or auto-update was added. SDK files are not modified.
 Keep all auxiliary files; settings persist per user
 outside the extracted folder. This is an unsigned prototype, not an invitation
 to disable Windows security. No administrator/end-user installation is required.
-Actual Windows build/ZIP/smoke and owner-run Windows 11 acceptance are still
-unproved; T5 remains in progress.
+Packaged execution, qualified ZIP/smoke and owner-run Windows 11 acceptance
+remain unproved despite native frozen assembly; T5 stays in progress.
 
 No model-specific driver has been copied. Real protocol selection and physical
 USB testing require identified hardware; simulation must never be shown as a
