@@ -181,6 +181,17 @@ class TrayTests(unittest.TestCase):
                 shell.coordinator.snapshot(), state="retrying", worker_alive=True)):
             shell.refresh()
             APP.processEvents()
+            # Check the original native geometry before applying fixture pressure.
+            until(lambda: dialog.runtime.height() >=
+                  dialog.runtime.heightForWidth(dialog.runtime.width()))
+            self.assertGreaterEqual(dialog.runtime.height(),
+                                    dialog.runtime.heightForWidth(dialog.runtime.width()))
+            wrap_width = dialog.runtime.fontMetrics().horizontalAdvance("recovering") + 4
+            QTimer.singleShot(0, lambda: dialog.runtime.setFixedWidth(wrap_width))
+            APP.processEvents()
+            # Font/style/width changes may post a later LayoutRequest on Windows.
+            until(lambda: dialog.runtime.height() >=
+                  dialog.runtime.heightForWidth(dialog.runtime.width()))
             self.assertGreaterEqual(dialog.runtime.height(),
                                     dialog.runtime.heightForWidth(dialog.runtime.width()))
         dialog.close()
