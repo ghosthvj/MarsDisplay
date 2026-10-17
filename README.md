@@ -40,8 +40,10 @@ are startup failures, not an invitation to install system dependencies silently.
 Unsupported hosts are rejected before importing Qt or accessing user settings.
 The host admission check recognizes Windows x64; Windows 11 is the acceptance
 target, not a new version-detection framework. Fake-platform tests are branch
-proof only. Source invocation may have a console; no-console delivery requires
-future windowed packaging. Windows tray/ZIP acceptance remains pending.
+proof only. Source invocation may have a console. A [windowed bootstrap and portable payload
+support library](packaging/README.md) now prepare sanitized native error reporting
+and source/notices/inventory assembly, but the actual native builder, Windows
+executable and ZIP have not been delivered. Windows tray/ZIP acceptance remains pending.
 
 ## Run the source tests
 
@@ -342,8 +344,17 @@ checks and actual Windows acceptance remain later work. The browser adapter
 implements the recorded version 1 `/display` contract, but has not been exercised
 against real MARS. MARS continues to own content, order, dwell, live updates and
 orientation. Local rendering must not add server-side work.
-Windows packaging must bundle Chromium and retain dependency licenses/notices;
-portable ZIP smoke tests and owner-run Windows acceptance remain separate work.
+Windows packaging must bundle Chromium and retain dependency licenses/notices.
+The [portable support APIs](packaging/README.md) validate synthetic layouts, collect
+installed metadata/vendor material and include corresponding application source;
+they do not compile or qualify a Windows executable. Missing installed Qt-binding
+and pyserial license texts now use explicit exact-version, hash-verified
+[upstream material](third_party/license-material/README.md), retained with provenance
+in notices and source. Unknown versions or altered inputs still fail. Binding
+material and supplementary Qtbase texts are not complete native/plugin coverage,
+commercial rights or a legal audit.
+Native build/spec/workflow source, portable ZIP smoke tests and owner-run Windows
+acceptance remain separate work; T5 is still in progress.
 
 No model-specific driver has been copied. Real protocol selection and physical
 USB testing require identified hardware; simulation must never be shown as a
