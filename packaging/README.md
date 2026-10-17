@@ -16,9 +16,12 @@ remain synthetic, never native execution proof.
 Run [39032168531](https://github.com/ghosthvj/MarsDisplay/actions/runs/39032168531)
 subsequently passed runtime-tree validation and produced a real **UNQUALIFIED**
 JSON inventory of 136 native files. Smoke failed on the incorrect four-value
-Qt lock-info unpack. The source correction uses the real three-value binding;
-a new Windows run is required. That report is not a native-license approval or
-ZIP, and it cannot satisfy the qualification input schema.
+Qt lock-info unpack. After correcting that binding contract, broad-bundle run
+[39033278476](https://github.com/ghosthvj/MarsDisplay/actions/runs/39033278476)
+**passed native startup and binary smoke**, then failed missing native
+qualification. Its UNQUALIFIED diagnostic is not a license approval or ZIP and
+cannot satisfy the qualification schema. That broad-bundle pass does not prove
+the new minimal candidate below.
 
 ## Developer commands (native Windows x64 only)
 
@@ -57,6 +60,42 @@ prior reports and artifacts are never overwritten. Successful artifacts are
 `dist/MarsDisplay-<version>-Windows-x64.zip` and `.zip.sha256`, plus the unpacked
 `dist/MarsDisplay/`. Abrupt termination can leave partial output; a later build
 refuses it instead of repairing or overwriting it.
+
+## Minimal Qt runtime — stage one, source candidate only
+
+The owner selected **Minimal app-required runtime**. The app uses raster
+Core/Gui/Widgets tray drawing and Playwright Chromium rendering, not Qt PDF/SVG
+file icons, QML UI or virtual-keyboard features. No GUI feature or user parameter
+is changed. Stage one suppresses only these optional plugin roots:
+
+| QtGui plugin family | Omitted Windows root basenames |
+| --- | --- |
+| `imageformats` | `qpdf.dll`, `qsvg.dll` |
+| `iconengines` | `qsvgicon.dll` |
+| `platforminputcontexts` | `qtvirtualkeyboardplugin.dll` |
+
+`Analysis.hookspath` selects the repository-local `hook-PySide6.QtGui.py`.
+It loads the pure `qt_plugins.select_plugin_roots` policy by hook-relative path,
+initializes pinned PyInstaller 6.22.3 library info, and temporarily wraps only
+that instance's `collect_plugins`. The stock collector still performs plugin
+release/debug and dependency validation and normal QtGui module traversal.
+Kept tuples/order, hidden imports and data are preserved. A `finally` restores
+the exact previous instance override or removes the temporary attribute to
+restore normal descriptor binding, including on failure. Installed SDK files,
+class methods and other hooks are not changed.
+
+Selection happens **before Analysis native dependency closure**, not by deleting
+Qt DLLs after Analysis. Other families/plugins, qwindows, styles, base binding
+hooks, Core/Widgets/Network/SSL, Mesa/ANGLE/ICU and CRT support remain delegated
+to their defaults. The existing post-Analysis DATA selection below is unchanged.
+There is no invented hooksconfig key, whole-family suppression or license bypass.
+
+A smaller native graph is expected, but disappearance of Qt Pdf/Qml/Quick/Svg/
+VirtualKeyboard libraries remains a **hypothesis until a new Windows inventory**;
+other dependency edges may retain them. The minimal candidate needs independent
+source review and a new parent-controlled Windows build/inventory/smoke. The
+previous broad smoke is not transferable proof. Component-version/provenance
+correction is the next unit; native qualification and final ZIP remain blocked.
 
 ## Frozen runtime selection, not relaxed validation
 
@@ -98,10 +137,11 @@ app uses launch, and settings remain under `%LOCALAPPDATA%\\MarsDisplay`.
 
 ## Native material is a real, unresolved gate
 
-The installed Windows Qt payload has **not** been inspected. Binding license
-texts and the 56 registered [official source inputs](../third_party/license-material/README.md)
+The broad Windows inventory has been inspected, but component attribution and
+the component-version model remain incomplete. Binding license texts and the
+56 registered [official source inputs](../third_party/license-material/README.md)
 are not complete native/plugin attribution. Missing/unmapped native material
-fails before distribution. There is no legal-certification claim.
+still fails before distribution. There is no legal-certification claim.
 
 The default builder requires reviewed local inputs at
 `build/native-material/native.json`, plus the referenced genuine native license
@@ -122,9 +162,11 @@ Manifest schema (all paths relative, checked by `payload.read_tree`):
   public HTTPS `sources`, and nonempty `licenses` pointing to the genuine texts.
 - `license_sha256`: mapping of those relative text paths to measured SHA256.
 
-All component versions must match measured `qVersion()`. Every binary/hash,
-license path/hash and source reference must validate; unknown or extra component
-mappings fail. The complete manifest/texts travel in `notices/native/`. This is
+The current gate incorrectly requires every listed component version to match
+`qVersion()`, including non-Qt CRT components. Correcting that model/provenance
+is the **next unit**, not part of this plugin policy. Do not fabricate Qt versions
+for other components or supply a pass-through manifest. Binary/hash, license
+path/hash and source checks remain fail-closed; unknown or extra mappings fail. The complete manifest/texts travel in `notices/native/`. This is
 byte/provenance binding, not an automatic legal auditor: the operator must
 actually establish native third-party attribution and corresponding-source
 sufficiency. Other SDK/native obligations must also be reviewed before delivery.
@@ -266,9 +308,10 @@ notice gap, not native Qt qualification. Run
 [39029908479](https://github.com/ghosthvj/MarsDisplay/actions/runs/39029908479)
 then passed source tests and prebuild winldd collection, and completed Windows
 EXE/one-folder assembly. Runtime validation failed before smoke/diagnostic, so
-again no artifact was uploaded. The scoped selection correction above needs a
-subsequent parent-controlled run; packaged execution, native Qt qualification
-and ZIP success remain unproved.
+again no artifact was uploaded. Subsequent runtime DATA and lock-info fixes led
+to the broad native smoke pass in39033278476 described above, but native
+qualification and ZIP delivery remain absent. The new minimal candidate has
+not been built or smoked; it requires fresh parent-controlled Windows evidence.
 Owner authorization covers T5 branch pushes/CI and seven-day test artifacts;
 none was executed by this correction worker. Server 2025 is not Windows 11
 acceptance.

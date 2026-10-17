@@ -6,8 +6,9 @@ local settings persistence, a lifecycle coordinator, and an injectable Qt tray
 shell, a persistent bundled Chromium capture adapter, and a GUI entrypoint exist
 today.** Passive USB-serial inventory/selection APIs are preparation only, not a
 physical driver. Output is simulated; no qualified Windows prototype has been
-delivered. Native frozen assembly has succeeded, but packaged execution and
-ZIP delivery remain unproved. No screen is needed for these tests.
+delivered. The previous broad Windows bundle passed native startup/binary smoke,
+but the new minimal-runtime candidate is unproved and ZIP delivery remains
+blocked by native qualification. No screen is needed for these tests.
 
 ## Run the application (Windows source)
 
@@ -44,14 +45,15 @@ target, not a new version-detection framework. Fake-platform tests are branch
 proof only. Source invocation may have a console. The [native portable build
 source](packaging/README.md) now supplies a windowed recipe, isolated packaged
 startup smoke and restricted workflow source. No Windows executable/ZIP has been
-delivered: native material qualification and packaged execution/smoke remain
-outstanding. T5 stays in progress. The owner authorized feature-branch CI/test
+delivered: native material qualification remains outstanding. T5 stays in
+progress. The owner authorized feature-branch CI/test
 artifacts. Run39029908479 completed native EXE + COLLECT but rejected SDK
 metadata. Later run39032168531 passed runtime validation and uploaded an
 **UNQUALIFIED JSON diagnostic**, not a ZIP; its smoke failed on the Qt lock-info
-return shape. The source fix preserves PID ownership/held-lock/GUI checks and
-requires a new Windows run. Assembly or a diagnostic report is not successful
-application execution or Windows 11 acceptance.
+return shape. After that fix, broad-bundle run39033278476 passed packaged native
+startup and binary smoke, then failed missing native qualification. This is not
+normal Exit/Windows 11 acceptance or ZIP delivery, and it does not qualify the
+new minimal candidate.
 
 ## Run the source tests
 
@@ -332,8 +334,9 @@ installation, interoperability, or Windows acceptance evidence. These declaratio
 are not a complete transitive lock. The pinned editable package and build extra
 were installed successfully in a repository-local `.venv` on Linux, producing an
 editable wheel. System Python was not modified. Windows EXE/one-folder assembly
-has since succeeded in CI, but runtime validation prevented packaged execution
-and ZIP delivery; bundled runtime compatibility remains unverified.
+and the broad bundle's native startup/binary smoke have since succeeded in CI.
+The new minimal candidate still needs fresh Windows inventory/smoke; native
+qualification and ZIP delivery remain blocked.
 
 Linux Qt offscreen availability passed after the explicitly authorized
 installation of `libegl1` and its required dependencies. A sandbox-enabled
@@ -385,6 +388,16 @@ test artifacts; this source correction executed none. The exact winldd1007
 root texts and complete source with both MIT and Apache-2.0 headers, plus build
 provenance—not a whole-Playwright exemption or native Qt qualification. See the
 packaging guide for the exact core/commit distinction and fail-closed checks.
+The owner chose a minimal app-required runtime. Stage one adds a local QtGui
+hook that delegates stock collection/validation and omits only
+`imageformats/qpdf.dll`, `imageformats/qsvg.dll`, `iconengines/qsvgicon.dll` and
+`platforminputcontexts/qtvirtualkeyboardplugin.dll` before native dependency
+closure. Required/default plugins and Network/SSL/Mesa/CRT remain; no app feature
+or parameter changes. Smaller native DLL inventory is a hypothesis, not proof
+from the earlier broad smoke. Component-version/provenance correction follows;
+the current gate's Qt-version requirement for non-Qt CRT components remains
+unfixed, not bypassed. See the packaging guide for stage-one limits.
+
 After Analysis, including hook-added copies, the spec excludes known Playwright
 installer flags/`.links` SDK references and exact root `py.typed` DATA for
 playwright, PySide6, shiboken6, PIL, pyee and greenlet only. These static typing
@@ -396,8 +409,8 @@ or auto-update was added. SDK files are not modified.
 Keep all auxiliary files; settings persist per user
 outside the extracted folder. This is an unsigned prototype, not an invitation
 to disable Windows security. No administrator/end-user installation is required.
-Packaged execution, qualified ZIP/smoke and owner-run Windows 11 acceptance
-remain unproved despite native frozen assembly; T5 stays in progress.
+Minimal-candidate packaged execution/smoke, qualified ZIP and owner-run Windows
+11 acceptance remain unproved; T5 stays in progress.
 
 No model-specific driver has been copied. Real protocol selection and physical
 USB testing require identified hardware; simulation must never be shown as a

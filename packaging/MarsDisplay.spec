@@ -14,6 +14,7 @@ a = Analysis(
     [str(root / 'packaging/entrypoint.py')],
     pathex=[str(root / 'src')],
     datas=collect_data_files('playwright'),
+    hookspath=[str(root / 'packaging/hooks')],
     hiddenimports=['mars_display.app', 'mars_display.devices'],
     excludes=['PyQt5', 'PyQt6', 'PySide2', 'PySide6.QtWebEngineCore',
               'PySide6.QtWebEngineWidgets', 'PySide6.QtWebEngineQuick',
