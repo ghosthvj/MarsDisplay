@@ -4,8 +4,9 @@ MarsDisplay is a GPL v3 companion foundation for a future Windows 11 x64
 MARS display application. **Immutable RGB frames, in-memory simulated output,
 local settings persistence, a lifecycle coordinator, and an injectable Qt tray
 shell, a persistent bundled Chromium capture adapter, and a GUI entrypoint exist
-today.** Output is simulated: there is no USB implementation or Windows executable
-yet. No screen is needed for these tests.
+today.** Passive USB-serial inventory/selection APIs are preparation only, not a
+physical driver. Output is simulated; there is no Windows executable yet.
+No screen is needed for these tests.
 
 ## Run the application (Windows source)
 
@@ -90,6 +91,49 @@ Construction rejects invalid field types with `TypeError` and invalid geometry,
 byte lengths, or timestamp values with `ValueError`. Mutable byte buffers are not
 silently copied. Simulation retains no history and writes no files. This is a
 single-threaded boundary, not a streaming scheduler or a real adapter.
+
+## Passive USB-serial preparation (API only)
+
+`mars_display.devices.enumerate_devices(provider=None)` returns a tuple of frozen
+`USBSerialDescriptor` observations. Import does nothing. Only an explicit call
+without a provider lazily calls `serial.tools.list_ports.comports(include_links=False)`;
+it never opens, probes, handshakes, resets or writes a port. Tests replace that
+backend or inject a zero-argument provider of synthetic descriptor objects; no
+actual host inventory was enumerated for qualification.
+
+Observations retain `device`, integer `vid`/`pid`, and optional `serial_number`,
+`description`, `location`, `manufacturer`, `product`, and `interface`. Non-USB,
+missing/invalid VID/PID (outside 0–65535, including booleans), or invalid port-name
+records are omitted. Missing, blank, non-string or non-printable optional text
+becomes `None`. Metadata is sorted deterministically by all fields; duplicates
+remain visible. Inventory failure raises sanitized `DeviceInventoryError` with
+`Cannot list USB serial descriptors; check system device access and retry.`
+No partial inventory is returned.
+
+A descriptor's `identity` is `None` without a usable USB serial. Otherwise it is
+an opaque persistable identity combining VID/PID and percent-escaped,
+case-preserved USB serial, e.g. `usb:1234:00ab:Screen%2FA%25%3A%C3%A9` for
+serial `Screen/A%:é`. Treat the entire identity as opaque, not as a protocol or
+compatibility claim. A COM name alone is never stable identity.
+
+`select_device(inventory, identity)` returns the exact existing observation only
+when exactly one matches; it never chooses even a sole device automatically.
+COM reassignment follows the unique USB identity, not an unrelated old COM
+occupant. Rejections raise `DeviceSelectionError`, leave the inventory unchanged,
+and use these exact messages without echoing supplied values:
+
+| Condition | Message |
+| --- | --- |
+| No selection (`None` or blank) | `Select an explicit stable USB identity; no device was selected.` |
+| Unknown identity (including COM-only or legacy opaque values) | `Selected USB identity was not found; refresh inventory and select again.` |
+| Multiple matching observations | `Selected USB identity is ambiguous; disconnect duplicates or identify the hardware before selecting.` |
+
+Neither API saves configuration. Existing opaque `Settings.device_identity`
+values remain valid and unmigrated; the tray field remains read-only. These APIs
+are not wired into startup or Start: runnable output remains `SimulatedTransport`.
+Native Windows enumeration, driver compatibility, a physical GUI chooser and
+hardware/protocol qualification await identified hardware. VID/PID never selects
+a protocol, and no model-specific upstream driver has been copied.
 
 ## Local settings (no capture or automatic launch)
 
@@ -262,6 +306,7 @@ extra as well. Tray/application assembly imports Qt; the core remains GUI-indepe
 | Browser rendering | Playwright 1.64.0 |
 | Tray/UI | PySide6 6.12.0 |
 | Image decoding | Pillow 12.3.0 |
+| Passive serial descriptor metadata only | pyserial 3.5 |
 | Optional future executable packaging | PyInstaller 6.22.3 |
 | Source build backend | setuptools 84.0.0 |
 
@@ -280,6 +325,15 @@ installation of `libegl1` and its required dependencies. A sandbox-enabled
 Chromium local screenshot also passed using the repository-local browser.
 These probes establish tooling availability, not Windows tray, real MARS,
 packaged-runtime or physical-screen acceptance.
+
+The direct `pyserial==3.5` pin comes from the upstream
+[pySerial project](https://pypi.org/project/pyserial/3.5/), under its BSD license;
+retain that license and provenance in future bundled dependency notices. The
+passive API follows the official
+[list_ports documentation](https://github.com/pyserial/pyserial/blob/master/documentation/tools.rst).
+The package is installed in the local `.venv`; its universal wheel and empty
+`Requires-Python` metadata do not establish Python/Windows compatibility. Synthetic
+API tests do not qualify native enumeration or any physical driver.
 
 ## Deliberately deferred
 
