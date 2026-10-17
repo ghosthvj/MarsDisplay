@@ -6,15 +6,12 @@ drive a physical USB screen.
 
 ## Download the verified portable prototype
 
-**Memory correction pending delivery:** source 0.1.2 releases the temporary
-Playwright layout-wait handle after every capture. The 0.1.1 download below
-predates this fix and retains one handle per captured frame until Stop.
-
-[Download MarsDisplay 0.1.1 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39055573997/artifacts/12109691322)
-from the [successful native build](https://github.com/ghosthvj/MarsDisplay/actions/runs/39055573997).
-This corrects premature metadata rejection when MARS mounts its display root
-after DOMContentLoaded. The artifact contains the application ZIP and SHA256
-sidecar; retention ends **2026-10-24 17:54 UTC**. GitHub sign-in may be required.
+[Download MarsDisplay 0.1.2 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39065994952/artifacts/12112754920)
+from the [successful native build](https://github.com/ghosthvj/MarsDisplay/actions/runs/39065994952).
+This releases the temporary Playwright layout-wait handle after every capture;
+0.1.1 retained one per frame until Stop. The earlier bounded SPA readiness fix
+is preserved. The artifact contains the application ZIP and SHA256 sidecar;
+retention ends **2026-10-24 20:20 UTC**. GitHub sign-in may be required.
 
 1. Exit the previous MarsDisplay instance. Keep existing user settings.
 2. If missing, manually install official **Microsoft VC++ v14 x64, 14.51+**:
@@ -29,17 +26,20 @@ are not. There is no MarsDisplay installer or automatic prerequisite download.
 The prototype is unsigned: do not disable security or copy random DLLs to bypass
 an error. Follow the included root `README.txt`.
 
-**T5 is complete for 0.1.1:** native CI passed all 143 source tests, assembly,
+**T5 is complete for 0.1.2:** native CI passed all 144 source tests, assembly,
 external-runtime profile, startup/binary smoke, native-material qualification,
-source stability and publication. The downloaded **205,550,469-byte** ZIP,
+source stability and publication. The downloaded **205,551,083-byte** ZIP,
 all **1,221 file hashes** and **325 source hashes** were verified. SHA256:
 
 ```text
-84769fa48f091323a4d7598fb12358d725c4a2cc6ef6a96fa7f504f75b7a4fc4
+657b71f30f1b73e2340de152cf1719b35a1a6a6739b7e819c075e0959387737e
 ```
 
-Exact artifact source: `5d0de48b4f08c38a33c5027195e18841fe2c86d4`.
-A real MARS capture passed with the corrected source on Linux. Owner Windows
+Exact artifact source: `93b222b77ac07141d561e8735ef6bbb037747315`.
+The memory regression failed with 20 retained handles before correction and
+passed with none afterward; all 144 local tests and 14 independent capture and
+security tests passed. A real MARS capture passed with the earlier SPA-corrected
+source on Linux; no new private endpoint capture was required for this fix. Owner Windows
 screenshots show running/ready, live connected, non-stale data and increasing
 frame counts; the owner confirmed these tests used the delivered 0.1.1 ZIP.
 The owner also confirmed Start, Stop, restart and normal Exit. Screenshots show
@@ -380,7 +380,7 @@ were installed successfully in a repository-local `.venv` on Linux, producing an
 editable wheel. System Python was not modified. Windows EXE/one-folder assembly
 and the broad bundle's native startup/binary smoke have since succeeded in CI.
 The minimal external-runtime profile, fresh native inventory/smoke, qualification
-and downloaded 0.1.1 ZIP are now verified. Owner-run acceptance remains partial.
+and downloaded 0.1.2 ZIP are now verified. Owner-run acceptance remains partial.
 
 Linux Qt offscreen availability passed after the explicitly authorized
 installation of `libegl1` and its required dependencies. A sandbox-enabled

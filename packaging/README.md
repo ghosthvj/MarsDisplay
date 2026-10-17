@@ -1,23 +1,19 @@
 # Windows portable build and verified delivery
 
-## Verified artifact — historical 0.1.1
+## Verified artifact — T5 complete for 0.1.2
 
-Source 0.1.2 now disposes the per-capture layout-wait handle. Its corrected
-Windows artifact is pending; the verified 0.1.1 download below does not contain
-this memory-retention fix. No dependency, runtime profile or qualification gate
-has changed.
-
-[Download MarsDisplay 0.1.1 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39055573997/artifacts/12109691322)
-from [run39055573997](https://github.com/ghosthvj/MarsDisplay/actions/runs/39055573997), exact source
-`5d0de48b4f08c38a33c5027195e18841fe2c86d4`. The artifact contains the
-application ZIP and SHA256 sidecar; retention ends **2026-10-24 17:54 UTC**.
-This build contains the bounded SPA display-root readiness correction; the
-previous 0.1.0 artifact does not.
+[Download MarsDisplay 0.1.2 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39065994952/artifacts/12112754920)
+from [run39065994952](https://github.com/ghosthvj/MarsDisplay/actions/runs/39065994952), exact source
+`93b222b77ac07141d561e8735ef6bbb037747315`. The artifact contains the
+application ZIP and SHA256 sidecar; retention ends **2026-10-24 20:20 UTC**.
+This build releases the per-capture layout-wait handle and preserves the bounded
+SPA readiness correction. The previous 0.1.1 does not contain this handle fix.
+Dependencies, external-runtime profile and qualification gates are unchanged.
 
 | Verified evidence | Result |
 | --- | --- |
-| Native CI | 143 source tests passed in 49.084s, then compile, external profile, startup/binary smoke, genuine-material provisioning, unchanged v2 qualification, source stability and upload passed. |
-| Download | 205,550,469-byte ZIP; SHA256 `84769fa48f091323a4d7598fb12358d725c4a2cc6ef6a96fa7f504f75b7a4fc4` matches its sidecar. |
+| Native CI | 144 source tests passed in 50.226s, then compile, external profile, startup/binary smoke, genuine-material provisioning, unchanged v2 qualification, source stability and upload passed. |
+| Download | 205,551,083-byte ZIP; SHA256 `657b71f30f1b73e2340de152cf1719b35a1a6a6739b7e819c075e0959387737e` matches its sidecar. |
 | Content | 1,222 members; all 1,221 file hashes and 325 source hashes verified without executing or extracting Windows code on Linux; browser source/version match the source commit. |
 | Native inventory | 69 files; 27 Qt components and 6 supplemental associations bound to notices/evidence; no selected Microsoft DLLs or Qt Mesa. |
 | Runtime | Python3.13.16, Qt6.12.0, PyInstaller6.22.3, Node24.21.0, Chromium156.0.8078.4, FFmpeg1013. |
@@ -34,8 +30,10 @@ The earlier four corrected defects and three missing-input diagnostic runs remai
 recorded in the feature ledger. The first qualified artifact was 0.1.0/run39049628794;
 0.1.1 addresses the later owner-reported capture bootstrap race. A local monitor
 initially failed because unqualified Python was absent; the feature push succeeded
-and monitoring attached to the same run. No duplicate workflow or validation bypass
-was used.
+and monitoring attached to the same run. The later 0.1.2 handle-retention repair
+passed its RED/GREEN resource-lifetime regression, 144 local tests and 14
+independent capture/security tests before the single corrected Windows build.
+No duplicate workflow or validation bypass was used.
 
 **T6 remains partial:** owner Windows screenshots show running/ready, live,
 non-stale data and increasing frames; the owner subsequently confirmed the tested
