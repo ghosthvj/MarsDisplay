@@ -50,6 +50,14 @@ Distribution prerequisite selected by the user, verbatim:
 > VC++ oficial como requisito externo — recomendado
 > El ZIP incluye Python, Qt y Chromium, pero no redistribuye las DLL de Microsoft. Si falta VC++ x64, el usuario lo instala desde Microsoft. Sin instalador de MarsDisplay.
 
+Owner acceptance, verbatim:
+> Ok, podemos cerrar T6 y aceptar 0.1.2 como base para hacer pruebas.
+
+T6 is closed by owner acceptance of the verified 0.1.2 portable as a testing
+baseline. Unperformed aggregate-resource, remaining process-cleanup and
+Stop-during-retry observations are deferred, not passed. This does not approve
+production use, physical hardware, an installer or a release.
+
 ### S7 — Provenance and protocol gate
 > ok. la licencia es GPL3.0 así que podríamos reutilizar su codigo en la capa de comunicacion una vez que tengamos identificada la pantalla y así no tener que desarrollarlo desde cero
 > si, no tengo problemas en respetar las condiciones de la licencia y de momento el uso es personal
@@ -119,7 +127,7 @@ Acceptance: correct the proven same-URL popup defect with regression proof, reta
 - T3 [S1,S3,S5,S10,S15] route: inline for bounded popup correction, delegated context-backstop for subsequent app assembly; status: done (S5 handle cleanup RED/GREEN/full144/independent14 verified); commits: T3a `5f55f3e6bf720f0f74d578ac21371d9c353dbbc9`, T3b `e951bbb0a4b6f2f4caea07e1a988d69bbc57b272` — actual MARS contract inspected, persistent browser and controlled fixtures under test. Access is HTTP(S) without interactive login.; bootstrap repair: 5d0de48b4f08c38a33c5027195e18841fe2c86d4; handle cleanup: `93b222b77ac07141d561e8735ef6bbb037747315`
 - T4 [S1,S4,S5,S7] route: delegated (context backstop); status: done (software preparation/simulated pipeline only; native inventory and physical chooser deferred to identified hardware); commit: `f936dd21a2787e5bb5f67cbaa98478634a9148f3` — both-orientation capture/bounded simulated pipeline proved by T3b; passive USB-serial descriptor inventory and explicit conservative identity-selection APIs/tests without choosing a protocol, auto-selecting a port or writing USB. Runnable output remains simulated; physical GUI chooser/driver qualification waits for identified hardware.
 - T5 [S1,S2,S3,S6,S7] route: bounded implementation and independent Risk5 source/policy verification; status: done (0.1.2 CI39065994952 and downloaded ZIP/source/hash/profile verification passed; owner acceptance remains T6); owner acceptance is T6); delivery source commit: `93b222b77ac07141d561e8735ef6bbb037747315`; principal final units: external profile `6e9218ab46f6a92cee4e2f6f3245eb6a21462e69`, native data `dcc7ff6cd526bc7c9843bec151ba120745625965`, policy `97bf8a0ca5d06f61e1feb1d8b5f776bd5fbf4b6d`, provisioner `ff55d90fb348649016b59f610a35d722b00aa868` — source141/independent44 passed; actual Windows run39049628794 compiled, smoked, qualified and uploaded artifact12107551102. Downloaded205549310-byte ZIP verified SHA256f304b389b02b214ee7f090e609e1035256046ddb420ffea50f248d612fffb8fb,1221file/325sourcehashes,69native/27Qt+6supp; no selected Microsoft DLLs or Qt Mesa. VC14.51+x64 external prerequisite acceptedS6. Output remains simulated; T6 separate. Earlier work-unit commits/evidence retained in Log.; 0.1.1 source: 5d0de48b4f08c38a33c5027195e18841fe2c86d4; 0.1.1 source: `5d0de48b4f08c38a33c5027195e18841fe2c86d4`; 0.1.2 candidate: `93b222b77ac07141d561e8735ef6bbb037747315`, CI39065994952 passed; artifact12112754920 verified
-- T6 [S1,S4,S5,S6] route: local Windows acceptance by owner; status: blocked (owner Windows screenshots now running/ready with increasing frames; 0.1.1 capture/Start/Stop/restart/normal Exit confirmed by owner; unreachable-source exhaustion/resume and Ethernet-loss/live restoration observed; both Node Stop closure confirmed and preliminary RAM estimate available; awaits owner 0.1.2 sustained Windows benchmark, remaining Chromium/Exit cleanup and Stop-during-retry evidence); commit: evidence pending — actual tray/normal Exit/LAN/recovery and process-tree RAM/CPU measurements. Server2025 CI is not Windows11 acceptance. Physical USB/protocol validation remains deferred.
+- T6 [S1,S4,S5,S6] route: local Windows acceptance by owner; status: done (owner explicitly accepts 0.1.2 as a testing baseline; outstanding observations deferred, not verified); commit: owner-acceptance documentation work unit. Evidence: prior functional/recovery/both-Node Stop observations and eight same-PID EXE samples through 2,303 frames at 34.2–38.6 MB, compatible with stabilization. No attributed aggregate-memory bound, remaining Chromium/Exit cleanup or Stop-during-retry proof is invented. Physical USB/protocol qualification remains deferred.
 
 - T7 [S13] route: delegated (context backstop); status: done (fixture-only scope); commit: `5b34bd34db6acee3a8cd428a5569788abbbae2f0` — per-test fixture, strict counters, HTTP/Page/Route provenance through later captures, bounded cleanup and corrected listener teardown verified. Helper4, public trace regression1, full51 and targeted independent recheck passed. Standalone helper/trace tests/docs commit independently; unaccepted BrowserSession and its test_browser.py integration remain uncommitted under T3.
 
@@ -372,3 +380,32 @@ L120 — Sourceworkunit `93b222b77ac07141d561e8735ef6bbb037747315` committedonfe
 L121 — Job47exit0after4m9s:source93b222bpushandCI39065994952passed,portablejob1174936749923m55s. Windows144tests/50.226sexit0;nativebuild,externalprofile,isolatedpackagedsmoke,genuinematerialqualification/source-stability/uploadpassed. Unqualified-onlyuploadcorrectlyskippedonsuccess. Job48downloadmetadata+artifactactive;nohash/contentverificationyet. Planreview:T5remainsinprogressuntilactualZIPverification,T6pendingT5andownerresource/cleanup/retryStopproof;T3sourcecompletionunchanged. No new source tests/build/reviewrun.
 
 L122 — Job48downloadexit0/46s;artifact12112754920expires2026-10-24T20:20:01Z. Exactapplication`MarsDisplay-0.1.2-Windows-x64.zip`205551083bytes,SHA256`657b71f30f1b73e2340de152cf1719b35a1a6a6739b7e819c075e0959387737e`. Checker012exit0/1.9s:1222members/1221filehashes/325sourcehashes/69native/27Qt+6supplemental/noMicrosoftDLLs/noMesa,source93b222b/version/browser/newregressionbytesmatch. NoWindowscodeextracted/executedonLinux. Wrapper204849246B/digestd356a6a1...isnotapplicationZIP. README/packagingupdatedtoverified0.1.2download/SHA/expiry;sourceunitunchanged. T5doneafteractualproof,T6blockedonownerpostfixRAM/remainingcleanup/retryStop;existing0.1.1functionalproofretained. Docs-onlycommit/pushtoexistingfeaturebranchwith[skipci]next;doesnotrebuildbinary. No main/PR/release/installer/hardwareorflatRAMclaim.
+
+
+L123 — Owner, verbatim: `aqui las pruebas '/my-projects/pantalla/.herdr-web-ui/paste-20261017-202906-7eb7412b.png' '/my-projects/pantalla/.herdr-web-ui/paste-20261017-203310-233a7662.png' '/my-projects/pantalla/.herdr-web-ui/paste-20261017-203712-cd88e113.png' '/my-projects/pantalla/.herdr-web-ui/paste-20261017-204218-5c345a0a.png' '/my-projects/pantalla/.herdr-web-ui/paste-20261017-204239-38405022.png' '/my-projects/pantalla/.herdr-web-ui/paste-20261017-205027-55411293.png' '/my-projects/pantalla/.herdr-web-ui/paste-20261017-210154-37105b09.png' '/my-projects/pantalla/.herdr-web-ui/paste-20261017-210727-ccd504f9.png'`. All eight images consumed privately; no image bytes or private endpoint copied into the repository.
+
+Same EXE PID 46972, in supplied order:
+
+| Lifetime frames | Observed RAM (MB) | Instantaneous CPU (%) |
+| --- | --- | --- |
+| 11 | 34.3 | 0 |
+| 259 | 34.2 | 0 |
+| 502 | 36.9 | 0.1 |
+| 805 | 37.9 | 0 |
+| 825 | 35.9 | 0.2 |
+| 1285 | 38.6 | 0.1 |
+| 1974 | 37.2 | 0 |
+| 2303 | 36.4 | 0.1 |
+
+Every screenshot shows running/ready, simulated-open, live connected and non-stale data. The last three RAM samples decrease while frames advance. This is compatible with EXE stabilization in this post-delivery test series, not proof of an indefinite bound, absence of every leak, a physical-RAM average or attributed aggregate Node/Chromium consumption. Filename times are not a stopwatch or sampling-cadence record. Background process names are obscured: no attribution, summing or conclusions about the large unidentified row. No new code/build/CI is warranted by this series. T6 remains blocked only on the other outstanding whole-process/Chromium-Exit/retry-Stop evidence; do not request these eight images or prior functional/Node-Stop evidence again. The 0.1.2 version is the test context following delivery; the GUI does not display a binary version.
+
+Delivery bookkeeping: job49 previously exited0/2s and confirmed remote documentation commit `45021a08a40d7b80b91ccda7bb794b3b198bbc58`; binary source remains `93b222b77ac07141d561e8735ef6bbb037747315`. This acceptance-note update is local, not a new published binary or benchmark.
+
+
+L124 — Owner, verbatim:
+```text
+Ok, podemos cerrar T6 y aceptar 0.1.2 como base para hacer pruebas.
+Sería posible personalizar un poco la UI de MarsDisplay.exe?
+```
+
+Decision: close T6 by explicit owner acceptance of the verified 0.1.2 testing baseline. Outstanding aggregate-resource/process-cleanup/retry-cancellation observations are deferred, not asserted successful. All T1–T8 outcomes are now closed within their scoped evidence/owner acceptance; hardware qualification is still outside this baseline. README/packaging acceptance wording reconciled. No source/dependency/binary/installer/release changes or CI rebuild. The UI question authorizes explanation/design discussion only; no visual direction or implementation scope has been selected, so no UI writer/assets/code/new task is started. Current Qt Widgets shell can be styled or reorganized without replacing the capture stack; discuss the owner's preferred visual direction before implementation.

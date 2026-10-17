@@ -35,7 +35,8 @@ passed its RED/GREEN resource-lifetime regression, 144 local tests and 14
 independent capture/security tests before the single corrected Windows build.
 No duplicate workflow or validation bypass was used.
 
-**T6 remains partial:** owner Windows screenshots show running/ready, live,
+**T6 is closed by owner acceptance of 0.1.2 as a testing baseline.** Earlier
+owner Windows screenshots show running/ready, live,
 non-stale data and increasing frames; the owner subsequently confirmed the tested
 ZIP was 0.1.1. The owner then confirmed Start, Stop, restart and normal Exit;
 screenshots show stopped/closed output and retained lifetime frames (30 to 36).
@@ -46,9 +47,12 @@ confirmed both observed Node processes disappear after Stop. Their separate
 includes its four children. Together with earlier EXE samples this suggested
 184–186 MB, not simultaneous sampling or a sustained benchmark. The same EXE
 PID later reached 45.9 MB / 3,671 frames. Source diagnosis reproduced one retained
-layout-wait handle per capture; 0.1.2 releases it immediately. Sustained corrected
-whole-process measurements, remaining Chromium/Exit cleanup and Stop-during-retry
-cancellation remain pending. Windows Server2025 CI and ZIP checks are not
+layout-wait handle per capture; 0.1.2 releases it immediately. Eight subsequent
+same-PID EXE samples ranged from 34.2 to 38.6 MB through 2,303 frames, ending at
+36.4 MB, compatible with stabilization in that run. The owner accepted this as
+a testing baseline, not a production or physical-screen qualification. Aggregate
+Node/Chromium measurements, remaining Chromium/Exit cleanup and Stop-during-retry
+observations are deferred, not claimed successful. Windows Server2025 CI and ZIP checks are not
 Windows11 acceptance or legal certification. Later documentation-only commits
 do not change/rebuild the artifact.
 

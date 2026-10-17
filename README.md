@@ -52,9 +52,12 @@ not a simultaneous total or sustained benchmark. The same EXE PID later grew
 from 34–36.4 MB to 42.6–42.7 MB and then 45.9 MB at 3,671 frames.
 A local isolated reproduction confirmed one retained layout-wait handle per
 capture; source 0.1.2 corrects that retention without changing rendering policy.
-**T6 remains partial:** sustained whole-process CPU/RAM, remaining Chromium/Exit
-cleanup and Stop-during-retry cancellation still need evidence. Source object
-lifetime checks do not establish the corrected Windows working-set bound.
+**T6 is closed by owner acceptance of 0.1.2 as a testing baseline.** Eight
+subsequent same-PID EXE samples ranged from 34.2 to 38.6 MB through 2,303 frames,
+ending at 36.4 MB: compatible with stabilization in that run, not an indefinite
+memory bound. Aggregate Node/Chromium measurements, remaining Chromium/Exit
+cleanup and Stop-during-retry observations are deferred, not passed. This is not
+production or physical-screen qualification.
 Windows Server CI is not Windows 11 acceptance or hardware support. Later
 documentation-only commits do not rebuild this artifact.
 
@@ -380,7 +383,8 @@ were installed successfully in a repository-local `.venv` on Linux, producing an
 editable wheel. System Python was not modified. Windows EXE/one-folder assembly
 and the broad bundle's native startup/binary smoke have since succeeded in CI.
 The minimal external-runtime profile, fresh native inventory/smoke, qualification
-and downloaded 0.1.2 ZIP are now verified. Owner-run acceptance remains partial.
+and downloaded 0.1.2 ZIP are now verified. The owner accepted this testing
+baseline and closed T6; unperformed observations remain explicitly deferred.
 
 Linux Qt offscreen availability passed after the explicitly authorized
 installation of `libegl1` and its required dependencies. A sandbox-enabled
