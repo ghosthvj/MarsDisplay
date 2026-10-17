@@ -3,3 +3,4 @@ third_party/license-material/**/*.txt -text -whitespace
 third_party/license-material/provenance.json text eol=lf
 third_party/native-material/raw/** -text -whitespace conflict-marker-size=32
 third_party/native-material/provenance.json text eol=lf
+third_party/native-material/policy.json text eol=lf
