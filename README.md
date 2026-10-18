@@ -4,7 +4,11 @@ MarsDisplay is a GPL v3 Windows 11 x64 tray companion that renders MARS locally
 with bundled Chromium. Output is **simulated only**: this prototype does not
 drive a physical USB screen.
 
-## Output frame preview (0.1.4 source)
+## Download the output preview prototype — 0.1.4
+
+[Download MarsDisplay 0.1.4 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39084595234/artifacts/12120556248)
+from the [successful native build](https://github.com/ghosthvj/MarsDisplay/actions/runs/39084595234).
+Retention ends **2026-10-25 00:59 UTC**; GitHub sign-in may be required.
 
 **Preview** in Status / Settings opens one modeless popup with the exact latest
 RGB888 frame accepted by simulated output, not a separate browser capture.
@@ -15,10 +19,34 @@ that capture must be started. Close/Escape hides only the popup; reopening shows
 the current frame. Hidden previews release their rendered image. Session theme and
 existing capture/Save/Exit guards remain unchanged. No image files/history, extra
 Chromium, new setting, USB communication or proof of physical reception is added.
-The preview portable is pending native build/download verification; the verified
-0.1.3 download below does **not** contain this button.
+Exit the previous instance through the tray, extract the **entire application ZIP**
+into a separate folder, open `MarsDisplay.exe`, then use **Status / Settings → Preview**.
+Your saved settings remain in place. Keep the owner-tested 0.1.3 folder as a fallback.
+The official Microsoft VC++ v14 x64 **14.51+** prerequisite is unchanged:
+https://aka.ms/vc14/vc_redist.x64.exe . No installer or automatic prerequisite download.
 
-## Download the themed UI prototype
+**Verified:** 159 Windows source tests (61.547s), native build, isolated packaged
+smoke, external-runtime profile, genuine-material qualification and source stability.
+The downloaded ZIP is **205,571,620 bytes**; all **1,224 file hashes** and **328 source
+hashes** passed, with 69 native files and the unchanged minimal runtime profile.
+Application ZIP SHA256 (not the Actions wrapper digest):
+
+```text
+4252eeae642b9e7c878c618c7aca5ae0dc13c16ec14629af25a5e8c658064e54
+```
+
+Exact binary source: `2b87ace0967f720820fa800b93a21541715012df`.
+All 159 local tests, 34 independent tray/preview/real-browser app checks and the
+parent spot check passed. Existing public behavior matched the previous source;
+synthetic light/dark, portrait/landscape, empty/retained, small-window and 150% views
+were inspected. **Owner Windows 11 preview/DPI acceptance remains pending.** The
+prior owner confirmation of 0.1.3 themes below does not cover this new popup or
+physical USB reception. Later documentation commits do not rebuild this artifact.
+
+<details>
+<summary>Previous owner-tested 0.1.3 UI and accepted 0.1.2 baseline</summary>
+
+### Owner-tested themed UI — 0.1.3
 
 [Download MarsDisplay 0.1.3 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39078344950/artifacts/12117643947)
 from the [successful native build](https://github.com/ghosthvj/MarsDisplay/actions/runs/39078344950).
@@ -120,6 +148,8 @@ cleanup and Stop-during-retry observations are deferred, not passed. This is not
 production or physical-screen qualification.
 Windows Server CI is not Windows 11 acceptance or hardware support. Later
 documentation-only commits do not rebuild this artifact.
+
+</details>
 
 </details>
 

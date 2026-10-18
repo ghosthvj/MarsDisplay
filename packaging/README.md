@@ -1,6 +1,36 @@
 # Windows portable build and verified delivery
 
-## Verified themed UI artifact — 0.1.3
+## Verified output-preview portable — 0.1.4
+
+[Download MarsDisplay 0.1.4 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39084595234/artifacts/12120556248)
+from [run39084595234](https://github.com/ghosthvj/MarsDisplay/actions/runs/39084595234), exact source
+`2b87ace0967f720820fa800b93a21541715012df`. Retention ends **2026-10-25 00:59 UTC**.
+
+| Verified evidence | Result |
+| --- | --- |
+| Native CI | 159 source tests / 61.547s; compile, external profile, isolated packaged smoke, genuine-material qualification, source stability and upload passed. |
+| Application ZIP | 205,571,620 bytes; SHA256 `4252eeae642b9e7c878c618c7aca5ae0dc13c16ec14629af25a5e8c658064e54` matches its sidecar. |
+| Payload/source | 1,225 members; all 1,224 file hashes and 328 source hashes checked. Preview, tray, presentation, tests, browser, bundled README and project version match the source commit. |
+| Native profile | 69 native files; 27 Qt components plus 6 supplemental associations; no selected Microsoft runtime DLLs or Qt Mesa. Dependency pins/profile/qualification/workflow unchanged. |
+| Functional source proof | 159 local tests; independent 34 preview/tray/real-browser app cases, plus parent spot check; exact old CLI/UI differential and synthetic 100%/150%/small-window views. |
+
+Use **Status / Settings → Preview**. It reads the existing latest frame accepted
+by output; it does not capture again, start another browser, save images or access
+USB. Stop/loading/rejected output retain the last accepted pixels and current
+metadata is labeled separately. Close/Escape hides only the modeless popup; tray
+Exit retains its resource-cleanup guard. Extract the whole ZIP into a new folder
+after exiting the old instance; saved settings and external VC++ prerequisite stay
+unchanged. Keep owner-tested 0.1.3 as a fallback.
+
+The first independent preparation copied the SDK unnecessarily and hit temporary
+storage limits before running any test. Explicitly authorized cleanup and code-
+only isolation with the original read-only SDK resolved it; the 34-case command
+then passed once. No source failure, qualification bypass or automatic CI retry.
+**New popup owner Windows11 visual/DPI acceptance is pending.** No Windows code
+was executed on Linux; wrapper digest is not the application ZIP checksum. This
+is not a release, installer, production certification or physical-screen test.
+
+## Owner-tested previous themed UI — 0.1.3
 
 [Download MarsDisplay 0.1.3 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39078344950/artifacts/12117643947)
 from [run39078344950](https://github.com/ghosthvj/MarsDisplay/actions/runs/39078344950), exact source
