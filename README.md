@@ -39,9 +39,12 @@ Local tests, independent verification and synthetic 100%/150%/small-window views
 passed. The first Windows test run exposed premature layout measurement; the
 corrected test retains the same geometry requirement and bounded Qt event loop.
 No production timeout, threshold, runtime profile or qualification was relaxed.
-**Owner Windows 11 visual/DPI acceptance of 0.1.3 is still pending.** The owner-
-accepted testing baseline remains **0.1.2**; that acceptance is not transferred
-to the new UI or to physical hardware. Later documentation commits do not rebuild
+**The owner confirmed the 0.1.3 UI working in both light and dark modes on
+Windows.** Supplied screenshots show running/ready, live connected, non-stale
+capture and increasing frames (34 to 59), with no obvious clipping at that setup.
+Other DPI configurations and sustained aggregate resource use were not established
+by these two snapshots. Keep **0.1.2** as a fallback; this is not production or
+physical-hardware qualification. Later documentation commits do not rebuild
 this artifact.
 
 <details>

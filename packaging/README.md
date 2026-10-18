@@ -23,9 +23,13 @@ corrected run passed without a platform skip, lowered threshold or runtime chang
 Exit the old instance, extract the whole new ZIP into a separate folder and keep
 0.1.2 as a fallback. Existing settings persist. The theme selector is per-session,
 not a settings-format migration. Native titlebar appearance follows Windows.
-**Owner Windows11 visual/DPI acceptance of 0.1.3 remains pending.** The following
-0.1.2 acceptance is historical and is not transferred to 0.1.3. This is not a
-release, installer, production certification or physical-screen qualification.
+**The owner confirmed 0.1.3 working in both light and dark modes on Windows.**
+Screenshots show one EXE PID, running/ready/live/non-stale capture and frames
+34 to 59; the layout and Save footer are visible without obvious clipping.
+EXE snapshots of 38.3/38.6 MB and 0.4/0% CPU are not a sustained whole-process
+benchmark. Other DPI setups, production use and physical hardware remain
+unqualified. Keep 0.1.2 as a fallback; its historical acceptance evidence below
+is not substituted for these new UI observations. No release or installer.
 
 ## Accepted testing baseline — 0.1.2
 
