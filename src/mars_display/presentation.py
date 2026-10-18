@@ -17,7 +17,7 @@ def window_stylesheet(dark: bool) -> str:
         "warning": "#865b16", "error": "#a92e36",
     })
     return """
-        QDialog#statusWindow, QWidget#body {
+        QDialog#statusWindow, QDialog#previewWindow, QWidget#body {
             background: %(background)s;
         }
         QWidget {

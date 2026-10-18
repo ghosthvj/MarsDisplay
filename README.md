@@ -4,6 +4,20 @@ MarsDisplay is a GPL v3 Windows 11 x64 tray companion that renders MARS locally
 with bundled Chromium. Output is **simulated only**: this prototype does not
 drive a physical USB screen.
 
+## Output frame preview (0.1.4 source)
+
+**Preview** in Status / Settings opens one modeless popup with the exact latest
+RGB888 frame accepted by simulated output, not a separate browser capture.
+Portrait320×480 and landscape480×320 remain unscaled; scroll if the window is small.
+It updates while visible, identifies current lifecycle/live/stale state and retains
+the last accepted image after Stop or an output failure. With no frame, it explains
+that capture must be started. Close/Escape hides only the popup; reopening shows
+the current frame. Hidden previews release their rendered image. Session theme and
+existing capture/Save/Exit guards remain unchanged. No image files/history, extra
+Chromium, new setting, USB communication or proof of physical reception is added.
+The preview portable is pending native build/download verification; the verified
+0.1.3 download below does **not** contain this button.
+
 ## Download the themed UI prototype
 
 [Download MarsDisplay 0.1.3 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39078344950/artifacts/12117643947)

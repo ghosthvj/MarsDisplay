@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mars-display"
-version = "0.1.3"
+version = "0.1.4"
 description = "Hardware-independent foundation for a Windows MARS display companion"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"

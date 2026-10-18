@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 
 from .lifecycle import Coordinator, LifecycleError
 from .presentation import window_stylesheet
+from .preview import FramePreviewDialog
 from .settings import Settings, SettingsError, SettingsStore, SettingsStoreError
 
 
@@ -170,6 +171,10 @@ class SettingsDialog(QDialog):
             line.setFixedHeight(1)
             details.addWidget(line, index * 2 + 1, 0, 1, 2)
         column.addLayout(details)
+        self.preview_action = QPushButton("Preview")
+        self.preview_action.setAutoDefault(False)
+        self.preview_action.setAccessibleName("Preview output frame")
+        column.addWidget(self.preview_action, 0, Qt.AlignmentFlag.AlignRight)
         column.addWidget(_label("Configuration", "sectionHeading"))
         column.addWidget(_label("MARS URL"))
         self.url = QLineEdit(configured.mars_url if configured else "")
@@ -232,6 +237,8 @@ class TrayShell(QObject):
         self.configured = configured
         app.setQuitOnLastWindowClosed(False)
         self.dialog = SettingsDialog(configured)
+        self.preview = None
+        self.dialog.preview_action.clicked.connect(self.show_preview)
         self.menu = QMenu()
         self.settings_action = self.menu.addAction("Status / Settings")
         self.start_action = self.menu.addAction("Start")
@@ -261,6 +268,17 @@ class TrayShell(QObject):
         self.dialog.show()
         self.dialog.raise_()
         self.dialog.activateWindow()
+
+    def show_preview(self):
+        status = self.coordinator.snapshot()
+        if status.exit_requested:
+            return
+        if self.preview is None:
+            self.preview = FramePreviewDialog(self.dialog)
+        self.preview.show()
+        self.preview.update_snapshot(status)
+        self.preview.raise_()
+        self.preview.activateWindow()
 
     def _activate(self, reason):
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
@@ -301,6 +319,12 @@ class TrayShell(QObject):
 
     def refresh(self):
         status = self.coordinator.snapshot()
+        self.dialog.preview_action.setEnabled(not status.exit_requested)
+        if self.preview is not None:
+            if status.exit_requested:
+                self.preview.hide()
+            elif self.preview.isVisible():
+                self.preview.update_snapshot(status)
         self.dialog.runtime.setText("recovering (retrying)" if status.state == "retrying" else status.state)
         self.dialog.source.setText(status.source_state)
         self.dialog.output.setText(f"Simulated — {status.output_state} (no USB output)")

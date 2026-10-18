@@ -10,6 +10,12 @@ Windows 11 provides the OS UCRT/API-set components. No MarsDisplay installer exi
 Open MarsDisplay.exe in an interactive desktop session; capture starts STOPPED.
 Output is SIMULATED ONLY; no USB screen is connected or driven by this prototype.
 Use the tray Status / Settings to configure; Start/Stop control capture, Exit closes.
+Preview opens one modeless view of the latest RGB frame accepted by simulated output.
+It updates while visible without another capture/browser or writing images to disk.
+Stop retains the last frame; read the lifecycle/live/stale labels, not just the image.
+Close/Escape hides only the preview; tray Exit still waits for owned-resource cleanup.
+Preview pixels are unscaled (scroll if needed); Windows DPI can affect physical size.
+Light/dark mode follows the status window for this session. This is not USB reception.
 Settings persist at %LOCALAPPDATA%\MarsDisplay\settings.json outside this folder.
 Missing DLL/startup error: check the official x64 VC++ runtime and full extraction;
 do not copy random DLLs, disable security, or assume an unsigned prototype is trusted.
