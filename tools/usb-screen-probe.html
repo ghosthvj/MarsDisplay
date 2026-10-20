@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>USB screen fixed-image probe</title>
+<style>
+body { max-width: 850px; margin: 2rem auto; padding: 0 1rem; font: 16px system-ui; }
+canvas { width: 320px; height: 480px; border: 1px solid #888; }
+button { display: block; margin: 1rem 0; padding: .7rem; }
+#status { padding: 1rem; background: #eee; color: #111; }
+</style>
+</head>
+<body>
+<h1>USB screen fixed-image probe</h1>
+<p>Preparation only, not hardware qualification or MarsDisplay integration. No firmware changes.</p>
+<p>Windows desktop Edge/Chrome: close vendor apps first. Disconnect other matching devices.
+Confirm your known <strong>SHCHV TUS-35 / USB35INCHIPSV2</strong> in Device Manager,
+then choose that screen in the browser chooser (currently COM5 for the owner; use your current COM port).</p>
+<p>Web Serial cannot expose the USB serial number or COM number to this page.
+This is your visual verification, not automatic stable identity. VID/PID 1A86:5722 is shared with protocol B devices;
+matching IDs alone do not establish compatibility. No administrator access or driver installation is required by this probe.</p>
+<canvas id="preview" width="320" height="480" aria-label="Portrait test: TOP, red green blue bands, white and black, numbered asymmetric corners"></canvas>
+<p><label><input id="confirm" type="checkbox"> I visually verified my known SHCHV TUS-35 / USB35INCHIPSV2 in Device Manager and disconnected other matching devices.</label></p>
+<button id="send" disabled>Choose screen and send one fixed image</button>
+<p id="status" role="status" aria-live="polite">Preview only. Confirm the device before sending.</p>
+<p>One send per page load; no automatic retries. After any failed/partial transfer, disconnect/reconnect the device
+before considering a reload and new explicit send. Photograph the physical screen to verify colors and orientation.
+Closing the page may leave the image displayed; no restoration or clear is sent.</p>
+<script>
+'use strict';
+// Protocol derived from GPL-3.0 project turing-smart-screen-python, revision pinned below.
+// https://github.com/mathoudebine/turing-smart-screen-python/blob/2b33ab4f00a096916dd6a1174441a53a7ec33b03/library/lcd/lcd_comm_rev_a.py
+// https://github.com/mathoudebine/turing-smart-screen-python/blob/2b33ab4f00a096916dd6a1174441a53a7ec33b03/library/lcd/lcd_comm.py
+const canvas = document.querySelector('#preview');
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 320, 480);
+for (const [color, y] of [['#f00', 64], ['#0f0', 176], ['#00f', 288]]) {
+  ctx.fillStyle = color; ctx.fillRect(8, y, 304, 112);
+}
+ctx.fillStyle = '#fff'; ctx.fillRect(8, 400, 152, 72);
+ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.strokeRect(2, 2, 316, 476);
+ctx.fillStyle = '#fff'; ctx.font = 'bold 26px sans-serif'; ctx.fillText('TOP ↑', 105, 40);
+// Distinct corner marks make rotation and mirroring visible.
+ctx.fillText('1', 12, 32); ctx.fillText('2', 282, 52);
+ctx.fillStyle = '#000'; ctx.fillText('3', 20, 456);
+ctx.fillStyle = '#fff'; ctx.fillText('4', 273, 438);
+ctx.fillRect(8, 45, 20, 8); ctx.fillRect(272, 12, 32, 8);
+const confirm = document.querySelector('#confirm');
+const send = document.querySelector('#send');
+const status = document.querySelector('#status');
+const supported = window.isSecureContext && !!navigator.serial;
+let used = false;
+if (!supported) status.textContent = 'No send: secure-context Web Serial is unavailable. Preview still works. Use supported desktop Edge/Chrome; do not bypass browser security or install drivers.';
+confirm.addEventListener('change', () => { send.disabled = !supported || used || !confirm.checked; });
+
+function bounded(promise, milliseconds) {
+  let timer;
+  return Promise.race([promise, new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('Timeout')), milliseconds);
+  })]).finally(() => clearTimeout(timer));
+}
+
+send.addEventListener('click', async () => {
+  if (used || !supported || !confirm.checked) return;
+  used = true;
+  send.disabled = true;
+  confirm.disabled = true;
+  status.textContent = 'Choose the visually verified screen. Cancel if unsure.';
+  let port, writer, openPending = false, openAttempted = false;
+  let uncertain = false, bytes = 0;
+  let message = 'Selection cancelled or unavailable; no bytes written.';
+  try {
+    // Must remain directly inside the user's click, with no enumeration.
+    port = await navigator.serial.requestPort({filters: [{usbVendorId: 0x1a86, usbProductId: 0x5722}]});
+    const info = port.getInfo();
+    if (info.usbVendorId !== 0x1a86 || info.usbProductId !== 0x5722) {
+      message = 'Wrong VID/PID; no port opened and no bytes written.';
+      return;
+    }
+    message = 'Open failed; close vendor apps or other port users. No bytes written.';
+    openAttempted = true;
+    openPending = true;
+    let abandoned = false;
+    const opening = port.open({baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'hardware'});
+    const observedOpen = opening.then(async () => {
+      openPending = false;
+      // A timed-out open cannot be cancelled. Close it when it eventually resolves.
+      if (abandoned) {
+        try { await bounded(port.close(), 1000); } catch (_) { /* remains uncertain */ }
+      }
+    }, error => { openPending = false; throw error; });
+    try { await bounded(observedOpen, 3000); }
+    catch (error) { abandoned = true; throw error; }
+    message = 'Transfer failed; possible partial image. Disconnect/reconnect before retrying.';
+    status.textContent = 'Writing one image. Do not disconnect during the transfer.';
+    writer = port.writable.getWriter();
+    const rgba = ctx.getImageData(0, 0, 320, 480).data;
+    const payload = new Uint8Array(307200);
+    for (let pixel = 0; pixel < 320 * 480; pixel++) {
+      const i = pixel * 4;
+      const value = ((rgba[i] >> 3) << 11) | ((rgba[i + 1] >> 2) << 5) | (rgba[i + 2] >> 3);
+      payload[pixel * 2] = value & 255;
+      payload[pixel * 2 + 1] = value >> 8;
+    }
+    const orientation = new Uint8Array(16);
+    orientation.set([121, 100, 1, 64, 1, 224], 5); // portrait = 0
+    const write = async data => { await bounded(writer.write(data), 3000); bytes += data.length; };
+    await write(orientation);
+    await write(new Uint8Array([0, 0, 4, 253, 223, 197]));
+    for (let offset = 0; offset < payload.length; offset += 2560) {
+      await write(payload.subarray(offset, offset + 2560));
+    }
+    message = 'Drain failed or timed out; delivery uncertain, possible partial image. Disconnect/reconnect before retrying.';
+    status.textContent = 'Draining serial output. Do not disconnect during the transfer.';
+    // Writes may resolve while output is buffered. Close the stream to drain before port cleanup.
+    await bounded(writer.close(), 3000);
+    message = `${bytes} bytes drained to the serial output; not a rendering ACK. Photograph the screen.`;
+  } catch (_) {
+    // Fixed messages avoid exposing device/browser exception details.
+  } finally {
+    if (writer) {
+      try { writer.releaseLock(); } catch (_) { uncertain = true; }
+    }
+    if (openPending) uncertain = true;
+    else if (openAttempted) {
+      try { await bounded(port.close(), 1000); } catch (_) { uncertain = true; }
+    }
+    if (uncertain) message += ' Cleanup uncertain; possible partial transfer. Check/disconnect/reconnect the device before reload.';
+    else message += ' Reload only after checking the device.';
+    status.textContent = message;
+    status.dataset.done = 'true';
+    // Always keep the one-shot latch, including cancellation and failed cleanup.
+  }
+});
+</script>
+</body>
+</html>
