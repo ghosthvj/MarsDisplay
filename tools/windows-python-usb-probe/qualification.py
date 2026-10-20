@@ -24,6 +24,13 @@ def _helper(name):
 
 _payload = _helper('payload')
 _native_runtime = _helper('native_runtime')
+_spec = util.spec_from_file_location('probe_cpython_material', Path(__file__).with_name('cpython_material.py'))
+cpython_material = util.module_from_spec(_spec)
+_spec.loader.exec_module(cpython_material)
+
+
+def _cpython_inputs(repo):
+    return cpython_material.read_inputs(repo)
 
 
 def assert_lean_runtime(runtime):
@@ -183,14 +190,8 @@ def qualify(runtime, origins, sdk, inventory, material, analysis, repo, *, measu
     boot_terms = b'\n'.join(material[name] for name in installer[0]['licenses']).lower()
     if b'bootloader' not in boot_terms or b'exception' not in boot_terms:
         raise ValueError('Missing PyInstaller bootloader exception')
-    generated = material[license_path].decode('utf-8').lower()
-    if not any(text in generated for text in ('psf license agreement', 'python software foundation license')):
-        raise ValueError('Unrecognized generated Python Windows SDK license')
-    # CPython's official Windows LICENSE carries its bundled third-party terms.
-    # Require relevant sections rather than treating every SDK file as CPython.
-    for marker in ('zlib', 'expat'):
-        if marker not in generated:
-            raise ValueError('Missing generated CPython component terms: ' + marker)
+    cpython = _cpython_inputs(repo)
+    cpython_material.validate_sdk(cpython, build, material[license_path])
     facts = measure(runtime, inventory)
     native = {name for name in runtime if Path(name).suffix.lower() in {'.exe', '.dll', '.pyd'}}
     if set(facts) != native or any(facts[name].get('sha256') != hashlib.sha256(runtime[name]).hexdigest()
@@ -198,11 +199,10 @@ def qualify(runtime, origins, sdk, inventory, material, analysis, repo, *, measu
                                   or facts[name].get('pe', {}).get('status') not in {'measured', 'absent'}
                                   for name in native):
         raise ValueError('Native PE/hash evidence mismatch')
-    python_source = 'https://github.com/python/cpython/tree/v' + build['Python']
     if '_internal/python313.dll' not in native:
         raise ValueError('Missing actual CPython 3.13 runtime DLL')
     components = []
-    pending_material = {}
+    pending_material = {'cpython-inputs/' + name: raw for name, raw in cpython['files'].items()}
     bundle = None
     for name in sorted(native):
         base = Path(name).name.lower()
@@ -212,6 +212,9 @@ def qualify(runtime, origins, sdk, inventory, material, analysis, repo, *, measu
                           sources=[boot['source']], licenses=installer[0]['licenses'],
                           bootloader=boot)
         elif base.startswith(('libcrypto-', 'libssl-')):
+            official = cpython_material.associate(cpython, name, facts[name],
+                origin_facts['sdk_files'][name], inventory.get('sdk_components', {}))
+            record['official_distribution'] = official['official_distribution']
             bundle = bundle or _helper('native_material').read_inputs(repo)
             matches = [item for item in bundle['policy']['supplemental']
                        if item['module'].startswith('openssl-') and item['path'] == name
@@ -230,53 +233,9 @@ def qualify(runtime, origins, sdk, inventory, material, analysis, repo, *, measu
                 raise ValueError('Missing verified OpenSSL terms')
             record.update(component='OpenSSL', version=version,
                           sources=[upstream['source_archive']], licenses=references)
-        elif base.startswith('libffi-') and base.endswith('.dll'):
-            version = facts[name]['pe'].get('product_version', '')
-            match = re.fullmatch(r'(\d+\.\d+\.\d+)\.0', version)
-            if not match or 'libffi' not in generated or 'permission is hereby granted' not in generated:
-                raise ValueError('Unqualified libffi version/generated terms: ' + name)
-            version = match[1]
-            # Require the generated SDK notice to identify the measured release,
-            # not infer a source release solely from a DLL version resource.
-            if not re.search(r'libffi[^\n]{0,100}\b' + re.escape(version) + r'\b', generated):
-                raise ValueError('Missing libffi source-version reference in SDK terms: ' + name)
-            record.update(component='libffi', version=version,
-                          sources=['https://github.com/libffi/libffi/tree/v' + version], licenses=[license_path])
-        elif (base in {'python313.dll', 'python3.dll'}
-              or (base.endswith('.pyd') and base[:-4] in _CORE_EXTENSIONS)):
-            marker = {'_ctypes.pyd': 'libffi', '_ssl.pyd': 'openssl', '_hashlib.pyd': 'openssl',
-                      '_decimal.pyd': 'libmpdec', '_bz2.pyd': 'bzip2', '_lzma.pyd': 'lzma'}.get(base)
-            if marker and marker not in generated:
-                raise ValueError('Missing generated component terms: ' + marker)
-            record.update(component='CPython', version=build['Python'], sources=[python_source],
-                          licenses=[license_path], sdk=origin_facts['sdk_files'][name])
-            embedded = {'zlib.pyd': 'zlib', 'pyexpat.pyd': 'expat', '_decimal.pyd': 'libmpdec'}.get(base)
-            if embedded:
-                component = inventory.get('sdk_components', {}).get(embedded, {})
-                version = component.get('version', '')
-                if (not re.fullmatch(r'\d+\.\d+\.\d+', version)
-                        or component.get('sha256') != facts[name]['sha256']
-                        or component.get('sdk_path') != origin_facts['sdk_files'][name]['sdk_path']
-                        or embedded not in generated):
-                    raise ValueError('Unbound SDK component version/terms: ' + embedded)
-                sources = {'zlib': 'https://zlib.net/fossils/zlib-' + version + '.tar.gz',
-                           'expat': 'https://github.com/libexpat/libexpat/archive/refs/tags/R_' + version.replace('.', '_') + '.tar.gz',
-                           'libmpdec': python_source + '/Modules/_decimal/libmpdec'}
-                record['embedded_component'] = dict(component=embedded, version=version,
-                                                    sources=[sources[embedded]], licenses=[license_path])
-            if base in {'_bz2.pyd', '_lzma.pyd'}:
-                component = 'bzip2' if base == '_bz2.pyd' else 'xz'
-                pattern = r'(?:bzip2|libbzip2)[^\n]{0,100}?(\d+\.\d+\.\d+)' if component == 'bzip2' else r'(?:xz utils|liblzma)[^\n]{0,100}?(\d+\.\d+\.\d+)'
-                versions = set(re.findall(pattern, generated))
-                if len(versions) != 1:
-                    raise ValueError('Missing generated SDK component source-version reference: ' + component)
-                version = versions.pop()
-                source = ('https://sourceware.org/pub/bzip2/bzip2-' + version + '.tar.gz' if component == 'bzip2'
-                          else 'https://github.com/tukaani-project/xz/releases/tag/v' + version)
-                record['embedded_component'] = dict(component=component, version=version,
-                                                    sources=[source], licenses=[license_path])
         else:
-            raise ValueError('Unknown native component: ' + name)
+            record.update(cpython_material.associate(cpython, name, facts[name],
+                origin_facts['sdk_files'][name], inventory.get('sdk_components', {})))
         components.append(record)
     qualified_names = {Path(item['path']).name.lower(): item['component'] for item in components}
     if '_ctypes.pyd' in qualified_names and 'libffi' not in qualified_names.values():

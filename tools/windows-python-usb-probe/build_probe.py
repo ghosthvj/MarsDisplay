@@ -48,7 +48,7 @@ SOURCE_PATHS = (
     *('src/mars_display/' + name + '.py' for name in
       ('__init__', 'frames', 'transport', 'devices', 'usb_protocol', 'usb_probe', 'usb_probe_process')),
     *('tools/windows-python-usb-probe/' + name for name in
-      ('entrypoint.py', 'PythonUsbProbe.spec', 'build_probe.py', 'qualification.py', 'smoke.py', 'README.md')),
+      ('entrypoint.py', 'PythonUsbProbe.spec', 'build_probe.py', 'qualification.py', 'cpython_material.py', 'smoke.py', 'README.md')),
     *('tools/windows-usb-probe/' + name for name in
       ('pattern.png', 'pattern.rgb565', 'pattern.json', 'pattern.rgb888', 'rgb888-provenance.json')),
     *('tests/' + name + '.py' for name in
@@ -70,6 +70,9 @@ def collect_source(repo):
     native = load(ROOT / 'packaging/native_material.py').read_inputs(repo)
     # read_inputs validates immutable raw policy sources; no Qt SDK admission.
     files.update({'third_party/native-material/' + name: data for name, data in native['files'].items()})
+    cpython = qualification.cpython_material.read_inputs(repo)
+    files.update({qualification.cpython_material.PREFIX + '/' + name: data
+                  for name, data in cpython['files'].items()})
     payload._validate(files)
     return files
 
@@ -161,8 +164,8 @@ def source_revision(repo, source, run=subprocess.run):
 
 def installed_environment(sdk):
     import PyInstaller
-    if sys.version_info[:2] != (3, 13):
-        raise ValueError('Python 3.13.x is required')
+    if sys.version_info[:3] != (3, 13, 16):
+        raise ValueError('Python 3.13.16 is required')
     if metadata.version('PyInstaller') != '6.22.3' or metadata.version('pyserial') != '3.5':
         raise ValueError('Pinned PyInstaller/pyserial SDK required')
     notices = load(ROOT / 'packaging/notices.py')
@@ -342,7 +345,7 @@ def build(repo, *, run=subprocess.run):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Build PythonUsbProbe 1.0.0 console onedir ZIP on native Windows x64.',
-                                     epilog='Requires pinned Python 3.13 SDK, clean source, legal/native qualification and USB-free smoke. No downloads or USB transfers. Existing outputs are never replaced.')
+                                     epilog='Requires pinned Python 3.13.16 SDK, clean source, legal/native qualification and USB-free smoke. No downloads or USB transfers. Existing outputs are never replaced.')
     parser.parse_args(argv)
     try:
         archive, sidecar = build(ROOT)

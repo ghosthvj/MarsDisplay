@@ -235,6 +235,22 @@ class PublisherTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             builder.zip_bytes({'../bad': b'bad'})
 
+    def test_source_contains_offline_cpython_material_without_native_downloads(self):
+        builder = load_tool('build_probe')
+        source = builder.collect_source(ROOT)
+        prefix = 'tools/windows-python-usb-probe/'
+        self.assertIn(prefix + 'cpython_material.py', list(source))
+        material = {name: data for name, data in source.items()
+                    if name.startswith(prefix + 'native-material/')}
+        self.assertTrue(material)
+        self.assertEqual(material[prefix + 'native-material/.gitattributes'], b'* -text\n')
+        self.assertFalse(any(Path(name).suffix.lower() in {'.dll', '.pyd', '.exe', '.zip'}
+                             for name in material))
+        with zipfile.ZipFile(io.BytesIO(builder.zip_bytes(source))) as archive:
+            for name, data in material.items():
+                self.assertEqual(archive.read(name), data)
+        self.assertEqual(source, builder.collect_source(ROOT))
+
     def test_source_allowlist_and_stability(self):
         builder = load_tool('build_probe')
         source = builder.collect_source(ROOT)
@@ -292,11 +308,13 @@ class ComposedProfileTests(unittest.TestCase):
         (self.sdk / 'python313.dll').write_bytes(b'core')
         self.runtime = {'PythonUsbProbe.exe': b'exe', '_internal/python313.dll': b'core'}
         self.origins = {'_internal/python313.dll': self.sdk / 'python313.dll'}
-        self.material = {'runtime/Python/LICENSE.txt': b'PSF LICENSE AGREEMENT; zlib; expat',
+        self.material = {'runtime/Python/LICENSE.txt': b'PSF LICENSE AGREEMENT',
                          'serial-license': b'BSD license', 'installer-license': b'GPL bootloader exception'}
         self.inventory = {
-            'build': {'Python': '3.13.9', 'PyInstaller': '6.22.3', 'pyserial': '3.5',
-                      'sys_version': '3.13.9 test SDK', 'compiler': 'test compiler'},
+            'build': {'Python': '3.13.16', 'PyInstaller': '6.22.3', 'pyserial': '3.5',
+                      'sys_version': '3.13.16 (tags/v3.13.16:cbc944f, synthetic SDK)', 'compiler': 'test compiler'},
+            'sdk_components': {'zlib': {'version': '1.3.1', 'sdk_path': 'python313.dll',
+                                      'sha256': hashlib.sha256(b'core').hexdigest()}},
             'bootloader': {'sha256': 'a'*64, 'record_sha256': 'a'*64, 'distribution_metadata_sha256': 'b'*64,
                           'source': 'https://github.com/pyinstaller/pyinstaller/tree/v6.22.3/bootloader'},
             'dependencies': [{'name': 'pyserial', 'version': '3.5',
@@ -309,15 +327,60 @@ class ComposedProfileTests(unittest.TestCase):
                          'bootloader_sha256': 'a'*64, 'exe_sha256': hashlib.sha256(b'exe').hexdigest()}
 
     def measure(self, runtime, inventory):
-        return {name: {'sha256': hashlib.sha256(data).hexdigest(), 'machine': 'AMD64/PE32+',
-                       'pe': {'status': 'absent'}} for name, data in runtime.items()}
+        facts = {}
+        for name, data in runtime.items():
+            version = '3.5.9.0' if name.endswith('libcrypto-3.dll') else '3.13.16150.1013'
+            pe = ({'status': 'absent'} if name.endswith(('libffi-8.dll', '.exe')) else
+                  {'status': 'measured', 'file_version': version, 'product_version': version})
+            facts[name] = {'sha256': hashlib.sha256(data).hexdigest(), 'machine': 'AMD64/PE32+', 'pe': pe}
+        return facts
+
+    def synthetic_bundle(self):
+        # Only compositional tests replace the trusted input provider. The offline
+        # reader and official associations are exercised without this seam below.
+        bundle = load_tool('cpython_material').read_inputs(ROOT)
+        bundle['policy']['sdk_license_sha256'] = hashlib.sha256(self.material['runtime/Python/LICENSE.txt']).hexdigest()
+        for row in bundle['policy']['members']:
+            name = '_internal/' + row[0]
+            if name in self.runtime and self.runtime[name] != b'unknown':
+                row[1] = self.origins[name].relative_to(self.sdk).as_posix()
+                row[2] = hashlib.sha256(self.runtime[name]).hexdigest()
+                if row[0] == 'libffi-8.dll':
+                    bundle['policy']['libffi_binary']['sha256'] = row[2]
+        return bundle
 
     def qualify(self, **kwargs):
-        return load_recipe().qualify(self.runtime, self.origins, self.sdk, self.inventory,
-                                     self.material, self.analysis, ROOT, measure=kwargs.get('measure', self.measure))
+        q = load_recipe()
+        with patch.object(q, '_cpython_inputs', side_effect=lambda repo: self.synthetic_bundle()):
+            return q.qualify(self.runtime, self.origins, self.sdk, self.inventory,
+                             self.material, self.analysis, ROOT, measure=kwargs.get('measure', self.measure))
+
+    def test_unknown_sdk_release_cannot_qualify_self_consistent_bytes(self):
+        self.inventory['build']['Python'] = '3.13.999'
+        self.inventory['build']['sys_version'] = '3.13.999 unknown SDK'
+        before = dict(self.material)
+        with self.assertRaises(ValueError):
+            self.qualify()
+        self.assertEqual(self.material, before)
+        self.assertEqual((self.sdk / 'python313.dll').read_bytes(), b'core')
+
+    def test_known_release_label_cannot_qualify_unofficial_sdk_bytes(self):
+        self.inventory['build']['Python'] = '3.13.16'
+        self.inventory['build']['sys_version'] = '3.13.16 (tags/v3.13.16:cbc944f, synthetic SDK)'
+        before = dict(self.material)
+        with self.assertRaises(ValueError):
+            load_recipe().qualify(self.runtime, self.origins, self.sdk, self.inventory,
+                                 self.material, self.analysis, ROOT, measure=self.measure)
+        self.assertEqual(self.material, before)
+        self.assertEqual((self.sdk / 'python313.dll').read_bytes(), b'core')
 
     def test_composition_qualifies_only_bound_core_and_executable(self):
+        license_bytes = self.material['runtime/Python/LICENSE.txt']
         result = self.qualify()
+        self.assertEqual(self.material['runtime/Python/LICENSE.txt'], license_bytes)
+        core = next(item for item in result['components'] if item['component'] == 'CPython')
+        self.assertEqual([item['component'] for item in core['embedded_components']], ['zlib', 'Unicode'])
+        self.assertIn('cpython-inputs/raw/cpython/Doc/license.rst', self.material)
         self.assertEqual(result['status'], 'QUALIFIED')
         self.assertEqual({item['path'] for item in result['components']}, set(self.runtime))
         self.assertEqual(result['origin_facts']['status'], 'UNQUALIFIED')
@@ -354,7 +417,7 @@ class ComposedProfileTests(unittest.TestCase):
 
 
     def test_core_extension_cannot_hide_an_unqualified_dependency(self):
-        for name, marker in (('_ctypes.pyd', b'libffi'), ('_hashlib.pyd', b'openssl'), ('_ssl.pyd', b'openssl')):
+        for name, marker in (('_ctypes.pyd', b'libffi'), ('_hashlib.pyd', b'openssl')):
             with self.subTest(name=name):
                 (self.sdk / name).write_bytes(b'extension')
                 self.runtime['_internal/' + name] = b'extension'
@@ -374,13 +437,14 @@ class ComposedProfileTests(unittest.TestCase):
         self.runtime[name] = b'crypto'
         self.origins[name] = self.sdk / 'libcrypto-3.dll'
         bundle = {'policy': {'supplemental': [{'module': 'openssl-3.5.9', 'path': name,
-                   'sha256': hashlib.sha256(b'crypto').hexdigest(), 'pe': {'status': 'absent'}}]},
+                   'sha256': hashlib.sha256(b'crypto').hexdigest(), 'pe': self.measure(self.runtime, self.inventory)[name]['pe']}]},
                   'registry': {'openssl': {'3.5.9': {'source_archive': 'https://example.org/openssl.tar.gz'}},
                                'files': [{'module': 'openssl-3.5.9', 'kind': 'license', 'path': 'raw/license.txt'}]},
                   'files': {'raw/license.txt': b'OpenSSL terms'}}
         original = q._helper
-        with patch.object(q, '_helper', side_effect=lambda name: SimpleNamespace(read_inputs=lambda repo: bundle)
-                          if name == 'native_material' else original(name)):
+        with patch.object(q, '_cpython_inputs', side_effect=lambda repo: self.synthetic_bundle()), patch.object(
+                q, '_helper', side_effect=lambda name: SimpleNamespace(read_inputs=lambda repo: bundle)
+                if name == 'native_material' else original(name)):
             result = q.qualify(self.runtime, self.origins, self.sdk, self.inventory,
                                self.material, self.analysis, ROOT, measure=self.measure)
             self.assertEqual(result['status'], 'QUALIFIED')
@@ -392,20 +456,100 @@ class ComposedProfileTests(unittest.TestCase):
                           self.material, self.analysis, ROOT, measure=self.measure)
             self.assertEqual(self.material, before)
 
-    def test_libffi_needs_matching_explicit_generated_version_reference(self):
+    def test_libffi_absent_pe_uses_independent_binding_not_notice_version(self):
         name = '_internal/libffi-8.dll'
         (self.sdk / 'libffi-8.dll').write_bytes(b'ffi')
         self.runtime[name] = b'ffi'
         self.origins[name] = self.sdk / 'libffi-8.dll'
-        self.material['runtime/Python/LICENSE.txt'] += b'\nlibffi 3.4.4\nPermission is hereby granted'
+        result = self.qualify()
+        self.assertEqual(result['status'], 'QUALIFIED')
+        ffi = next(item for item in result['components'] if item['component'] == 'libffi')
+        self.assertEqual(ffi['version'], '3.4.4')
+        self.assertEqual(ffi['independent_binary']['git_blob_sha1'], '8ebbbe8d5f3be43c2c27a2454e76d809954185fd')
         def measure(runtime, inventory):
             facts = self.measure(runtime, inventory)
             facts[name]['pe'] = {'status': 'measured', 'product_version': '3.4.4.0'}
             return facts
-        self.assertEqual(self.qualify(measure=measure)['status'], 'QUALIFIED')
-        self.material['runtime/Python/LICENSE.txt'] = self.material['runtime/Python/LICENSE.txt'].replace(b'3.4.4', b'3.4.5')
-        with self.assertRaisesRegex(ValueError, 'Missing libffi source-version'):
+        before = dict(self.material)
+        with self.assertRaisesRegex(ValueError, 'Independent libffi'):
             self.qualify(measure=measure)
+        self.assertEqual(self.material, before)
+
+
+class CPythonMaterialTests(unittest.TestCase):
+    def setUp(self):
+        self.helper = load_tool('cpython_material')
+        self.bundle = self.helper.read_inputs(ROOT)
+
+    def association(self, base, **changes):
+        row = next(row for row in self.bundle['policy']['members'] if row[0] == base)
+        _, sdk_path, sha = row
+        version = '3.5.9.0' if base == 'libcrypto-3.dll' else '3.13.16150.1013'
+        pe = ({'status': 'absent'} if base == 'libffi-8.dll' else
+              {'status': 'measured', 'file_version': version, 'product_version': version})
+        fact = {'sha256': sha, 'pe': pe}
+        origin = {'sdk_path': sdk_path, 'sha256': sha}
+        components = {'zlib': {'version': '1.3.1', 'sdk_path': sdk_path, 'sha256': sha},
+                      'libmpdec': {'version': '4.0.0', 'sdk_path': sdk_path, 'sha256': sha}}
+        return self.helper.associate(self.bundle, changes.get('name', '_internal/' + base),
+            changes.get('fact', fact), changes.get('origin', origin), changes.get('components', components))
+
+    def test_official_members_bind_complete_terms_recipes_and_exact_sources(self):
+        self.assertEqual(len(self.bundle['policy']['members']), 11)
+        expected = {'python313.dll': ['zlib', 'Unicode'], '_decimal.pyd': ['mpdecimal'],
+                    '_bz2.pyd': ['bzip2'], '_lzma.pyd': ['xz'],
+                    'unicodedata.pyd': ['Unicode'], 'libffi-8.dll': ['libffi']}
+        for base, _, sha in self.bundle['policy']['members']:
+            with self.subTest(base=base):
+                record = self.association(base)
+                self.assertEqual(record['official_distribution']['member_sha256'], sha)
+                self.assertEqual([item['component'] for item in record['embedded_components']], expected.get(base, []))
+                for embedded in record['embedded_components']:
+                    self.assertIn(embedded['recipe'].removeprefix('cpython-inputs/'), self.bundle['files'])
+                    for reference in embedded['licenses']:
+                        self.assertIn(reference.removeprefix('cpython-inputs/'), self.bundle['files'])
+                    self.assertRegex(embedded['sources'][0], r'/tree/[a-f0-9]{40}$')
+        decimal = self.association('_decimal.pyd')['embedded_components'][0]
+        self.assertEqual(decimal['version'], '4.0.0')
+        self.assertIn('cpython-source-deps', decimal['sources'][0])
+        self.assertEqual(self.association('libffi-8.dll')['independent_binary']['git_blob_sha1'],
+                         '8ebbbe8d5f3be43c2c27a2454e76d809954185fd')
+
+    def test_member_hash_origin_pe_and_component_versions_fail_closed(self):
+        for changes in ({'fact': {'sha256': '0'*64, 'pe': {'status': 'absent'}}},
+                        {'origin': {'sdk_path': 'python313.dll', 'sha256': '0'*64}},
+                        {'components': {}}, {'name': '_internal/pyexpat.pyd'},
+                        {'name': '_internal/unknown.dll'}):
+            before = json.dumps(self.bundle['policy'], sort_keys=True)
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                self.association('python313.dll', **changes)
+            self.assertEqual(json.dumps(self.bundle['policy'], sort_keys=True), before)
+        row = next(row for row in self.bundle['policy']['members'] if row[0] == 'python313.dll')
+        with self.assertRaisesRegex(ValueError, 'PE mismatch'):
+            self.association('python313.dll', fact={'sha256': row[2], 'pe': {'status': 'absent'}})
+        with self.assertRaisesRegex(ValueError, 'origin hash mismatch'):
+            self.association('python313.dll', origin={'sha256': row[2], 'sdk_path': 'DLLs/python313.dll'})
+        with self.assertRaisesRegex(ValueError, 'Unbound SDK component version'):
+            self.association('python313.dll', components={'zlib': {'version': '9.9.9',
+                'sha256': row[2], 'sdk_path': row[1]}})
+
+    def test_missing_tampered_extra_and_modified_manifest_block_offline_bundle(self):
+        builder = load_tool('build_probe')
+        for changed in ('manifest.json', 'raw/zlib/LICENSE', 'raw/cpython/PCbuild/python.props',
+                        'raw/cpython/Doc/license.rst', 'raw/libffi/LICENSE', '.gitattributes', 'extra.dll'):
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory(prefix='probe-material-') as temp:
+                root = Path(temp)
+                files = dict(self.bundle['files'])
+                files[changed] = b'tampered'
+                builder.write_files(root, {self.helper.PREFIX + '/' + name: data for name, data in files.items()})
+                with self.assertRaises(ValueError):
+                    self.helper.read_inputs(root)
+        with tempfile.TemporaryDirectory(prefix='probe-material-') as temp:
+            root = Path(temp)
+            builder.write_files(root, {self.helper.PREFIX + '/' + name: data
+                for name, data in self.bundle['files'].items() if name != 'raw/xz/COPYING'})
+            with self.assertRaisesRegex(ValueError, 'hash/blob mismatch'):
+                self.helper.read_inputs(root)
 
 
 class BuildPipelineTests(unittest.TestCase):
