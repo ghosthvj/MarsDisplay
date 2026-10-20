@@ -1,0 +1,12 @@
+{
+  "source_ref": "0b92565c10996276af5b9ad61a7c85bfc26df327",
+  "source": "tools/windows-usb-probe/pattern.png",
+  "png_sha256": "d8efdd4339e8c16a8f2b7e1416ec83221403cf6bdc6571ee5ff146113f00cfbc",
+  "rgb888_sha256": "19edb4162586afb859c062b82a4c26b54d7329dc3303205628ad61ab1558ef40",
+  "rgb888_bytes": 460800,
+  "width": 320,
+  "height": 480,
+  "derivation": "Pillow.Image.convert('RGB').tobytes(), no browser re-render",
+  "pillow": "12.3.0",
+  "limitations": "This preserves the frozen Linux PNG, not a claim of equivalence with the earlier Windows browser canvas or qualification of Python USB delivery."
+}

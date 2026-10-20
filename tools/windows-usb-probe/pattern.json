@@ -1,0 +1,16 @@
+{
+  "source": "tools/usb-screen-probe.html",
+  "source_sha256": "6a9450539fc60dfe9bd5669392cf52f386b78c275449f03f6f082923733825a8",
+  "platform": "Linux",
+  "playwright": "1.64.0",
+  "chromium": "156.0.8078.4",
+  "width": 320,
+  "height": 480,
+  "payload_sha256": "8cbbb7e39485e211548a4f3f448ca14eeb9358286e5eadf7079a324fdc97ed1d",
+  "png_sha256": "d8efdd4339e8c16a8f2b7e1416ec83221403cf6bdc6571ee5ff146113f00cfbc",
+  "orientation_hex": "00000000007964014001e00000000000",
+  "header_hex": "000004fddfc5",
+  "payload_chunk_bytes": 2560,
+  "wire_bytes": 307222,
+  "limitations": "Frozen Linux Chromium canvas; not byte-identical to the earlier Windows canvas unless independently compared. Device rendering remains unverified."
+}

@@ -4,6 +4,11 @@ MarsDisplay is a GPL v3 Windows 11 x64 tray companion that renders MARS locally
 with bundled Chromium. Output is **simulated only**: this prototype does not
 drive a physical USB screen.
 
+P0–P2 native Python bridge work is isolated from the application. See the
+[screen guide](docs/usb-screen-guide.md), [integration stages](docs/usb-integration-plan.md)
+and [active P0–P2 ledger](odd/tasks/native-python-usb-probe.md). The working C#
+diagnostic remains a separate pinned reference, not application USB output.
+
 ## Download the output preview prototype — 0.1.4
 
 [Download MarsDisplay 0.1.4 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39084595234/artifacts/12120556248)
