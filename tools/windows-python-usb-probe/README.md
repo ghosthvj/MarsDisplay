@@ -11,7 +11,7 @@ PYTHONPATH=src python tools/windows-python-usb-probe/entrypoint.py --help
 PYTHONPATH=src python tools/windows-python-usb-probe/entrypoint.py --self-test
 ```
 
-These commands do not enumerate or open USB ports. Help does not read the image or import pyserial. Self-test verifies the canonical raw image and P1 encoder without Pillow. Runtime pyserial must be version 3.5; dependency installation is outside this unit.
+These commands do not enumerate or open USB ports. Help does not read the image or import pyserial. Self-test verifies the canonical raw image and P1 encoder without Pillow. Runtime pyserial must be version 3.5. The build SDK installation below retains existing pins; the diagnostic itself installs nothing.
 
 On Windows, `--list` lists passive USB descriptors. `--port COM5` requests the current uppercase port; COM5 is only an example. No arguments prompt for a port. Type exactly `SEND COM5` at the confirmation prompt. EOF, an empty port, or any nonmatching confirmation cancels without opening. Unknown options, lowercase ports, combined modes, and private worker flags are rejected.
 
@@ -39,6 +39,49 @@ Settings are 115200 baud, 8N1, RTS/CTS enabled, DSR/DTR flow control disabled, D
 | 8 | `Worker timed out and was stopped; delivery uncertain. Do not automatically resend.` |
 
 Prompts are `Current uppercase COM port (empty to cancel): ` and `Type SEND COMn to send the fixed image: `. Listing prints one `COMn identity` line per observation, using `(no stable identity)` when absent. Errors go to stderr; normal output and prompts go to stdout. Success means all 307222 bytes were accepted, the output queue became empty, and close succeeded—not a display ACK. Never automatically resend after uncertainty.
+
+## Packaging preparation status
+
+The source build pipeline is implemented, but **no qualified Windows Python EXE or ZIP has been observed yet**. Native CI must run before delivery. Native job/event/frozen-child qualification (S4) and owner physical acceptance (S6) remain pending; passing portable fake-provider tests does not close either gate.
+
+`qualification.py` keeps `sdk_origin_facts(runtime, origins, sdk)` permanently facts-only and `UNQUALIFIED`. A separate profile composes those facts with actual Analysis/PYZ module inventories, x64 PE/hash/version measurements, installed package notices, generated Windows SDK LICENSE, and the console bootloader's actual EXE input, installed RECORD and distribution fingerprint. Only that profile can qualify publication. Unknown native files, mismatched hashes or missing component terms/source-version references fail closed. OpenSSL must match the existing reviewed supplemental hash/version policy; no empty Qt inventory or full-app v2 approval is fabricated. libffi and embedded bzip2/XZ require explicit source-version references in generated SDK terms; an SDK lacking those references produces metadata for investigation, not an uploadable binary.
+
+The future package must use the same external prerequisite as the application: **official Microsoft Visual C++ v14 x64 runtime, version 14.51 or later**. Installation is manual, from Microsoft; the diagnostic must not install it automatically, copy System32 DLLs, or bypass Windows security controls. Sources and terms for CPython and bundled components, pyserial 3.5, and PyInstaller 6.22.3 (including its bootloader exception) must accompany qualified delivery. Supplementary registry license texts do not imply those packages are installed or shipped.
+
+## Build or rebuild on native Windows x64
+
+Use a fresh clean checkout at the recorded source Git SHA, or extract the delivered `source.zip` into a fresh directory. The source archive includes a hash-bound `SOURCE-PROVENANCE.json`; rebuilds without Git verify that manifest. Its root README is this diagnostic guide, not the application's owner-observation history. Do not edit the source or reuse an old output directory during a build.
+
+With Python 3.13 x64 installed, run from that source root in PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install '.[build]'
+.\.venv\Scripts\python.exe -B tools/windows-python-usb-probe/build_probe.py
+```
+
+The existing development SDK includes Pillow for fixture tests, plus application dependencies. No Chromium download is needed. The frozen diagnostic imports only its console entrypoint and required CPython/pyserial modules; Pillow, Qt, Playwright, Chromium, Node and build/legal helpers are not runtime dependencies. PyInstaller 6.22.3 and pyserial 3.5 pins are unchanged. `build_probe.py --help` documents the no-option build interface; `smoke.py` separately runs the selected source suites on native Windows.
+
+The builder runs the fixture, encoder, diagnostic, owned-process and packaging suites on the actual SDK, rejecting every skip. It excludes Microsoft runtime DLLs during Analysis, records native origins and actual PYZ contents, compiles `PythonUsbProbe.exe`, qualifies native sources/terms, extracts a trial runtime archive, and compares source/frozen safe commands under isolated HOME/TEMP and system-only PATH. Both redirected EOF and passive listing exercise the inherited child streams. Separate helper-only checks cover frozen gate release/job-close termination and parent-death ownership; no public hang flag or SEND confirmation is used.
+
+Outputs are exclusively owned and never overwritten:
+
+- `build/python-usb-probe/PythonUsbProbe-1.0.0-Windows-x64.zip`
+- The adjacent `.zip.sha256` and unpacked `PythonUsbProbe/` folder.
+- On failure, only `build/python-usb-probe-work/unqualified.json` is eligible for CI upload. It contains native hashes/PE facts, SDK license text and sanitized failure metadata—not binaries. Use a fresh checkout/output location for another build; stale evidence is rejected.
+
+The qualified ZIP contains the console onedir runtime, `pattern.png`, README, GPL license, dependency/native notices, `source.zip`, source hashes, test evidence, native profile, inventory and `SHA256SUMS`. Diagnostic version **1.0.0** is distinct from application version **0.1.4**; the inventory binds the actual source commit and compiler/SDK facts. ZIP metadata for the source archive is deterministic; this does not claim byte-reproducible compiler output across SDK patches.
+
+The dedicated **Windows Python USB fixed-image probe** workflow uses `windows-2025` and the existing pinned actions. Only successful native qualification and smoke permit the seven-day `PythonUsbProbe-Windows-x64` ZIP/checksum artifact. Failed builds upload metadata only. No binary is ready for the owner until the parent verifies the downloaded archive, source binding, notices and hashes.
+
+## Use a qualified package
+
+1. Obtain the parent-verified ZIP and compare its SHA256 with the adjacent sidecar using `Get-FileHash -Algorithm SHA256`.
+2. Extract the entire ZIP into a new directory; retain `_internal`, notices and source material. Never copy only the EXE or mix versions.
+3. Run `PythonUsbProbe.exe --help`, then `PythonUsbProbe.exe --self-test`. These are USB-free.
+4. Only the owner proceeds with passive `--list`, explicit current-port selection and typed confirmation as described above. Supply the console result and a photo matching `pattern.png`; CI success is not a rendering ACK.
+
+Corresponding upstream source access is listed in `SOURCE-ACCESS.txt`, installed notices and `native-profile.json`. Redistributors must retain equivalent complete source access alongside the binary, including after Actions artifact expiry; keep original copyrights and the PyInstaller bootloader exception. Supplementary license-registry texts do not assert that Qt or browser packages are shipped.
 
 ## T3 build and native qualification contract
 
