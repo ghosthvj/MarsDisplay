@@ -65,11 +65,12 @@ if ((Get-Item $fixture).Length -ne 307200 -or (Hash $fixture) -ne '8cbbb7e39485e
 $app = Join-Path $package 'UsbScreenProbe.exe'
 $tests = Join-Path $out 'ProbeTests.exe'
 $common = @('/nologo', '/target:exe', '/platform:x64', '/optimize+', '/warnaserror+', '/langversion:5',
-    "/resource:$fixture,pattern.rgb565") + @($references | ForEach-Object { '/reference:' + (Join-Path $framework $_) }) +
-    @((Join-Path $PSScriptRoot 'Program.cs'), (Join-Path $PSScriptRoot 'Probe.cs'))
-$r = Invoke-Bounded $csc ($common + @('/main:UsbScreenProbe.Program', "/out:$app"))
+    "/resource:$fixture,pattern.rgb565") + @($references | ForEach-Object { '/reference:' + (Join-Path $framework $_) })
+$sources = @((Join-Path $PSScriptRoot 'Program.cs'), (Join-Path $PSScriptRoot 'Probe.cs'))
+# The inbox Framework compiler requires output/target options before source paths.
+$r = Invoke-Bounded $csc ($common + @('/main:UsbScreenProbe.Program', "/out:$app") + $sources)
 Assert-Result $r 0 '' ''
-$r = Invoke-Bounded $csc ($common + @('/main:UsbScreenProbe.ProbeTests', "/out:$tests", (Join-Path $PSScriptRoot 'ProbeTests.cs')))
+$r = Invoke-Bounded $csc ($common + @('/main:UsbScreenProbe.ProbeTests', "/out:$tests") + $sources + @((Join-Path $PSScriptRoot 'ProbeTests.cs')))
 Assert-Result $r 0 '' ''
 $r = Invoke-Bounded $tests @()
 if ($r.exit -ne 0 -or $r.stderr -ne '' -or $r.stdout -notmatch '\APASS [0-9]+ native checks; no USB opened\.\r\n\z') {
