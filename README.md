@@ -4,6 +4,11 @@ MarsDisplay is a GPL v3 Windows 11 x64 tray companion that renders MARS locally
 with bundled Chromium. Output is **simulated only**: this prototype does not
 drive a physical USB screen.
 
+For the separately owner-validated single-frame Windows diagnostic, see the
+[USB screen working guide](docs/usb-screen-guide.md). The
+[USB integration proposal](docs/usb-integration-plan.md) maps future gated work;
+it does not enable native output in MarsDisplay.
+
 ## Download the output preview prototype — 0.1.4
 
 [Download MarsDisplay 0.1.4 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39084595234/artifacts/12120556248)
@@ -280,8 +285,10 @@ and use these exact messages without echoing supplied values:
 Neither API saves configuration. Existing opaque `Settings.device_identity`
 values remain valid and unmigrated; the tray field remains read-only. These APIs
 are not wired into startup or Start: runnable output remains `SimulatedTransport`.
-Native Windows enumeration, driver compatibility, a physical GUI chooser and
-hardware/protocol qualification await identified hardware. VID/PID never selects
+The separate native diagnostic now has owner-validated WMI selection and one
+portrait frame on the identified unit; see the USB guide above. This does not
+qualify this Python inventory backend, other drivers, a physical GUI chooser or
+continuous application output. VID/PID never selects
 a protocol, and no model-specific upstream driver has been copied.
 
 ## Local settings (no capture or automatic launch)
@@ -461,7 +468,7 @@ and never force-removes another live lock. Keep ownership until cleanup succeeds
 | Tray action | Behavior |
 | --- | --- |
 | Status / Settings (or icon click) | Opens a temporary dialog with separate MARS source, source metadata, explicitly simulated output, lifecycle state, and lifetime frame count. Closing hides it, not the application. |
-| Save (stopped only) | Validates the MARS URL through `Settings` and saves through `Coordinator.save_settings`; invalid/active saves preserve previous settings. Saved device identity is opaque/read-only pending hardware identification, not an editable COM port or connected-device claim. |
+| Save (stopped only) | Validates the MARS URL through `Settings` and saves through `Coordinator.save_settings`; invalid/active saves preserve previous settings. Saved device identity remains opaque/read-only pending application integration, not an editable COM port or connected-device claim. |
 | Start / Stop | Explicit nonblocking coordinator requests; first launch remains stopped/unconfigured and does not automatically open the dialog. Starting/running/recovering/stopping/error reflect snapshots; no UI-thread joins or backend calls. |
 | Exit | Requests cleanup and polls `exit_ready` before releasing the lock and quitting. Uncertain cleanup keeps the app alive and displays an actionable error; it never terminates the user's normal browser. |
 
@@ -537,9 +544,9 @@ auxiliary files; settings persist per user outside the extracted folder. The
 unsigned prototype needs no MarsDisplay installer, but the separate official
 VC++ prerequisite may require administrator installation.
 
-No model-specific driver has been copied. Real protocol selection and physical
-USB testing require identified hardware; simulation must never be shown as a
-connected screen. There is no installer, service, autostart, or update mechanism.
+No model-specific driver has been copied. The identified screen has passed one
+standalone native portrait test, not MarsDisplay integration or general protocol
+qualification; simulation must never be shown as a connected screen. There is no installer, service, autostart, or update mechanism.
 
 ## License
 

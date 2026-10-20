@@ -2,7 +2,9 @@
 
 `UsbScreenProbe.exe` version **1.0.0** is a separate, portable x64 Windows 11 diagnostic using inbox .NET Framework 4.8. No Python, SDK, installation, administrator access or external DLL is required on the owner's PC. It sends one frozen portrait image, not a slideshow. It does not change MarsDisplay or execute vendor code.
 
-**Qualification pending:** source preparation is not a compiled or hardware-verified release. Obtain only the artifact from a successful **Windows USB fixed-image probe** workflow, after its source/commit/hash evidence has been checked. CI never opens a serial device; actual WMI visibility and panel rendering remain owner checks.
+**One portrait frame owner-validated (2026-10-20):** native CI, downloaded source/hash verification and independent checks passed; the owner subsequently confirmed WMI selection and correct physical rendering with `ahora si!!!`. This is not continuous output or MarsDisplay USB integration. See the [working guide](../../docs/usb-screen-guide.md) for the qualified artifact, hashes, evidence limits and troubleshooting, and the [integration proposal](../../docs/usb-integration-plan.md) for future gates. CI never opens a serial device.
+
+The frozen artifact source is `8227c002a48084d8c463400f45cd641f62359bb4`. Its bundled historical README still says qualification pending. This documentation update does not modify the ZIP/hash or rebuild the EXE.
 
 ## Quick path
 
@@ -37,7 +39,7 @@ No arbitrary image input or public worker mode is supported. The internally mark
 | 7 / E7 | Worker startup or unexpected execution failure; obtain a verified build/check the screen |
 | 8 / E8 | Worker timeout; read whether termination was confirmed. If not, do not rerun; check Task Manager and the screen |
 
-The probe requires `Win32_SerialPort` in `root\cimv2` to expose `DeviceID`, `PNPDeviceID`, and `ConfigManagerErrorCode`. The known USB instance must match exactly, ignoring letter case; substring matches and interface/suffix variants are intentionally rejected. Some drivers may not expose that WMI class or identity: this is an owner-acceptance uncertainty, not permission to try a different port or install a driver. Metadata is rechecked immediately before open, but an unavoidable hotplug race remains between enumeration and opening by COM name.
+The probe requires `Win32_SerialPort` in `root\cimv2` to expose `DeviceID`, `PNPDeviceID`, and `ConfigManagerErrorCode`. The known USB instance must match exactly, ignoring letter case; substring matches and interface/suffix variants are intentionally rejected. The owner's tested setup exposed that WMI class and identity. Other drivers may not: this remains an acceptance uncertainty elsewhere, not permission to try a different port or install a driver. Metadata is rechecked immediately before open, but an unavoidable hotplug race remains between enumeration and opening by COM name.
 
 ## Fixed transfer and containment
 
@@ -65,4 +67,4 @@ Only after tests pass does it create:
 - `build/native-usb-probe/UsbScreenProbe-1.0.0-Windows-x64.zip` and `.zip.sha256`;
 - inside: the EXE, this README, reference PNG/JSON, LICENSE, relevant `source.zip`, `SHA256SUMS`, and `nativeverification.json` (source commit/hashes, compiler fingerprints, OS/image versions, executable hash and test outcomes).
 
-Workflow artifact: **UsbScreenProbe-Windows-x64**, seven-day retention. No vendor files or owner screenshots are included. Hashes identify content, not publisher authenticity: compare against the expected workflow commit and downloaded source. Native CI success, downloaded artifact verification, and the existing Python regression suite are parent-owned delivery gates; this guide does not itself grant delivery or claim a physical test.
+Workflow artifact: **UsbScreenProbe-Windows-x64**, seven-day retention. No vendor files or owner screenshots are included. Hashes identify content, not publisher authenticity: compare against the expected workflow commit and downloaded source. Native CI success, downloaded artifact verification, and the existing Python regression suite passed the parent-owned delivery gates for the pinned artifact. The later owner physical test is separate evidence limited to one portrait frame; neither this guide nor that test authorizes application integration.
