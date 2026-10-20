@@ -7,7 +7,48 @@ for future application work. The owner has now authorized **P0–P2 only**, trac
 in [the Python bridge ledger](../odd/tasks/native-python-usb-probe.md). The
 production output stages remain proposals; Python rendering is not yet qualified.
 
-## Quick path: Windows 11 x64
+## Python P2 owner test pending
+
+The separate **PythonUsbProbe 1.0.0** package is now Windows-qualified, but its
+physical output has not been owner-accepted. MarsDisplay still uses Simulation.
+The C# artifact below remains preserved; do not confuse the two executables.
+
+- Source: `a26350dd74d1d03d999bbead5195dfc20d4a5344`.
+- [Native CI and seven-day artifact](https://github.com/ghosthvj/MarsDisplay/actions/runs/39512376268):
+  70 tests with zero skips, seven source/frozen command checks, startup gate and
+  owned-parent-death checks. Parent and independent artifact/source/license readback passed.
+- ZIP: `PythonUsbProbe-1.0.0-Windows-x64.zip`, 8,676,348 bytes.
+- SHA256: `75a581e017d8b69708f565751b75f1866cf956131ac05592185172a54cece621`.
+
+Extract the whole ZIP and keep `_internal` beside `PythonUsbProbe.exe`. No Python
+installation is needed. The documented external prerequisite is official Microsoft
+Visual C++ v14 x64 runtime 14.51 or later; do not install it automatically or bypass
+Windows security warnings. Close the vendor application and other screen probes.
+In PowerShell in the extracted `PythonUsbProbe` folder:
+
+```powershell
+.\PythonUsbProbe.exe --self-test
+.\PythonUsbProbe.exe --list
+.\PythonUsbProbe.exe
+```
+
+Self-test must print `Self-test passed: 122 packets, 307222 bytes; no USB access.`
+Listing must identify the current `COMn usb:1a86:5722:USB35INCHIPSV2`. At the
+interactive prompt, enter that uppercase COM port, then type exactly `SEND COMn`
+with its actual number. COM5 is not a default. The 90-second budget includes typing;
+empty input cancels without opening. Do not automate confirmation or resend.
+
+Expected completion is exactly:
+`Host transfer complete: 122 packets, 307222 bytes; not a rendering ACK.`
+Supply the final console and a photo matching the packaged `pattern.png`. If an
+error or corrupted image occurs, stop and retain both; do not change protocol or
+retry automatically. No GUI/continuous output is enabled by this test.
+
+The immutable packaged README retains its pre-CI preparation wording. The native
+receipts and this dated-candidate record establish packaging qualification only;
+its physical-acceptance warning still applies.
+
+## Previously accepted C# path: Windows 11 x64
 
 1. Close the vendor application and other serial applications. Reconnect the
    screen and check its current port in Windows Device Manager.
