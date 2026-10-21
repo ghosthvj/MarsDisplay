@@ -25,13 +25,19 @@ application output, P5/P6 or continuous hardware claim; mechanical bindings are
 not legal certification. See [P4 contracts/evidence](../docs/usb-settings.md) and
 [the P4 ledger](../odd/tasks/native-usb-settings.md).
 
-## P5 source-guide inclusion (qualification pending)
+## Qualified P5 source-guide inclusion
 
-The explicit helper source allowlist now also includes `docs/usb-runtime.md`
-byte-for-byte. This is not a whole-documentation-directory glob; build output,
-ODD ledgers and private workspace state remain excluded. The previous P5 ZIP
-omitted this guide and is not the qualified replacement. See the
-[P5 runtime contract](../docs/usb-runtime.md) for the pending qualification.
+Source `56ea091cfae996101e5106cf1acc64898bd52b59` passed
+[Windows run 39645553766](https://github.com/ghosthvj/MarsDisplay/actions/runs/39645553766):
+253 tests, zero skips, windowed build and packaged worker qualification.
+The explicit helper source allowlist includes `docs/usb-runtime.md` byte-for-byte;
+1,249 payload hashes and 353 source files passed parent and independent readback.
+This is not a whole-documentation-directory glob; build output, ODD ledgers and
+private workspace state remain excluded. The previous P5 ZIP omitted this guide
+and is not the qualified replacement. See the
+[P5 runtime contract](../docs/usb-runtime.md#verified-p5-evidence) for exact hashes,
+checks and the physical/P6 boundary. Historical pending text in the immutable ZIP
+is superseded by that record, not by rewriting the artifact.
 
 ## Qualified P3 helper — application remains simulated
 

@@ -1,10 +1,10 @@
 # P5 native runtime contract
 
-**Under implementation, not qualified.** Runtime composition/lifecycle tests are
-passing; the stopped selector, migration/recovery controls and host-preview UI are
-implemented with focused offscreen tests. Final differential, Windows and independent
-acceptance remain pending.
-Do not interpret intermediate source commits or P3/P4 evidence as P5 acceptance.
+**P5 software qualification passed at `56ea091cfae996101e5106cf1acc64898bd52b59`.**
+Native lifecycle, explicit stopped selection, migration/recovery and host-preview
+behavior passed local, Windows and independent checks. This is not physical-screen,
+performance or interactive Windows-tray acceptance; those boundaries remain below.
+The immutable ZIP contains earlier pending wording, superseded by this record.
 Track work in [the P5 ledger](../odd/tasks/native-usb-runtime.md).
 
 ## Explicit output composition
@@ -117,3 +117,33 @@ The [P4 configuration format and rollback contracts](usb-settings.md) are preser
 No real USB tests ran on the agent host; tests use controlled peers/children/fake
 ports. Continuous hardware, latency/capacity, hotplug, production deadline budgets
 and additional landscape qualification remain **P6**, not claims from unit tests.
+
+## Verified P5 evidence
+
+[Windows run 39645553766](https://github.com/ghosthvj/MarsDisplay/actions/runs/39645553766)
+qualified exact source `56ea091cfae996101e5106cf1acc64898bd52b59`:
+
+| Check | Observed result |
+|---|---|
+| Windows source tests | 253 passed / 65.572s, zero skips |
+| Local full regression | 253 tests / 26.980s: 249 passed, four Windows-only skips |
+| Public P4 differential | 12 cases: ten exact stdout/stderr/exit matches, two intended native changes |
+| Packaging correction | RED reproduced missing guide; 16 focused tests passed; differential added only the guide with prior bytes unchanged |
+| Independent UI verification | 45 focused tests plus three modal/draft probes, no blockers |
+| Final independent verification | 54 focused tests plus two composition/ownership probes; S1–S6 met, reusing UI evidence |
+| Parent final spot | 54 tests / 1.756s, all passed, no skips |
+| Parent and independent ZIP readback | 1,249 payload hashes; 353 sources (349 exact Git Windows-checkout files plus four SDK records); 69 AMD64 PE32+ binaries; GUI subsystem 2 |
+| Native/material closure | 27 Qt and six supplemental components; 209 material hashes; actual windowed worker smoke passed |
+
+Artifact `12367770679` contains `MarsDisplay-0.1.4-Windows-x64.zip`,
+205,687,478 bytes, SHA256
+`24d8ce2fff5d9455a08c8fac2251346f0fc9a010653abe13caa0106df910171d`.
+The runtime guide is present and bound to the committed Windows-checkout bytes.
+The prior `9b80139` ZIP failed guide inclusion and is not the qualified candidate.
+Its failure was fixed, not waived; neither historical ZIP was rewritten.
+
+Worker smoke exercised private admission, HELLO/CLOSE, malformed IPC, startup gate,
+parent death and owned reap without OPEN or a device request. Source/native/material
+binding is mechanical evidence, not legal certification or physical rendering proof.
+The earlier exact RDD candidate was declined through host consent; this software
+qualification is functional verification, not an RDD approval. P6 remains separate.
