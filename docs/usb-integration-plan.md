@@ -1,15 +1,16 @@
 # USB integration proposal for MarsDisplay
 
-**Proposal only: no native application output is implemented or authorized here.**
-The [working diagnostic guide](usb-screen-guide.md) establishes one owner-accepted
-portrait frame through each standalone C# and Python diagnostic. It does not
-qualify continuous output or a production Python transport.
+**Application wiring remains a proposal: the app still uses Simulation.**
+P0–P3 are complete; P4–P6 are not authorized. The
+[working diagnostic guide](usb-screen-guide.md) establishes one owner-accepted
+portrait through each standalone C# and Python diagnostic. Those physical
+observations alone do not qualify continuous output or production timing.
 
 **Implementation update:** the owner has authorized `ok, vamos con P0 - P2`.
 Those completed stages are recorded in the
 [accepted Python bridge ledger](https://github.com/ghosthvj/MarsDisplay/blob/6bff97befee7b1e72f7afbcef3ab482a89011ea2/odd/tasks/native-python-usb-probe.md).
-The owner has now authorized `adelante con P3`; track only that next stage in the
-[bounded helper ledger](../odd/tasks/native-usb-helper.md). P4–P6 remain proposals;
+The owner authorized `adelante con P3`; that bounded helper stage is now complete
+in the [helper ledger](../odd/tasks/native-usb-helper.md). P4–P6 remain proposals;
 this does not authorize application USB output.
 
 **Current gate:** P0–P2 are complete, including owner physical acceptance of one
@@ -25,9 +26,12 @@ independent focused verification passed 67, with the same three expected skips.
 matching the canonical reference. See the
 [Python evidence and limits](usb-screen-guide.md#python-p2-owner-validated-frame).
 This is one-frame proof, not a device rendering ACK or continuous-output qualification.
-P3's persistent bounded helper is now authorized and under implementation on a
-fresh-main branch with selected prerequisites. P4–P6 remain unauthorized.
-MarsDisplay stays in Simulation; no application wiring is enabled.
+P3's persistent bounded helper is qualified at `8841770b7f46f6aa057e80ef5d7cafafe2d19c7d`:
+[Windows run 39611543729](https://github.com/ghosthvj/MarsDisplay/actions/runs/39611543729)
+passed 202 tests without skips and actual windowed worker-lifetime checks. Artifact
+readback and the independent S1–S6 verification passed; see
+[helper evidence and limits](usb-helper.md#verified-evidence-and-limits).
+P4–P6 remain unauthorized. MarsDisplay stays in Simulation; no application wiring is enabled.
 
 Original request, verbatim:
 > documenta todo lo necesario para poder trabajar con la pantalla y prepara el plan de integracion en MarsDisplay!
@@ -114,11 +118,12 @@ identity and delivery evidence before proposing a C# architecture alternative.
 
 ### P3 — Persistent bounded helper
 
-**Status:** authorized by `adelante con P3`; implementation/proof in progress,
-not yet qualified. Safety caps are provisional, not measured hardware capacity.
+**Status:** complete after native/source/artifact/independent verification at
+`8841770b7f46f6aa057e80ef5d7cafafe2d19c7d`. Safety caps remain provisional,
+not measured hardware capacity; application USB output is not enabled.
 
-**Dependency:** P2. Proposed areas: `src/mars_display/usb_transport.py`,
-`src/mars_display/usb_worker.py`, packaging bootstrap/recipe and focused tests.
+**Dependency:** P2. Implemented seams: `src/mars_display/usb_transport.py`,
+`usb_process.py`, `usb_ipc.py`, `usb_worker.py`, packaging bootstrap/recipe and tests.
 Expose the synchronous transport contract through one persistent owned native
 child, one in-flight frame, bounded IPC lengths/types/profile and explicit replies.
 No arbitrary commands, image/URL logging, disk frame history or per-frame process.

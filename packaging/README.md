@@ -1,6 +1,6 @@
 # Windows portable build and verified delivery
 
-## P3 helper qualification candidate — not yet qualified
+## Qualified P3 helper — application remains simulated
 
 The `feat/native-usb-helper` candidate keeps 0.1.4 application output simulated.
 Its existing full-windowed build now has an early private runtime hook before
@@ -12,9 +12,32 @@ fake-port hangs and handle cleanup without a shipping fake mode. The workflow pi
 Python 3.13.16 and rejects skipped source tests. Source closure includes the canonical
 P1 fixtures, helper documentation, build hooks and test-owned process fixtures.
 
-Native execution and artifact qualification for this candidate are still pending;
-none of the historical accepted builds below proves P3. Follow the
-[P3 ledger](../odd/tasks/native-usb-helper.md) and [helper boundary](../docs/usb-helper.md).
+Qualified source: `8841770b7f46f6aa057e80ef5d7cafafe2d19c7d`,
+[Windows run 39611543729](https://github.com/ghosthvj/MarsDisplay/actions/runs/39611543729).
+The actual windowed EXE passed; independent inspection confirmed GUI subsystem 2.
+
+| Evidence | Result |
+|---|---|
+| Native source/build | 202 tests / 69.091s, zero skips; actual frozen private/gate/parent-death smoke, native/legal/source-stability qualification and upload passed |
+| Inner application ZIP | 205,651,098 bytes; SHA256 `74fb0b785fee64ebfc02473e212668c5102c8716485b8c619dd888b387083185` |
+| Parent and independent readback | 1,244 payload hashes; 348 source files (344 Git Windows checkout plus four explicit SDK metadata); 69 AMD64/PE32+ files; 27 Qt plus six supplemental bindings; 209 material hashes |
+| Independent verification | S1–S6 met, no severe blocker; 77 tests: 73 passed plus four Linux Windows-only skips; independent actual-artifact probe passed |
+| Parent spot check | Same 77 tests: 73 passed plus four expected skips; 2.487s, exit 0 |
+
+[Immutable Actions artifact](https://github.com/ghosthvj/MarsDisplay/actions/runs/39611543729/artifacts/12350677469)
+expires **2026-10-28 13:55 UTC**. Its Actions-wrapper digest is not the inner ZIP
+checksum above. This verification package is not an installer, release or app USB
+opt-in; ordinary output stays simulated. Existing preview/DPI owner-acceptance limits
+below are not requalified. P0–P2 diagnostic binaries remain unchanged and separate.
+
+The first native source run failed one buffering-assumption test before compile;
+its test-only backpressure correction preserved production limits. Parent readback
+required an owner-authorized reader fix, then every assertion passed. Historical
+pending wording inside the immutable source/README is superseded by this evidence,
+not patched into the ZIP. Continuous hardware/FPS/reconnect/landscape/application
+acceptance and P4–P6 remain unqualified. Mechanical bindings are not legal certification.
+See [the P3 ledger](../odd/tasks/native-usb-helper.md) and
+[helper evidence](../docs/usb-helper.md#verified-evidence-and-limits).
 
 ## Verified output-preview portable — 0.1.4
 

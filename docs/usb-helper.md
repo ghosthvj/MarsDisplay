@@ -1,15 +1,15 @@
 # P3 bounded native USB helper
 
-P3 is under implementation. Framing, the serial core and the owned UsbTransport
-controller pass source-mode fake-provider tests. Native Windows job/handle behavior
-and the actual frozen application route are not yet qualified. MarsDisplay still composes Simulation.
-Do not invoke the worker core as an unowned production serial service.
+P3 is qualified at source `8841770b7f46f6aa057e80ef5d7cafafe2d19c7d`:
+owned persistent transport, real Windows lifetime checks and the actual windowed
+EXE route passed. MarsDisplay still composes Simulation; this does not enable
+application USB output. Do not run the worker as an unowned serial service.
 
 ## Private wire v1
 
 One authenticated, parent-owned local connection carries one operation at a time.
 There is no frame queue, public endpoint option, pickle or arbitrary command RPC.
-The eventual owned controller must enforce both I/O and native-call deadlines.
+The owned controller enforces both I/O and native-call safety deadlines.
 No frame/URL/exception body is logged or stored as history.
 
 Each message starts with the 16-byte network-order struct `!4sBBHII`:
@@ -121,5 +121,37 @@ frames, open/write/drain/close hangs and failed raw-handle closure. There is no
 shipping fake-backend flag. Windows CI requires zero skipped source tests before
 compiling, and existing material/source/publication gates remain in force.
 
-These checks are implemented, not yet observed on Windows. Source injected tests
-are not frozen-process proof. Native proof is pending in [the P3 ledger](../odd/tasks/native-usb-helper.md).
+## Verified evidence and limits
+
+[Windows run 39611543729](https://github.com/ghosthvj/MarsDisplay/actions/runs/39611543729)
+built exact source `8841770b7f46f6aa057e80ef5d7cafafe2d19c7d` and passed
+202 source tests in 69.091s with **zero skips**. The actual windowed EXE passed
+the private-route checks above; independent inspection confirmed GUI subsystem 2.
+No OPEN/device request was sent by frozen qualification.
+
+| Evidence | Observed result |
+|---|---|
+| Local full regression | 202 tests: 198 passed, four Windows-only skips; 25.115s, exit 0 |
+| Independent P3 verification | S1–S6 met, no severe blockers; 77 focused tests: 73 passed, four expected Windows-only skips; independent artifact probe passed |
+| Parent spot check | Same 77 tests; 73 passed, four expected skips; 2.487s, exit 0 |
+| Public bootstrap differential | Nine cases: seven exact outcomes and two intended private-route/help changes |
+| Artifact readback | 1,244 payload hashes, 348 source files, 69 AMD64/PE32+ files; 27 Qt plus six supplemental bindings and 209 material hashes |
+
+The ZIP is 205,651,098 bytes, SHA256
+`74fb0b785fee64ebfc02473e212668c5102c8716485b8c619dd888b387083185`.
+Of 348 source files, 344 match the exact Git Windows checkout; four generated
+SDK metadata files were explicitly validated. Original legal bytes remain protected.
+This is mechanical/source binding, not legal certification. Parent and verifier did
+not execute Windows code or access USB on Linux.
+
+The first native run stopped before compilation on a test that assumed send-buffer
+size guaranteed a blocked socket. The test-only correction establishes bounded
+backpressure; production deadlines did not change. The initial artifact reader also
+needed an owner-authorized per-file Git correction for Windows checkout conversion;
+all final assertions passed. These failures and the verifier's pre-probe isolation
+clarification remain recorded in [the P3 ledger](../odd/tasks/native-usb-helper.md).
+
+The qualified ZIP is immutable. Its historical pending documentation is superseded
+by this evidence, not rewritten in place. P0–P2 diagnostics remain separate and
+unchanged. No continuous hardware, latency/FPS, reconnect, landscape, P4–P6 or
+application-integration acceptance is claimed. Production budgets remain unmeasured.

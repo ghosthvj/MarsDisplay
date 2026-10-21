@@ -6,8 +6,9 @@ and does not drive this screen.** Use this guide
 for the known-good diagnostic; see the [integration proposal](usb-integration-plan.md)
 for future application work. P0–P2 are complete, recorded in the
 [accepted Python bridge ledger](https://github.com/ghosthvj/MarsDisplay/blob/6bff97befee7b1e72f7afbcef3ab482a89011ea2/odd/tasks/native-python-usb-probe.md).
-The owner has now authorized **P3 only**, tracked in the
-[bounded helper ledger](../odd/tasks/native-usb-helper.md). Application wiring,
+The authorized **P3 bounded helper is qualified**, tracked in the
+[helper ledger](../odd/tasks/native-usb-helper.md) with
+[native/source evidence and limits](usb-helper.md#verified-evidence-and-limits). Application wiring,
 settings and continuous hardware qualification (P4–P6) remain unauthorized.
 Python physical acceptance still covers only one frozen portrait image.
 
@@ -57,8 +58,8 @@ Owner photos remain private and are not embedded in the repository or distributi
 No repeat is needed to close this gate. If a later explicit test fails, preserve
 console and photo, stop, and do not automatically resend or change protocol.
 Continuous output, latency/FPS, reconnect, landscape and application integration
-remain unqualified. P3 helper implementation is authorized, not application wiring;
-P4–P6 require separate authorization.
+remain unqualified. P3's bounded helper passed its isolated native qualification,
+not application wiring or new physical acceptance; P4–P6 require separate authorization.
 
 The immutable packaged README retains its pre-CI preparation wording. The native
 receipts establish packaging qualification; the owner's paired evidence above
