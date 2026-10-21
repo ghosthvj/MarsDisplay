@@ -40,8 +40,8 @@ Do not tune production deadlines from a single elapsed counter measurement. Reta
 
 ## Tasks
 
-- T0 [S1–S4] route: parent inline; status: in_progress; commit: pending — Pin artifact, reconcile historical documentation and prepare bounded initial owner procedure. Risk: none (documentation).
-- T1 [S1–S4] route: owner physical execution + parent evidence review; status: pending; commit: pending — Establish initial portrait continuous output, accepted-frame correspondence and acknowledged Stop from qualified Windows app.
+- T0 [S1–S4] route: parent inline; status: done; commit: `2954357aa2511566eedfdd45e47dade1edabbbe6` — Pin artifact, reconcile historical documentation and prepare bounded initial owner procedure. Risk: none (documentation).
+- T1 [S1–S4] route: owner physical execution + parent evidence review; status: blocked; commit: pending — Await owner evidence to establish initial portrait continuous output, accepted-frame correspondence and acknowledged Stop from qualified Windows app.
 - T2 [S2,S4] route: owner physical execution + parent evidence review; status: pending; commit: pending — Exercise unplug/replug, explicit restart, identity/COM/duplicate admission, in-flight Stop and Exit/resource lifetime without forced unrelated cleanup.
 - T3 [S2–S4] route: parent analysis + owner measurement; status: pending; commit: pending — Measure latency/capacity, decide justified production budgets, verify any resulting bounded changes and close only observed hardware conditions. Landscape remains a separate gate.
 
@@ -50,3 +50,5 @@ Do not tune production deadlines from a single elapsed counter measurement. Reta
 L1 — Original request verbatim: `continuamos con P6`.
 L2 — Owner selected readiness verbatim `Listo para probar` with description `Tengo la pantalla conectada y puedo ejecutar el paquete y compartir resultados.` No physical P6 execution observed yet.
 L3 — Clean P5 closure5f1e113 branched to feat/native-usb-hardware. P5 actual software qualification56ea091/run39645553766/253Windowszero-skips and independent/source/material proof remain valid. Historical plan/screen guide still say P5 unauthorized; reconcile current status without rewriting historical evidence or ZIP. Initial owner procedure is a bounded60second observation, not a production acceptance threshold or panelFPS benchmark.
+
+L4 — T0complete commit2954357: pinned ownerprocedure docs/usb-hardware-qualification.md, historicalplan/diagnosticstatus explicitly superseded,30localdoclinks/diffcheckPASS. Documentation only: no meaningfulRED/runtimechange. ChainedP6delivery boundary starts at5f1e113; this145+/1-docslice is not accumulatedP0–P5featurehistory. T1blocked awaiting firstphysical portrait/Stop evidence from owner; T2/T3orderedpending, no physicalexecution/resultsclaimed. Procedure60s+10s is a bounded firstobservation, not productionbudget or panelFPS. No need to repeat P5 software tests for passive instructions.
