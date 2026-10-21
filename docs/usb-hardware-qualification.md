@@ -288,13 +288,33 @@ panel duration, choose a timeout from the successful maximum, or tune protocol
 parameters from this sample. Finer stage measurements or an explicit decision to
 defer production-budget qualification are still required; P6 is not fully closed.
 
-## Next internal-send diagnostic — not yet delivered
+## Verified internal-send diagnostic package
 
-The source candidate adds seven rows to the existing three-row report. Neither
-qualified ZIP above contains them. Wait for a separately verified exact Windows
-source/artifact/hash before running this candidate; do not overwrite either ZIP.
+This separately qualified package adds seven rows to the existing three-row report.
+Neither earlier ZIP contains them; preserve both and extract this one into a new folder.
 
-For that future observation, the owner needs all ten rows, each with independent
+- Source: `b947675e6332f44e276a35840ef808310ffaaae5` (core `5668150`, UI `b947675`).
+- [Internal diagnostic artifact 12375057696](https://github.com/ghosthvj/MarsDisplay/actions/runs/39663099449/artifacts/12375057696).
+- Inner ZIP: `MarsDisplay-0.1.4-Windows-x64.zip`, 205,707,048 bytes.
+- SHA256: `f828e5f059777c8fff1b88b39067fd21ae39e7294d19ad553a086879d4b6a0ad`.
+
+Windows passed 267 tests / 68.546s with zero skips. Parent and independent artifact
+checks passed: 1,253 payload hashes, 357 source records (353 exact Git Windows
+checkout files plus four SDK records), 69 AMD64 PE32+ binaries, 27 Qt and six
+supplemental components, 209 material hashes and the packaged helper smoke.
+Independent verification passed 52 focused tests plus two boundary probes; legacy
+behavior differential checks passed. Native RDD was declined by the owner for this
+candidate, not approved or globally disabled. Earlier pending-delivery wording
+inside this immutable ZIP is superseded by this record.
+
+Follow the measurement procedure above using this artifact and hash: normal Exit,
+verify the inner ZIP, extract into a new folder, confirm stopped startup, then one
+explicit Start without changing settings. Capture the complete report near one
+minute and five minutes with elapsed time and host count, then again after Stop
+acknowledgement. On an error, stop and report it without retrying. Keep previous
+folders, configuration and backups intact.
+
+For this observation, the owner needs all ten rows, each with independent
 count/last/min/max/mean milliseconds. In addition to source read, host send and
 cadence wait, scroll to **Helper frame decode**, **Helper identity resolution**,
 **Helper RGB565 encode**, **Helper packet writes**, **Helper queue drain**,
