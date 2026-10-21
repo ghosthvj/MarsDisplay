@@ -1,6 +1,6 @@
-"""Version-1 local settings, independent of capture and application lifecycle."""
+"""Strict local settings and explicit reversible migration; no runtime admission."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import ipaddress
 import json
 import os
@@ -25,6 +25,12 @@ _URL_ERROR = (
 )
 _SCHEMA_ERROR = "Settings must contain exactly schema_version, mars_url and device_identity."
 _KEYS = {"schema_version", "mars_url", "device_identity"}
+_KEYS_V2 = _KEYS | {"output_mode", "native_profile"}
+_VERSION_ERROR = "Unsupported settings schema version; supported versions are 1 and 2."
+_SCHEMA_V2_ERROR = "Schema 2 must contain exactly schema_version, mars_url, device_identity, output_mode and native_profile."
+NATIVE_PROFILE = "tus35-portrait-v1"
+NATIVE_IDENTITY = "usb:1a86:5722:USB35INCHIPSV2"
+_ACK_ERROR = "Schema 2 is incompatible with older binaries; explicit acknowledgement is required."
 
 
 def _unsafe_text(value: str) -> bool:
@@ -83,10 +89,12 @@ class Settings:
     mars_url: str
     device_identity: str | None = None
     schema_version: int = 1
+    output_mode: str = field(default="simulated", repr=False)
+    native_profile: str | None = field(default=None, repr=False)
 
     def __post_init__(self):
-        if type(self.schema_version) is not int or self.schema_version != 1:
-            raise SettingsError("Unsupported settings schema version; use version 1.") from None
+        if type(self.schema_version) is not int or self.schema_version not in (1, 2):
+            raise SettingsError(_VERSION_ERROR) from None
         _capture_url(self.mars_url)
         device = self.device_identity
         if device is not None and (
@@ -95,6 +103,17 @@ class Settings:
             raise SettingsError(
                 "Device identity must be null or a non-empty string without control characters."
             ) from None
+
+        if self.output_mode not in ("simulated", "native") or type(self.output_mode) is not str:
+            raise SettingsError("Output mode must be simulated or native.") from None
+        if self.schema_version == 1 and (self.output_mode != "simulated" or self.native_profile is not None):
+            raise SettingsError("Schema 1 supports simulated output only.") from None
+        if self.output_mode == "simulated":
+            if self.native_profile is not None:
+                raise SettingsError("Simulated output requires a null native profile.") from None
+        elif (type(self.native_profile) is not str or self.native_profile != NATIVE_PROFILE
+              or self.device_identity != NATIVE_IDENTITY):
+            raise SettingsError("Native output requires the supported profile and exact opaque identity.") from None
 
     @property
     def capture_url(self) -> str:
@@ -140,52 +159,167 @@ class SettingsStore:
             ) from None
         except OSError:
             raise SettingsStoreError("Cannot read settings; check file access and retry.") from None
+        return Settings(**_document(raw))
+
+    @property
+    def schema1_backup_path(self) -> Path:
+        """Exact original bytes retained before incompatible migration."""
+        return self.path.with_name(self.path.name + ".schema1-backup.json")
+
+    def _existing(self):
         try:
-            data = json.loads(raw, object_pairs_hook=_unique_object)
-        except (ValueError, RecursionError) as error:
-            if isinstance(error, SettingsError):
-                raise error from None
-            raise SettingsError(
-                "Settings file is not valid JSON; correct it or explicitly save new settings."
-            ) from None
-        if type(data) is not dict or data.keys() != _KEYS:
-            raise SettingsError(_SCHEMA_ERROR) from None
-        return Settings(**data)
+            return _document(self.path.read_bytes())
+        except FileNotFoundError:
+            return None
+        except OSError:
+            raise SettingsStoreError("Cannot read settings; check file access and retry.") from None
+
+    def _snapshot(self):
+        try:
+            raw = self.path.read_bytes()
+        except FileNotFoundError:
+            return None, None
+        except OSError:
+            raise SettingsStoreError("Cannot read settings; check file access and retry.") from None
+        return raw, Settings(**_document(raw))
+
+    def _expect_unchanged(self, original):
+        try:
+            current = self.path.read_bytes()
+        except FileNotFoundError:
+            current = None
+        except OSError:
+            raise SettingsStoreError("Cannot read settings; check file access and retry.") from None
+        if current != original:
+            raise SettingsError("Settings changed during the operation; nothing was replaced.") from None
 
     def save(self, settings: Settings) -> None:
-        """Validate before any write; atomically replace only on explicit save."""
-        if type(settings) is not Settings:
-            raise SettingsError("Only validated Settings can be saved.") from None
-        # Reuse the value constructor's invariants, even if a caller bypassed
-        # frozen assignment using Python's low-level object API.
-        checked = Settings(settings.mars_url, settings.device_identity, settings.schema_version)
-        content = json.dumps({
-            "schema_version": checked.schema_version,
-            "mars_url": checked.mars_url,
-            "device_identity": checked.device_identity,
-        }, ensure_ascii=True, indent=2) + "\n"
-        temporary = None
+        """Ordinary explicit edit, never implicit migration or downgrade."""
+        checked = _checked(settings)
+        existing = self._existing()
+        version = existing["schema_version"] if existing is not None else 1
+        if checked.schema_version != version:
+            raise SettingsError("Use explicit schema migration or schema-1 recovery; Save cannot change versions.") from None
+        if version == 2:
+            Settings(**existing)
+            self._backup_bytes()
+        _write(self.path, _content(checked), replace=True)
+
+    def migrate_to_v2(self, settings: Settings, *, acknowledge_legacy_incompatibility=False) -> None:
+        """Trusted explicit API: preserve old-readable bytes before replacement."""
+        if acknowledge_legacy_incompatibility is not True:
+            raise SettingsError(_ACK_ERROR) from None
+        checked = _checked(settings)
+        if checked.schema_version != 2:
+            raise SettingsError("Migration requires validated schema-2 settings.") from None
+        snapshot, current = self._snapshot()
+        if current is not None and current.schema_version != 1:
+            raise SettingsError("Settings already use schema 2; use explicit Save.") from None
+        original = (snapshot if current is not None
+                    else _content(Settings(checked.mars_url, checked.device_identity)))
+        backup = self.schema1_backup_path
         try:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            with tempfile.NamedTemporaryFile(
-                mode="w", encoding="utf-8", dir=self.path.parent,
-                prefix=".settings-", suffix=".tmp", delete=False,
-            ) as stream:
-                temporary = Path(stream.name)
-                stream.write(content)
-                stream.flush()
-                os.fsync(stream.fileno())
-            os.replace(temporary, self.path)
+            if backup.exists():
+                if backup.read_bytes() != original:
+                    raise OSError("Conflicting backup")
+            else:
+                _write(backup, original, replace=False)
         except OSError:
-            if temporary is not None:
-                try:
-                    temporary.unlink(missing_ok=True)
-                except OSError:
-                    raise SettingsStoreError(
-                        "Cannot save settings or remove temporary file; check directory access. "
-                        "Previous settings were not replaced."
-                    ) from None
-            raise SettingsStoreError(
-                "Cannot save settings; check directory access and retry. "
-                "Previous settings were not replaced."
-            ) from None
+            raise SettingsStoreError("Cannot preserve schema-1 settings; previous settings were not replaced.") from None
+        self._expect_unchanged(snapshot)
+        _write(self.path, _content(checked), replace=True)
+
+    def export_schema1(self, destination: Path | str) -> None:
+        """Explicit old-reader export, exclusively created; never downgrade Save."""
+        snapshot, current = self._snapshot()
+        if current is None:
+            raise SettingsError("No settings are available to export.") from None
+        data = (snapshot if current.schema_version == 1
+                else _content(Settings(current.mars_url, current.device_identity)))
+        _write(Path(destination), data, replace=False)
+
+    def _backup_bytes(self) -> bytes:
+        try:
+            raw = self.schema1_backup_path.read_bytes()
+            checked = Settings(**_document(raw))
+            if checked.schema_version != 1:
+                raise SettingsError("Backup is not schema 1.")
+            return raw
+        except (OSError, SettingsError):
+            raise SettingsStoreError("A valid preserved schema-1 backup is required.") from None
+
+    def restore_schema1(self) -> None:
+        """Explicit recovery only; refuse to erase invalid/unknown configuration."""
+        snapshot, _ = self._snapshot()
+        backup = self._backup_bytes()
+        self._expect_unchanged(snapshot)
+        _write(self.path, backup, replace=True)
+
+
+def _document(raw):
+    try:
+        if isinstance(raw, bytes):
+            raw = raw.decode("utf-8")
+        data = json.loads(raw, object_pairs_hook=_unique_object)
+    except (ValueError, UnicodeError, RecursionError) as error:
+        if isinstance(error, SettingsError):
+            raise error from None
+        raise SettingsError(
+            "Settings file is not valid JSON; correct it or explicitly save new settings."
+        ) from None
+    if type(data) is not dict or not _KEYS <= data.keys():
+        raise SettingsError(_SCHEMA_ERROR) from None
+    version = data["schema_version"]
+    if type(version) is not int or version not in (1, 2):
+        raise SettingsError(_VERSION_ERROR) from None
+    if data.keys() != (_KEYS if version == 1 else _KEYS_V2):
+        raise SettingsError(_SCHEMA_ERROR if version == 1 else _SCHEMA_V2_ERROR) from None
+    return data
+
+
+def _checked(settings):
+    if type(settings) is not Settings:
+        raise SettingsError("Only validated Settings can be saved.") from None
+    return Settings(settings.mars_url, settings.device_identity, settings.schema_version,
+                    settings.output_mode, settings.native_profile)
+
+
+def _content(settings):
+    value = {"schema_version": settings.schema_version, "mars_url": settings.mars_url,
+             "device_identity": settings.device_identity}
+    if settings.schema_version == 2:
+        value.update(output_mode=settings.output_mode, native_profile=settings.native_profile)
+    # Preserve ordinary platform text-save formatting; backup copies stay raw.
+    return (json.dumps(value, ensure_ascii=True, indent=2) + "\n").replace("\n", os.linesep).encode("utf-8")
+
+
+def _write(destination, data, *, replace):
+    temporary = None
+    try:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(mode="wb", dir=destination.parent,
+                prefix=".settings-", suffix=".tmp", delete=False) as stream:
+            temporary = Path(stream.name)
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        if replace:
+            os.replace(temporary, destination)
+            temporary = None
+        else:
+            os.link(temporary, destination)
+            temporary.unlink()
+            temporary = None
+    except OSError:
+        if temporary is not None:
+            try:
+                temporary.unlink(missing_ok=True)
+            except OSError:
+                raise SettingsStoreError(
+                    "Cannot save settings or remove temporary file; check directory access. "
+                    "Previous settings were not replaced."
+                ) from None
+        raise SettingsStoreError(
+            "Cannot save settings; check directory access and retry. "
+            "Previous settings were not replaced."
+        ) from None

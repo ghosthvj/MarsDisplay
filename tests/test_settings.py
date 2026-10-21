@@ -12,7 +12,7 @@ from mars_display.settings import Settings, SettingsError, SettingsStore, Settin
 
 
 URL_ERROR = "MARS URL must be HTTP(S) with a valid host and port, without credentials, query, fragment, whitespace or control characters."
-VERSION_ERROR = "Unsupported settings schema version; use version 1."
+VERSION_ERROR = "Unsupported settings schema version; supported versions are 1 and 2."
 SCHEMA_ERROR = "Settings must contain exactly schema_version, mars_url and device_identity."
 LOAD_ERROR = "Cannot read settings; check file access and retry."
 CORRUPT_ERROR = "Settings file is not valid JSON; correct it or explicitly save new settings."
@@ -92,7 +92,7 @@ class SettingsTests(unittest.TestCase):
             ({"schema_version": 1.0}, VERSION_ERROR),
             ({"schema_version": "1"}, VERSION_ERROR),
             ({"schema_version": 0}, VERSION_ERROR),
-            ({"schema_version": 2}, VERSION_ERROR),
+            ({"schema_version": 3}, VERSION_ERROR),
             *[({"device_identity": value},
                "Device identity must be null or a non-empty string without control characters.")
               for value in (False, 1, [], {}, "", "  ", "usb\nsecret", "usb\x7f", "usb\x85")],
@@ -142,7 +142,7 @@ class SettingsTests(unittest.TestCase):
         for value in (None, [], "private", {}, valid | {"extra": True},
                       {key: item for key, item in valid.items() if key != "device_identity"}):
             cases.append((json.dumps(value).encode(), SCHEMA_ERROR))
-        for version in (2, 0, True, 1.0, "1", None):
+        for version in (3, 0, True, 1.0, "1", None):
             cases.append((json.dumps(valid | {"schema_version": version}).encode(), VERSION_ERROR))
         cases.extend([
             (json.dumps(valid | {"mars_url": "http://user:private@host"}).encode(), URL_ERROR),

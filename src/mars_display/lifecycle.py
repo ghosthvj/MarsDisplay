@@ -135,6 +135,8 @@ class Coordinator:
             settings = self._store.load()
             if settings is None:
                 raise LifecycleError("Configure a MARS URL before starting.")
+            if settings.output_mode == "native":
+                raise LifecycleError("Native output is configured but is not enabled in this build. Select Simulation explicitly.")
             self._cancel = Event()
             self._outcome = "stopped"
             self._status = replace(self._status, state="starting", source_state="starting",
