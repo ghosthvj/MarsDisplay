@@ -163,3 +163,30 @@ acceptance during this observation, not physical panel FPS, maximum throughput o
 USB write/drain latency. Five minutes is an initial observation, not proof of an
 unbounded stable run. A successful sample alone cannot establish production
 operation deadlines; the existing safety caps remain unchanged and provisional.
+
+## Recorded first timed sample — limited result
+
+Owner screenshots show these stopwatch readings and lifetime host counts:
+
+| Elapsed seconds | Host-accepted count | State |
+|---:|---:|---|
+| 3.01 | 1 | running |
+| 61.86 | 24 | running |
+| 141.24 | 56 | running |
+| 203.19 | 81 | running |
+| 267.06 | 107 | running |
+| 322.79 | 130 | running |
+| 332.11 (stopwatch paused) | 134 | stopped / native-closed |
+
+The running interval contains 129 accepted frames in 319.78 seconds: approximately
+0.403 host-accepted frames/second, or a 2.48-second mean completion interval.
+Sample-to-sample rates range from 0.391 to 0.413 frames/second. The owner reported
+no visible freezes or running errors and more obvious redraw in the chart region.
+This does not identify a USB bottleneck, measure panel FPS or set production budgets.
+The exact Stop press was not timed; the final four frames cannot be classified as
+post-Stop writes from these captures. Earlier stopped-count stability was separately
+reported in T1.
+
+Video inspection remains pending: the available local browser reported duration
+but yielded empty frames. No visual conclusion is drawn from that attempt, and no
+private video or image has been uploaded or included in the repository.
