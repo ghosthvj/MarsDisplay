@@ -41,8 +41,8 @@ Do not tune production deadlines from a single elapsed counter measurement. Reta
 ## Tasks
 
 - T0 [S1–S4] route: parent inline; status: done; commit: `2954357aa2511566eedfdd45e47dade1edabbbe6` — Pin artifact, reconcile historical documentation and prepare bounded initial owner procedure. Risk: none (documentation).
-- T1 [S1–S4] route: owner physical execution + parent evidence review; status: blocked; commit: pending — Await owner evidence to establish initial portrait continuous output, accepted-frame correspondence and acknowledged Stop from qualified Windows app.
-- T2 [S2,S4] route: owner physical execution + parent evidence review; status: pending; commit: pending — Exercise unplug/replug, explicit restart, identity/COM/duplicate admission, in-flight Stop and Exit/resource lifetime without forced unrelated cleanup.
+- T1 [S1–S4] route: owner physical execution + parent evidence review; status: done; commit: `ee35544` (observations; confirmation in subsequent ledger commit) — Established initial portrait continuous output, accepted-frame correspondence and acknowledged Stop from qualified Windows app.
+- T2 [S2,S4] route: owner physical execution + parent evidence review; status: blocked; commit: pending — Await controlled-disconnect evidence, then exercise unplug/replug, explicit restart, identity/COM/duplicate admission, in-flight Stop and Exit/resource lifetime without forced unrelated cleanup.
 - T3 [S2–S4] route: parent analysis + owner measurement; status: pending; commit: pending — Measure latency/capacity, decide justified production budgets, verify any resulting bounded changes and close only observed hardware conditions. Landscape remains a separate gate.
 
 ## Log
@@ -62,3 +62,10 @@ L6 — Owner report verbatim:
 > No verifiqué el hash, descargué el ZIP que me dijiste y lo ejecuté
 
 L7 — Inspected supplied Stop screenshot: lifecycle/source stopped, native-closed, hostacceptedcount152, configuration reenabled; red diagnostic exactly `Native delivery is uncertain; the previous host-accepted frame is retained. No resend.` Owner confirms no observed delay and stablecount; exact measuredStopduration/10second observation interval not supplied. Cardrotation confirmed, resolving earlier different-card ambiguity, not establishing simultaneouspixelmatch. Visible top-to-bottom redraw and approximate1–2second updates are ownerobservations, not measuredFPS/latencycapacity or proven bufferingcause. Delivery uncertainty differs from retained resourceownership: stopped/nativeclosed can coexist with unconfirmed lastframe after cancellation. Need owner timing of warning (beforeStop vs onlyafter) before classifying physical failure. Local lifecycle.py329–338 confirms typed deliveryuncertainty diagnostic, not evidence of its actual trigger here. Packagehashnotverified byowner; T1blocked on checksum confirmation and warning chronology/stabilitywindow. Do not ask to repeat Start, resend, unplug or changeprotocol yet. Originalimages remain private, no endpoint/IP copied.
+
+L8 — Owner report verbatim:
+> El aviso apareció al pulsar en Stop.
+> El contador quedó sin avanzar durante todo el tiempo.
+> Este es el resultado de la verificacion: '/my-projects/pantalla/MarsDisplay/.herdr-web-ui/paste-20261021-181051-875e9cfe.png'
+
+L9 — Parent inspected SHA256 screenshot: uppercase24D8CE2FFF5D9455A08C8FAC2251346F0FC9A010653ABE13CAA0106DF910171D equals qualified innerZIP hash exactly. T1done for initialowner-observation scope: rotatingportrait physicallyvisible/~1–2sreportedupdates/top-downredraw; stopped/nativeclosed/count152 stablethroughownerobservation; warning beganonStop, compatiblewithinflightcancellation, not proof of a priorrunningerror or panelACK. No measuredStoplatency/FPS/productionbudget/sustainedstress claim. T2blocked awaiting next controlleddisconnect: explicitStart once, observe advancingcount, unplugscreenUSB once, collectstate/message/count+elapsed over atmost30s; no automaticreconnect/restart/forcedcleanup. Thirtyseconds is a bounded observation window, not deadline tuning. If Start itself errors, stopbeforeunplug. T3pending on remainingphysicalscenarios and measurement.

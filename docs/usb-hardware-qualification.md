@@ -65,3 +65,23 @@ restart, COM reassignment/duplicate rejection when available, in-flight Stop,
 Exit and owned-resource lifetime, and measured latency/capacity. No production
 budgets or landscape implementation are authorized by a successful first run.
 See [the P6 task ledger](../odd/tasks/native-usb-hardware.md) for acceptance boundaries.
+
+## Follow-up: one controlled disconnect
+
+Proceed only after the initial portrait/Stop evidence and package checksum have
+been reviewed. Keep the same package and saved settings; do not change protocol.
+
+1. From acknowledged stopped, click **Start** once. Confirm the host count advances
+   and physical updates resume. If Start fails, report that instead of unplugging.
+2. Note the host count, unplug only this screen's USB cable once, and start a timer.
+3. Without reconnecting or clicking Start/Stop/Exit, observe for at most 30 seconds.
+   Record elapsed time to the first state/error change, the exact diagnostic,
+   output/source state and final host count. Take a screenshot, hiding private URLs.
+4. Stop the test at that observation and report before reconnecting. If cleanup
+   remains pending or uncertain, do not kill processes or force another session.
+
+A frame already in flight may affect the count before failure; do not infer a
+panel acknowledgement from it. No automatic native restart is expected. A continued
+running state after 30 seconds is evidence to investigate, not permission to widen
+safety deadlines. Reconnect, COM reassignment, duplicates and Exit are separate
+steps after this observation is reviewed.
