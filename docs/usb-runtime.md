@@ -58,7 +58,7 @@ Hardware stage measurements and production budgets remain pending.
 
 Each stage shows its independent count, last, minimum, maximum and mean in
 milliseconds. A zero count displays dashes, not measured zero latency. The immutable
-snapshot holds only three fixed-size numeric aggregates in RAM (durations internally
+snapshot holds only ten fixed-size numeric aggregates in RAM (durations internally
 in seconds). There are no timestamps, images, URLs, identities, credentials, histories,
 logs or exports in this diagnostic. Reading the display does not capture another frame.
 
@@ -74,17 +74,32 @@ target, synchronous backpressure, cancellation, zero native retries, transport a
 safety deadlines remain unchanged. Successful-duration aggregates omit failures and
 cannot alone establish failure deadlines, panel FPS or production capacity.
 
-### Pending internal send detail integration
+### Internal send detail (unqualified candidate)
 
-The next diagnostic core exposes optional `UsbTransport.last_send_timing` with
-seven immutable numeric durations; see [the helper API](usb-helper.md#source-api-and-ownership).
-It is not yet aggregated or displayed by this lifecycle/UI. The dependent change
-must read it only after successful send, keep injected transports without this
-accessor working, and show unavailable detail rather than fabricated zero samples.
-Reset aggregates on admitted native Start and retain them on Stop/error, as above.
-Host exchange includes helper work and is not pure IPC or panel latency. Existing
-qualified P5 and `d79eb80` diagnostic ZIPs remain immutable; this new candidate
-requires its own Windows/source/artifact qualification before owner use.
+The lifecycle reads optional `UsbTransport.last_send_timing` only after successful
+send; see [the helper API](usb-helper.md#source-api-and-ownership). Seven additional
+rows show independent count/last/min/max/mean milliseconds:
+
+| UI row | Successful sample measures |
+|---|---|
+| Helper frame decode (ms) | Frame payload decoding and validation |
+| Helper identity resolution (ms) | Current unique device identity resolution |
+| Helper RGB565 encode (ms) | Portrait packet encoding |
+| Helper packet writes (ms) | Total packet-write loop |
+| Helper queue drain (ms) | Host queue-drain loop |
+| Host IPC body encode (ms) | Parent frame IPC-body encoding |
+| Host exchange (includes helper work) (ms) | Full parent request/reply exchange, including helper work |
+
+Exchange and helper stages overlap: **do not sum them as separate costs** or call
+exchange pure IPC/USB latency or panel rendering. Missing/None optional detail
+leaves counts unchanged; count-zero detail rows show `unavailable (count 0)`, not
+measured zero latency. A successful measured zero has a positive sample count.
+Failed sends never aggregate retained stale detail. Admitted native Start resets
+all ten aggregates; Stop/error retain them and Simulation has no native report.
+No extra capture, history, settings, logs or export is introduced.
+
+Existing qualified P5 and `d79eb80` diagnostic ZIPs remain immutable; this new
+candidate requires its own Windows/source/artifact qualification before owner use.
 
 ## Failure and cleanup policy
 

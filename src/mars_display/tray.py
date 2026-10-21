@@ -464,7 +464,17 @@ class TrayShell(QObject):
                 ("Source read (observations)", report.source_read),
                 ("Host send (encoding / IPC / helper total)", report.host_send),
                 ("Cadence wait (non-cancelled)", report.cadence_wait),
+                ("Helper frame decode (ms)", report.decode),
+                ("Helper identity resolution (ms)", report.identity),
+                ("Helper RGB565 encode (ms)", report.encode),
+                ("Helper packet writes (ms)", report.write),
+                ("Helper queue drain (ms)", report.drain),
+                ("Host IPC body encode (ms)", report.body_encode),
+                ("Host exchange (includes helper work) (ms)", report.exchange),
             ):
+                if title.endswith("(ms)") and not aggregate.count:
+                    timing_lines.append(f"{title}: unavailable (count 0)")
+                    continue
                 values = [f"{value * 1000:.3f}" if aggregate.count else "—"
                           for value in (aggregate.latest, aggregate.minimum,
                                         aggregate.maximum, aggregate.mean)]
@@ -473,6 +483,7 @@ class TrayShell(QObject):
                     f"max {values[2]}; mean {values[3]}")
             timing_lines.append("Host send is not isolated serial write/drain or panel rendering. "
                                 "Counts are independent, not panel FPS.")
+            timing_lines.append("Host exchange includes helper work; do not add exchange and helper stages as separate costs.")
         self.dialog.native_timing.setText("\n".join(timing_lines))
         self.dialog.native_timing.setVisible(report is not None)
         _tone(self.dialog.source, "success" if status.source_state == "ready" else

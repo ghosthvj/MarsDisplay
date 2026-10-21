@@ -287,3 +287,24 @@ behavior are not separated by this report. Do not infer an isolated serial or
 panel duration, choose a timeout from the successful maximum, or tune protocol
 parameters from this sample. Finer stage measurements or an explicit decision to
 defer production-budget qualification are still required; P6 is not fully closed.
+
+## Next internal-send diagnostic — not yet delivered
+
+The source candidate adds seven rows to the existing three-row report. Neither
+qualified ZIP above contains them. Wait for a separately verified exact Windows
+source/artifact/hash before running this candidate; do not overwrite either ZIP.
+
+For that future observation, the owner needs all ten rows, each with independent
+count/last/min/max/mean milliseconds. In addition to source read, host send and
+cadence wait, scroll to **Helper frame decode**, **Helper identity resolution**,
+**Helper RGB565 encode**, **Helper packet writes**, **Helper queue drain**,
+**Host IPC body encode**, and **Host exchange (includes helper work)**.
+Report unavailable rows as unavailable, not as measured zeros. Keep private URLs
+out of shared evidence; no export or per-frame log is needed. Save remains in the
+fixed footer while the numeric report scrolls.
+
+Host exchange includes helper work: never add exchange and helper durations as
+separate costs. Host-send total still is not panel rendering latency. Stop/error
+retain the successful report; an admitted native Start resets it. Failures are
+excluded, so even these finer successful measurements cannot alone establish
+failure deadlines or justify protocol, serial, retry or cadence changes.

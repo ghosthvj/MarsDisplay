@@ -31,8 +31,27 @@ class TimingUITests(unittest.TestCase):
                 'Source read (observations): count 2; last 125.000; min 62.500; max 187.500; mean 125.000\n'
                 'Host send (encoding / IPC / helper total): count 2; last 125.000; min 62.500; max 187.500; mean 125.000\n'
                 'Cadence wait (non-cancelled): count 0; last —; min —; max —; mean —\n'
-                'Host send is not isolated serial write/drain or panel rendering. Counts are independent, not panel FPS.')
+                'Helper frame decode (ms): unavailable (count 0)\n'
+                'Helper identity resolution (ms): unavailable (count 0)\n'
+                'Helper RGB565 encode (ms): unavailable (count 0)\n'
+                'Helper packet writes (ms): unavailable (count 0)\n'
+                'Helper queue drain (ms): unavailable (count 0)\n'
+                'Host IPC body encode (ms): unavailable (count 0)\n'
+                'Host exchange (includes helper work) (ms): unavailable (count 0)\n'
+                'Host send is not isolated serial write/drain or panel rendering. Counts are independent, not panel FPS.\n'
+                'Host exchange includes helper work; do not add exchange and helper stages as separate costs.')
             self.assertEqual(dialog.native_timing.textFormat(), Qt.TextFormat.PlainText)
+            measured = replace(report, decode=stage, identity=stage, encode=stage, write=stage,
+                               drain=stage, body_encode=stage, exchange=stage)
+            with patch.object(shell.coordinator, 'snapshot', return_value=replace(
+                    before, output_mode='native', native_timing=measured)):
+                shell.refresh()
+                for title in ('Helper frame decode', 'Helper identity resolution',
+                              'Helper RGB565 encode', 'Helper packet writes', 'Helper queue drain',
+                              'Host IPC body encode', 'Host exchange (includes helper work)'):
+                    self.assertIn(f'{title} (ms): count 2; last 125.000; min 62.500; '
+                                  'max 187.500; mean 125.000', dialog.native_timing.text())
+            shell.refresh()
             self.assertTrue(dialog.scroll_area.isAncestorOf(dialog.native_timing))
             self.assertFalse(dialog.scroll_area.isAncestorOf(dialog.save))
             self.assertTrue(dialog.save.isVisible())

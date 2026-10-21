@@ -85,6 +85,13 @@ class NativeTiming:
     source_read: TimingAggregate = TimingAggregate()
     host_send: TimingAggregate = TimingAggregate()
     cadence_wait: TimingAggregate = TimingAggregate()
+    decode: TimingAggregate = TimingAggregate()
+    identity: TimingAggregate = TimingAggregate()
+    encode: TimingAggregate = TimingAggregate()
+    write: TimingAggregate = TimingAggregate()
+    drain: TimingAggregate = TimingAggregate()
+    body_encode: TimingAggregate = TimingAggregate()
+    exchange: TimingAggregate = TimingAggregate()
 
 
 @dataclass(frozen=True)
@@ -155,12 +162,17 @@ class Coordinator:
         with self._lock:
             self._status = replace(self._status, **changes)
 
-    def _record_timing(self, stage: str, started: float):
+    def _record_timing(self, stage: str, started: float, detail=None):
         seconds = self._diagnostic_clock() - started
         # Only the admitted worker records samples; Start cannot replace its report.
         report = self.snapshot().native_timing
-        aggregate = getattr(report, stage).observe(seconds)
-        self._update(native_timing=replace(report, **{stage: aggregate}))
+        changes = {stage: getattr(report, stage).observe(seconds)}
+        if detail is not None:
+            # Optional last-success detail is read only after send returns. Exchange
+            # includes helper stages; these aggregates are not additive costs.
+            for name in ("decode", "identity", "encode", "write", "drain", "body_encode", "exchange"):
+                changes[name] = getattr(report, name).observe(getattr(detail, name))
+        self._update(native_timing=replace(report, **changes))
 
     def _reap_locked(self):
         # Only an observer of a *completed* thread may acknowledge Stop/Exit.
@@ -426,7 +438,8 @@ class Coordinator:
                                 stage_started = self._diagnostic_clock()
                             output.send(sample.frame)
                             if native:
-                                self._record_timing("host_send", stage_started)
+                                self._record_timing("host_send", stage_started,
+                                                    getattr(output, "last_send_timing", None))
                             with self._lock:
                                 self._status = replace(self._status, latest_frame=sample.frame,
                                                        frames_sent=self._status.frames_sent + 1,
