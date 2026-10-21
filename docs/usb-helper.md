@@ -153,5 +153,7 @@ clarification remain recorded in [the P3 ledger](../odd/tasks/native-usb-helper.
 
 The qualified ZIP is immutable. Its historical pending documentation is superseded
 by this evidence, not rewritten in place. P0–P2 diagnostics remain separate and
-unchanged. No continuous hardware, latency/FPS, reconnect, landscape, P4–P6 or
-application-integration acceptance is claimed. Production budgets remain unmeasured.
+unchanged. No continuous hardware, latency/FPS, reconnect, landscape or
+application-output acceptance is claimed. [P4 configuration contracts](usb-settings.md#verified-p4-evidence-and-limits)
+are qualified separately, not by this P3 proof. Selector/native composition and
+hardware qualification remain P5/P6. Production budgets remain unmeasured.

@@ -1,5 +1,30 @@
 # Windows portable build and verified delivery
 
+## Qualified P4 contracts — no native application output
+
+[Windows run 39629193023](https://github.com/ghosthvj/MarsDisplay/actions/runs/39629193023)
+qualified source `91e20904cb5f729c520a6fd6799e69087a0cccc6`: 227 tests / 64.053s,
+zero skips, actual windowed build, unchanged native/helper/material/source gates
+and upload. Schema 1 remains default/passive; schema 2 requires explicit reversible
+migration. An older binary rejects schema 2: preserve the tested schema-1 backup
+and use explicit recovery. There is no GUI selector or native Start in this build.
+
+| Evidence | Result |
+|---|---|
+| Inner ZIP | 205,667,244 bytes; SHA256 `c5edd037a453cc1e8171f10b377250b42d3707f65f0e59e35a272f68fb509777` |
+| Parent + independent readback | 1,246 payload hashes, 350 source files (346 Git Windows checkout plus four SDK records), 69 AMD64/PE32+ binaries, actual GUI subsystem 2; 27 Qt + six supplemental bindings and 209 material hashes |
+| Independent P4 | S1–S6 met, no blockers; 63 focused tests / 1.776s, all passed, zero skips; independent real-old-reader/CRLF recovery and actual-artifact probes passed |
+| Parent spot | Same 63 tests / 2.210s, all passed, zero skips |
+
+[Exact Actions artifact](https://github.com/ghosthvj/MarsDisplay/actions/runs/39629193023/artifacts/12358512984)
+expires **2026-10-28 15:53 UTC**. The Actions-wrapper digest is not the inner ZIP
+checksum. Immutable packaged pending notes are superseded by this observed evidence,
+not changed inside the ZIP. P0–P3 artifacts remain separate and unchanged; GUI/DPI
+owner-acceptance limitations below are not requalified. No installer/release, native
+application output, P5/P6 or continuous hardware claim; mechanical bindings are
+not legal certification. See [P4 contracts/evidence](../docs/usb-settings.md) and
+[the P4 ledger](../odd/tasks/native-usb-settings.md).
+
 ## Qualified P3 helper — application remains simulated
 
 The `feat/native-usb-helper` candidate keeps 0.1.4 application output simulated.
@@ -35,7 +60,8 @@ its test-only backpressure correction preserved production limits. Parent readba
 required an owner-authorized reader fix, then every assertion passed. Historical
 pending wording inside the immutable source/README is superseded by this evidence,
 not patched into the ZIP. Continuous hardware/FPS/reconnect/landscape/application
-acceptance and P4–P6 remain unqualified. Mechanical bindings are not legal certification.
+acceptance remain unqualified. P4 contracts are qualified separately above; P5/P6
+remain outside that evidence. Mechanical bindings are not legal certification.
 See [the P3 ledger](../odd/tasks/native-usb-helper.md) and
 [helper evidence](../docs/usb-helper.md#verified-evidence-and-limits).
 

@@ -1,7 +1,7 @@
 # USB integration proposal for MarsDisplay
 
 **Application wiring remains a proposal: the app still uses Simulation.**
-P0–P3 are complete. P4 is authorized as API/contracts only and is under implementation;
+P0–P4 are complete. P4 delivered API/contracts only;
 the selector and native composition remain P5. P5–P6 are not authorized. The
 [working diagnostic guide](usb-screen-guide.md) establishes one owner-accepted
 portrait through each standalone C# and Python diagnostic. Those physical
@@ -11,7 +11,8 @@ observations alone do not qualify continuous output or production timing.
 Those completed stages are recorded in the
 [accepted Python bridge ledger](https://github.com/ghosthvj/MarsDisplay/blob/6bff97befee7b1e72f7afbcef3ab482a89011ea2/odd/tasks/native-python-usb-probe.md).
 The owner authorized `adelante con P3`; that bounded helper stage is now complete
-in the [helper ledger](../odd/tasks/native-usb-helper.md). P4 is now authorized as contracts/API only;
+in the [helper ledger](../odd/tasks/native-usb-helper.md). The subsequently authorized
+[P4 contracts](usb-settings.md) are also complete as API-only work;
 P5–P6 remain proposals and application USB output is not authorized.
 
 **Current gate:** P0–P2 are complete, including owner physical acceptance of one
@@ -32,8 +33,12 @@ P3's persistent bounded helper is qualified at `8841770b7f46f6aa057e80ef5d7cafaf
 passed 202 tests without skips and actual windowed worker-lifetime checks. Artifact
 readback and the independent S1–S6 verification passed; see
 [helper evidence and limits](usb-helper.md#verified-evidence-and-limits).
-P4 API/contracts are now under implementation; P5–P6 remain unauthorized.
-MarsDisplay stays in Simulation; native Start is rejected and no native application wiring is enabled.
+P4 API/contracts are qualified at `91e20904cb5f729c520a6fd6799e69087a0cccc6`:
+[Windows run 39629193023](https://github.com/ghosthvj/MarsDisplay/actions/runs/39629193023)
+passed 227 tests without skips; source/artifact/recovery and independent S1–S6
+verification passed. See [P4 evidence](usb-settings.md#verified-p4-evidence-and-limits).
+P5–P6 remain unauthorized. MarsDisplay stays in Simulation; native Start is rejected
+and no native application wiring is enabled.
 
 Original request, verbatim:
 > documenta todo lo necesario para poder trabajar con la pantalla y prepara el plan de integracion en MarsDisplay!
@@ -144,8 +149,9 @@ Unknown cleanup fails closed, never reports success or releases ownership.
 ### P4 — Explicit settings and stopped-only opt-in
 
 **Status:** authorized by `continúa entonces con P4`; owner selected
-`Contratos/API en P4; selector en P5 — recomendado`. Implementation/proof is
-in progress, not qualified. See [the P4 contracts](usb-settings.md) and
+`Contratos/API en P4; selector en P5 — recomendado`. Complete and qualified at
+`91e20904cb5f729c520a6fd6799e69087a0cccc6` after source/Windows/artifact/old-reader
+recovery and independent verification. See [the P4 contracts](usb-settings.md) and
 [task ledger](../odd/tasks/native-usb-settings.md). No native Start or selector is enabled.
 
 **Dependency:** P3; settle schema/migration/rollback design before coding.

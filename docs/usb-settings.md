@@ -1,13 +1,13 @@
 # P4 output configuration contracts
 
-**Under implementation, not qualified.** P4 is API/contracts only; the selector and
-native composition remain P5. The GUI has no new mode/profile/device controls.
+**P4 is qualified at `91e20904cb5f729c520a6fd6799e69087a0cccc6`.**
+This stage is API/contracts only; the selector and native composition remain P5. The GUI has no new mode/profile/device controls.
 The application still starts stopped, defaults to Simulation and rejects saved
 native mode before creating a capture worker or transport. It never substitutes
 Simulation for an explicitly native configuration.
 
 Track implementation and proof in [the P4 ledger](../odd/tasks/native-usb-settings.md).
-[P3 helper qualification](usb-helper.md) does not qualify these new contracts.
+[P3 helper qualification](usb-helper.md) is separate; the new P4 evidence is below.
 
 ## Two strict formats
 
@@ -124,3 +124,35 @@ A stored native mode reports:
 Do not interpret this as a connection failure, retry it or enable a fallback.
 There is no native GUI selector in P4. Production native lifecycle, truthful output
 states, Stop/Exit semantics and physical/performance qualification remain P5/P6.
+
+## Verified P4 evidence and limits
+
+[Windows run 39629193023](https://github.com/ghosthvj/MarsDisplay/actions/runs/39629193023)
+qualified exact source `91e20904cb5f729c520a6fd6799e69087a0cccc6`:
+227 source tests / 64.053s, **zero skips**, followed by the actual windowed build,
+existing private-worker smoke, source/native/material qualification and upload.
+This is not a GUI native-output opt-in or new hardware acceptance.
+
+| Evidence | Observed result |
+|---|---|
+| Final local regression | 227 tests: 223 passed, four Windows-only skips; 24.890s, exit 0 |
+| Schema/API differential | Ten cases: six exact/four intended; actual prior reader rejects schema 2 and accepts byte-exact restoration |
+| Lifecycle/tray differential | Eleven cases: six exact/five intended; legacy zero-argument Simulation, Stop, landscape and native-Start rejection unchanged |
+| Independent P4 verification | S1–S6 met, no blockers; 63 focused tests / 1.776s, all passed, zero skips |
+| Independent recovery | Real old-reader subprocesses accept original/backup/export/restoration, reject schema 2, and never rewrite bytes; CRLF formatting preserved |
+| Parent spot check | Same 63 focused tests / 2.210s, all passed, zero skips |
+| Parent and independent artifact readback | 1,246 payload hashes, 350 source files, 69 AMD64/PE32+ binaries; actual EXE GUI subsystem 2; 27 Qt plus six supplemental bindings and 209 material hashes |
+
+The immutable ZIP is 205,667,244 bytes, SHA256
+`c5edd037a453cc1e8171f10b377250b42d3707f65f0e59e35a272f68fb509777`.
+Of 350 source files, 346 match exact Git Windows checkout bytes and four are
+explicitly validated SDK metadata records. Raw legal bytes remain protected.
+Mechanical/source binding is not legal certification. Neither parent nor verifier
+executed Windows code or accessed USB on Linux; bound native evidence supplies
+Windows proof. Offscreen Qt warnings were retained and did not indicate failure.
+
+Historical pending wording inside the source-bound ZIP is superseded here; the
+qualified ZIP is not rewritten. Initial schema/unknown-preservation and GUI/context
+RED failures and their fixes remain recorded in the task ledger. No required proof
+remains open. No selector, native factory, application USB, P5/P6, physical/FPS,
+hotplug or production-budget claim is included. P0–P3 artifacts remain unchanged.
