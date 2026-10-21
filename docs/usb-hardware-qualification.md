@@ -259,3 +259,31 @@ See [the runtime timing contract](usb-runtime.md#native-numeric-timing-diagnosti
 The needed rows are **Source read (observations)**, **Host send (encoding / IPC /
 helper total)** and **Cadence wait (non-cancelled)**, each with count/last/min/max/mean.
 No command-line diagnostic mode, file export or per-frame disk log is required.
+
+## Recorded diagnostic stage sample
+
+The owner verified the diagnostic ZIP SHA256 and supplied running samples through
+323.03 seconds, followed by stopped/native-closed at a paused 335.06 seconds.
+Host counts rose from 6 at 16.71 seconds to 129 at 323.03 seconds: approximately
+0.402 host-accepted frames/second. The retained report after Stop contained 134
+successful sends and the following values (milliseconds):
+
+| Stage | Count | Last | Minimum | Maximum | Mean |
+|---|---:|---:|---:|---:|---:|
+| Source read | 137 | 25.561 | 19.252 | 121.148 | 25.068 |
+| Host send | 134 | 2440.637 | 2308.649 | 2464.827 | 2441.610 |
+| Non-cancelled cadence wait | 136 | 0.009 | 0.007 | 977.580 | 14.340 |
+
+Independent sample counts are expected. The wait maximum includes a source
+observation without a send; it is not an additional one-second delay on every
+completed frame. Count-weighted successful stage durations total approximately
+332.560 seconds: 327.176 seconds in host send, 3.434 in source read and 1.950 in
+cadence waits. Host send accounts for about 98.38% of this measured stage time,
+not 98.38% of the entire application lifetime.
+
+The measured bottleneck lies in the host-send path, not the capture call or
+steady-state cadence wait. Encoding, IPC, helper writes, queue drain and device
+behavior are not separated by this report. Do not infer an isolated serial or
+panel duration, choose a timeout from the successful maximum, or tune protocol
+parameters from this sample. Finer stage measurements or an explicit decision to
+defer production-budget qualification are still required; P6 is not fully closed.
