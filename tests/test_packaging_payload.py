@@ -74,6 +74,17 @@ class PayloadTests(unittest.TestCase):
             self.assemble(self.fixture() | {'marsdisplay.EXE': b'collision'})
         self.assertEqual(list(self.root.iterdir()), [])
 
+    def test_p3_source_closure_includes_exact_helper_fixtures_and_docs(self):
+        root = Path('.')
+        source = self.payload.collect_source(root)
+        for name in ('pattern.png', 'pattern.rgb565', 'pattern.rgb888', 'pattern.json', 'rgb888-provenance.json'):
+            path = 'tools/windows-usb-probe/' + name
+            self.assertIn(path, list(source))
+            self.assertEqual(source[path], (root/path).read_bytes())
+        self.assertEqual(source['docs/usb-helper.md'], (root/'docs/usb-helper.md').read_bytes())
+        self.assertIn('src/mars_display/usb_worker.py', source)
+        self.assertFalse(any(name.startswith(('build/', 'odd/', '.herdr-web-ui/')) for name in source))
+
     def test_source_allowlist_and_symlink_rejection(self):
         repo = self.root / 'repo'; repo.mkdir()
         for name in ['src/mars_display/app.py', 'packaging/entrypoint.py', 'tests/fixtures/display.html', 'README.md', 'LICENSE', 'pyproject.toml', 'requirements.txt', 'requirements-build.txt', '.env', 'odd/tasks/private.md', 'src/settings.json', 'tests/__pycache__/test.pyc']:

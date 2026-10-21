@@ -115,6 +115,13 @@ def startup(folder, scratch, *, popen=None, seconds=20):
         process.wait(timeout=5)
 
 
+def worker_check(folder, scratch):
+    spec = util.spec_from_file_location('marsdisplay_usb_smoke', Path(__file__).with_name('usb_smoke.py'))
+    module = util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.check(folder, scratch)
+
+
 def check(folder, scratch):
     require_host()
     spec = util.spec_from_file_location('marsdisplay_payload_smoke', Path(__file__).with_name('payload.py'))
@@ -149,11 +156,12 @@ def check(folder, scratch):
         if label == 'FFmpeg' and not measured[label].lower().startswith('ffmpeg version '):
             raise RuntimeError('Unexpected packaged FFmpeg version output')
     startup(folder, scratch)
+    measured['UsbWorker'] = worker_check(folder, scratch / 'usb-worker')
     return measured
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description='Native Windows x64 smoke of an unpacked MarsDisplay folder; no capture or normal Exit acceptance.')
+    parser = argparse.ArgumentParser(description='Native Windows x64 startup, bundled-version and gated USB-worker smoke; no capture, OPEN/device request or normal Exit acceptance.')
     parser.add_argument('folder', type=Path, help='Unpacked built folder below repository build/ or dist/')
     args = parser.parse_args(argv)
     try:

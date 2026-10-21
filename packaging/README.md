@@ -1,5 +1,21 @@
 # Windows portable build and verified delivery
 
+## P3 helper qualification candidate — not yet qualified
+
+The `feat/native-usb-helper` candidate keeps 0.1.4 application output simulated.
+Its existing full-windowed build now has an early private runtime hook before
+PyInstaller's Qt hooks; ordinary startup and all source/legal/native gates remain.
+`python packaging/smoke.py <unpacked-folder>` adds actual EXE worker admission,
+HELLO/CLOSE, malformed IPC, held-gate and owned parent-death checks in isolated state.
+No OPEN/FRAME request or physical USB is used. Windows-only source fixtures exercise
+fake-port hangs and handle cleanup without a shipping fake mode. The workflow pins
+Python 3.13.16 and rejects skipped source tests. Source closure includes the canonical
+P1 fixtures, helper documentation, build hooks and test-owned process fixtures.
+
+Native execution and artifact qualification for this candidate are still pending;
+none of the historical accepted builds below proves P3. Follow the
+[P3 ledger](../odd/tasks/native-usb-helper.md) and [helper boundary](../docs/usb-helper.md).
+
 ## Verified output-preview portable — 0.1.4
 
 [Download MarsDisplay 0.1.4 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/39084595234/artifacts/12120556248)

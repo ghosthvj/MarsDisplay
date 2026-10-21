@@ -9,6 +9,9 @@ MarsDisplay does not download/install prerequisites or redistribute Microsoft DL
 Windows 11 provides the OS UCRT/API-set components. No MarsDisplay installer exists.
 Open MarsDisplay.exe in an interactive desktop session; capture starts STOPPED.
 Output is SIMULATED ONLY; no USB screen is connected or driven by this prototype.
+The P3 native helper is not selected by the application. --usb-worker is a reserved
+owned-child route, not an operator command; do not invoke it manually. Build checks
+of that route do not send frames to USB or establish continuous hardware acceptance.
 Use the tray Status / Settings to configure; Start/Stop control capture, Exit closes.
 Preview opens one modeless view of the latest RGB frame accepted by simulated output.
 It updates while visible without another capture/browser or writing images to disk.

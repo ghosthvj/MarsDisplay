@@ -19,6 +19,14 @@ def run(main=None, reporter=message_box):
     all captured output; raw import/exception details must never reach a dialog.
     Streams are restored before invoking native reporting, even on failure.
     """
+    arguments = list(sys.argv[1:])
+    if any(value.startswith('--usb-worker') for value in arguments):
+        # Reserved admission failure must never fall through to GUI/reporting.
+        try:
+            from mars_display.usb_worker import main as worker_main
+            return worker_main(arguments)
+        except BaseException:
+            return 2
     output, errors = io.StringIO(), io.StringIO()
     with redirect_stdout(output), redirect_stderr(errors):
         try:

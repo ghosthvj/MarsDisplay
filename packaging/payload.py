@@ -160,6 +160,12 @@ def collect_source(root):
         spec.loader.exec_module(reader)
         material = reader.read_inputs(root)['files']
         files.update({'third_party/native-material/' + name: data for name, data in material.items()})
+    if (root / 'src/mars_display/usb_worker.py').is_file():
+        # Only the known P3 rebuild/test assets, never tools/ or a workspace glob.
+        fixtures = ['tools/windows-usb-probe/' + name for name in
+                    ('pattern.png', 'pattern.rgb565', 'pattern.rgb888', 'pattern.json',
+                     'rgb888-provenance.json')]
+        files.update(read_tree(root, (*fixtures, 'docs/usb-helper.md')))
     workflow = '.github/workflows/windows-portable.yml'
     if (root / workflow).exists() or (root / workflow).is_symlink():
         files.update(read_tree(root, (workflow,)))

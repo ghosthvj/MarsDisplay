@@ -13,6 +13,49 @@ def load_entry():
 
 
 class EntrypointTests(unittest.TestCase):
+    def test_custom_runtime_hook_private_exit_precedes_later_hooks(self):
+        for error in (False, True):
+            with self.subTest(error=error), patch.object(sys, 'argv', ['MarsDisplay.exe', '--usb-worker']), patch.object(sys, 'stdout', None), patch.object(sys, 'stderr', None), patch('mars_display.usb_worker.main', side_effect=RuntimeError('private') if error else None, return_value=0) as worker:
+                spec=importlib.util.spec_from_file_location('p3_early_hook', Path('packaging/usb_bootstrap.py'))
+                hook=importlib.util.module_from_spec(spec)
+                with self.assertRaises(SystemExit) as exit:
+                    spec.loader.exec_module(hook)
+                self.assertEqual(exit.exception.code, 2 if error else 0)
+                worker.assert_called_once_with(['--usb-worker'])
+                self.assertIsNone(sys.stdout); self.assertIsNone(sys.stderr)
+
+    def test_custom_runtime_hook_ordinary_arguments_are_noop(self):
+        with patch.object(sys, 'argv', ['MarsDisplay.exe', '--ordinary-unknown']), patch('mars_display.usb_worker.main') as worker:
+            spec=importlib.util.spec_from_file_location('p3_normal_hook', Path('packaging/usb_bootstrap.py'))
+            spec.loader.exec_module(importlib.util.module_from_spec(spec))
+            worker.assert_not_called()
+
+    def test_worker_prefix_routes_before_app_reporting_with_none_streams(self):
+        entry = load_entry()
+        for args in (['--usb-worker'], ['--usb-worker=invalid']):
+            main, report = Mock(return_value=7), Mock()
+            with self.subTest(args=args), patch.object(sys, 'argv', ['MarsDisplay.exe', *args]), \
+                 patch('mars_display.usb_worker.main', return_value=2) as worker, \
+                 patch.object(sys, 'stdout', None), patch.object(sys, 'stderr', None):
+                self.assertEqual(entry.run(main, report), 2)
+                worker.assert_called_once_with(args)
+                main.assert_not_called(); report.assert_not_called()
+                self.assertIsNone(sys.stdout); self.assertIsNone(sys.stderr)
+
+    def test_worker_failure_is_quiet_without_app_or_native_dialog(self):
+        entry = load_entry(); main, report = Mock(), Mock()
+        with patch.object(sys, 'argv', ['MarsDisplay.exe', '--usb-worker']), \
+             patch('mars_display.usb_worker.main', side_effect=RuntimeError('private token')):
+            self.assertEqual(entry.run(main, report), 2)
+        main.assert_not_called(); report.assert_not_called()
+
+    def test_ordinary_unknown_option_preserves_app_startup(self):
+        entry = load_entry(); report = Mock()
+        with patch.object(sys, 'argv', ['MarsDisplay.exe', '--ordinary-unknown']), \
+             patch('mars_display.usb_worker.main') as worker:
+            self.assertEqual(entry.run(lambda: 7, report), 7)
+        worker.assert_not_called(); report.assert_not_called()
+
     def test_none_streams_sanitized_reports_codes_and_restore(self):
         entry = load_entry()
         for message, code in [('MarsDisplay is already running.', 0),

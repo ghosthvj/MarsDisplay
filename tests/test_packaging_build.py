@@ -289,7 +289,7 @@ class BuildTests(unittest.TestCase):
         for fragment in ('entrypoint.py', 'console=False', 'upx=False', 'COLLECT(', 'mars_display.devices', 'PyQt6', 'PySide6.QtWebEngine'):
             self.assertIn(fragment, spec)
         workflow = Path('.github/workflows/windows-portable.yml').read_text()
-        for fragment in ('windows-2025', 'timeout-minutes: 30', 'retention-days: 7', 'persist-credentials: false', 'contents: read', 'feat/simulated-companion', 'workflow_dispatch:', 'architecture: x64', "python-version: '3.13'", 'if-no-files-found: error', '3d3c42e5aac5ba805825da76410c181273ba90b1', '5fda3b95a4ea91299a34e894583c3862153e4b97', 'cf430e030ddbb5b0abf93d22962f4752f3646cd9'):
+        for fragment in ('windows-2025', 'timeout-minutes: 30', 'retention-days: 7', 'persist-credentials: false', 'contents: read', 'feat/simulated-companion', 'workflow_dispatch:', 'architecture: x64', "python-version: '3.13.16'", 'feat/native-usb-helper', 'and not r.skipped', 'if-no-files-found: error', '3d3c42e5aac5ba805825da76410c181273ba90b1', '5fda3b95a4ea91299a34e894583c3862153e4b97', 'cf430e030ddbb5b0abf93d22962f4752f3646cd9'):
             self.assertIn(fragment, workflow)
         self.assertIn("if: ${{ failure() && steps.native_build.outcome == 'failure' }}", workflow)
         self.assertIn('name: MarsDisplay-UNQUALIFIED-native-diagnostics', workflow)
@@ -348,9 +348,11 @@ class SmokeTests(unittest.TestCase):
             for name, data in runtime.items():
                 path = root / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
             responses = [subprocess.CompletedProcess([], 0, text, '') for text in ('v24.0.0\n', 'Chromium 156.0.fixture\n', 'ffmpeg version fixture\n')]
-            with patch.object(self.smoke, 'require_host'), patch.object(self.smoke.subprocess, 'run', side_effect=responses) as run, patch.object(self.smoke, 'startup') as startup:
+            proof = {'status': 'passed', 'scope': 'controlled worker fixture'}
+            with patch.object(self.smoke, 'require_host'), patch.object(self.smoke.subprocess, 'run', side_effect=responses) as run, patch.object(self.smoke, 'startup') as startup, patch.object(self.smoke, 'worker_check', return_value=proof, create=True) as worker:
                 result = self.smoke.check(root, root / 'isolated')
-            self.assertEqual(result, {'Node': 'v24.0.0', 'Chromium': 'Chromium 156.0.fixture', 'FFmpeg': 'ffmpeg version fixture'})
+            self.assertEqual(result, {'Node': 'v24.0.0', 'Chromium': 'Chromium 156.0.fixture', 'FFmpeg': 'ffmpeg version fixture', 'UsbWorker': proof})
+            worker.assert_called_once_with(root, root / 'isolated/usb-worker')
             self.assertEqual(run.call_count, 3)
             for call in run.call_args_list:
                 self.assertEqual(call.kwargs['timeout'], 10)

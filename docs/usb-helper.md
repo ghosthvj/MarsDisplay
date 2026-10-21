@@ -101,5 +101,25 @@ invalid/missing admission exits 2 without output or GUI, and no socket/device I/
 precedes the owned Windows gate. Child stdin/stdout/stderr are explicitly DEVNULL,
 so windowed None streams cannot produce a pipe bootstrap/deadlock.
 
-The actual packaged route still must prove dispatch before app/Qt/settings startup.
-Pending native proof is tracked in [the P3 ledger](../odd/tasks/native-usb-helper.md).
+## Frozen qualification boundary
+
+The full windowed EXE has a minimal custom runtime hook, `packaging/usb_bootstrap.py`,
+which handles only the reserved worker prefix before PyInstaller's default hooks.
+An entrypoint-only dispatch is insufficient: the pinned PySide6 runtime hook imports
+QtCore before the application entrypoint. Ordinary arguments are a no-op in the
+custom hook and retain all existing Qt/application startup. The strict worker guard
+still rejects preloaded Qt/app/settings modules; it has not been weakened.
+
+`packaging/smoke.py` also invokes `usb_smoke.py` against the actual unpacked EXE:
+quiet malformed-argument rejection, authenticated HELLO/CLOSE, oversized IPC rejection,
+unreleased startup containment and parent-death termination with confirmed reap.
+It never sends OPEN or FRAME and never opens a device. The worker gets isolated
+state with no SDK/application Python path; the test-owned parent uses source code
+only to own the actual packaged child. The source archive carries that fixture.
+Windows-only source tests separately use test-owned fake ports for repeated exact
+frames, open/write/drain/close hangs and failed raw-handle closure. There is no
+shipping fake-backend flag. Windows CI requires zero skipped source tests before
+compiling, and existing material/source/publication gates remain in force.
+
+These checks are implemented, not yet observed on Windows. Source injected tests
+are not frozen-process proof. Native proof is pending in [the P3 ledger](../odd/tasks/native-usb-helper.md).
