@@ -74,6 +74,18 @@ target, synchronous backpressure, cancellation, zero native retries, transport a
 safety deadlines remain unchanged. Successful-duration aggregates omit failures and
 cannot alone establish failure deadlines, panel FPS or production capacity.
 
+### Pending internal send detail integration
+
+The next diagnostic core exposes optional `UsbTransport.last_send_timing` with
+seven immutable numeric durations; see [the helper API](usb-helper.md#source-api-and-ownership).
+It is not yet aggregated or displayed by this lifecycle/UI. The dependent change
+must read it only after successful send, keep injected transports without this
+accessor working, and show unavailable detail rather than fabricated zero samples.
+Reset aggregates on admitted native Start and retain them on Stop/error, as above.
+Host exchange includes helper work and is not pure IPC or panel latency. Existing
+qualified P5 and `d79eb80` diagnostic ZIPs remain immutable; this new candidate
+requires its own Windows/source/artifact qualification before owner use.
+
 ## Failure and cleanup policy
 
 Native mode has **zero automatic retries**, including safe pre-write and source

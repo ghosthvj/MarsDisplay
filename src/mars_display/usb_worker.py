@@ -28,7 +28,7 @@ def _resolve(inventory):
 
 def run_session(channel, nonce, *, inventory=enumerate_devices,
                 port_factory=serial_factory, budgets=ipc.Budgets(),
-                clock=time.monotonic, sleep=time.sleep):
+                clock=time.monotonic, sleep=time.sleep, timing_clock=time.monotonic):
     """Serve one already-admitted channel; injection is Python-only, never CLI.
 
     The parent must bound blocking native calls by owning/terminating this worker
@@ -65,26 +65,44 @@ def run_session(channel, nonce, *, inventory=enumerate_devices,
                     port.dtr = True
                     port.port = selected
                     port.open()
-                elif kind == ipc.FRAME:
+                elif kind in (ipc.FRAME, ipc.TIMED_FRAME):
                     if port is None:
                         raise ValueError('USB session is not open')
+                    # Legacy operations do not consult the diagnostic clock.
+                    measure = timing_clock if kind == ipc.TIMED_FRAME else lambda: 0
+                    started = measure()
                     frame = ipc.decode_frame(body)
+                    decode = measure() - started
                     status = IDENTITY_ERROR
+                    started = measure()
                     if _resolve(inventory) != selected:
                         raise ValueError('Current USB port changed')
+                    identity = measure() - started
                     status = WRITE_ERROR
                     deadline = clock() + budgets.frame
-                    for packet in encode_portrait(frame):
+                    started = measure()
+                    packets = encode_portrait(frame)
+                    encode = measure() - started
+                    started = measure()
+                    for packet in packets:
                         if clock() >= deadline:
                             raise TimeoutError('USB frame deadline exceeded')
                         if port.write(packet) != len(packet):
                             raise OSError('USB write failed')
+                    write = measure() - started
                     status = DRAIN_ERROR
                     deadline = min(deadline, clock() + budgets.drain)
+                    started = measure()
                     while port.out_waiting:
                         if clock() >= deadline:
                             raise TimeoutError('USB queue drain exceeded')
                         sleep(0.01)
+                    drain = measure() - started
+                    if kind == ipc.TIMED_FRAME:
+                        detail = ipc.WorkerTiming(decode, identity, encode, write, drain)
+                        ipc.send_packet(channel, ipc.TIMED_REPLY, request,
+                                        ipc.encode_timing(detail), time.monotonic() + budgets.start)
+                        continue
                 elif kind == ipc.CLOSE:
                     status = CLOSE_ERROR
                     if port is not None:

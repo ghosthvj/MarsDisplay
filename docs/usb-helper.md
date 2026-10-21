@@ -30,6 +30,8 @@ Each message starts with the 16-byte network-order struct `!4sBBHII`:
 | FRAME | 3 | Exactly 460812 bytes: `!HHd` width, height, capture time, then RGB888 |
 | CLOSE | 4 | Empty |
 | REPLY | 5 | Exactly one fixed status byte; request must match the operation |
+| TIMED_FRAME | 6 | Same exact validated payload as FRAME; diagnostic pair only |
+| TIMED_REPLY | 7 | Exactly 41 bytes, `!B5d`: OK (0), then five duration seconds |
 
 Frames support only 320x480 portrait, 460800 tightly packed RGB bytes, and a finite
 nonnegative capture time. This does not narrow shared RGBFrame/Simulation support
@@ -39,6 +41,21 @@ Partial/truncated/unsupported messages are terminal, not a resynchronization mod
 An idle admitted worker may await the first message byte; once one arrives, the
 whole header/body has five seconds. Parent calls always provide their operation's
 absolute deadline. Send/receive cancellation and partial progress never renew it.
+
+### Additive send diagnostic (unqualified candidate)
+
+Legacy OPEN/FRAME/CLOSE and one-byte replies remain byte-for-byte unchanged.
+The new parent sends TIMED_FRAME and requires a matching TIMED_REPLY success;
+ordinary OK, wrong request/kind/status, malformed sizes and negative/nonfinite
+values are terminal failures, never fallback or resend. Timed failures carry only
+the existing non-OK REPLY status, never partial measurements.
+
+The five doubles are successful frame **decode, identity resolution, RGB565
+encode, packet-write loop, queue-drain loop**, in that order. Only durations cross
+the connection: no diagnostic timestamps, identities, ports or payload history.
+The Python-only `timing_clock` injection is independent of deadline clocks; safety
+budgets, serial options and the device stream below are unchanged. This extension
+requires the same packaged parent/helper pair and separate artifact qualification.
 
 ## Persistent serial session
 
@@ -85,6 +102,16 @@ Close signals cancellation and uses one absolute graceful-close budget, then the
 separate bounded owned-reap budget. Failed/partial delivery never auto-resends.
 Explicit reopening is possible only after confirmed complete cleanup and fresh
 identity resolution. Cancel before startup performs no listener/process/device work.
+
+`last_send_timing` is a read-only optional frozen `SendTiming` value, in seconds:
+`decode`, `identity`, `encode`, `write`, `drain`, `body_encode`, `exchange`.
+The parent measures IPC-body encoding and the full request/reply exchange. Exchange
+**includes helper work**, not pure IPC latency; do not sum it with helper stages as
+independent costs. `send()` still returns None. Publication occurs only after full
+reply validation and the final deadline/cancellation check. Rejection, failure and
+close retain the last success. Construction and an explicit fresh open attempt
+(after cleanup admission) reset it to None; idempotent open does not reset it.
+No history, new ownership registry or CLI switch is added.
 
 `owned` stays true while child, creation attempt or channel/native cleanup remains
 owned. A late Popen attempt remains retained and never releases its startup gate;

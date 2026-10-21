@@ -117,7 +117,8 @@ class TransportTests(unittest.TestCase):
             self.assertFalse(launch.call_args.kwargs['shell'])
             self.assertTrue(launch.call_args.kwargs['close_fds'])
 
-    def make(self, mode=None, cancel=None, budgets=None, launcher_delay=None):
+    def make(self, mode=None, cancel=None, budgets=None, launcher_delay=None,
+             timing_clock=time.monotonic):
         children, gates = [], []
         def launch(port, nonce):
             if launcher_delay is not None:
@@ -129,7 +130,7 @@ class TransportTests(unittest.TestCase):
             value = Gate(nonce);gates.append(value);return value
         obj = UsbTransport(worker.IDENTITY, cancel=cancel,
             budgets=budgets or ipc.Budgets(start=1, frame=1, close=0.5, reap=0.2),
-            launcher=launch, gate_factory=gate)
+            launcher=launch, gate_factory=gate, timing_clock=timing_clock)
         def cleanup():
             if launcher_delay is not None:launcher_delay.set()
             for value in gates:value.fail_close = False

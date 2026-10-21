@@ -8,6 +8,8 @@ import time
 from .frames import RGBFrame, _validate_frame
 
 HELLO, OPEN, FRAME, CLOSE, REPLY = range(1, 6)
+TIMED_FRAME, TIMED_REPLY = 6, 7
+TIMING = struct.Struct('!B5d')
 HEADER = struct.Struct('!4sBBHII')
 METADATA = struct.Struct('!HHd')
 FRAME_BYTES = METADATA.size + 320 * 480 * 3
@@ -16,6 +18,36 @@ POLL = 0.05
 
 class ProtocolError(ValueError):
     """Malformed, truncated or unsupported private message."""
+
+
+@dataclass(frozen=True)
+class WorkerTiming:
+    """Successful helper stages, in seconds; never clock timestamps."""
+    decode: float
+    identity: float
+    encode: float
+    write: float
+    drain: float
+
+    def __post_init__(self):
+        for field in fields(self):
+            value = getattr(self, field.name)
+            if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+                raise ValueError('USB timings must be nonnegative finite seconds')
+
+
+def encode_timing(detail):
+    return TIMING.pack(0, detail.decode, detail.identity, detail.encode,
+                       detail.write, detail.drain)
+
+
+def decode_timing(body):
+    if not isinstance(body, bytes) or len(body) != TIMING.size:
+        raise ProtocolError('Invalid USB timing length')
+    status, *durations = TIMING.unpack(body)
+    if status != 0:
+        raise ProtocolError('Invalid USB timing status')
+    return WorkerTiming(*durations)
 
 
 class Cancelled(RuntimeError):
@@ -62,12 +94,13 @@ def _remaining(deadline, cancel):
 def _shape(kind, request, size):
     if type(request) is not int or not 0 <= request <= 0xffffffff:
         raise ValueError('Invalid USB request identifier')
-    if type(kind) is not int or kind not in (HELLO, OPEN, FRAME, CLOSE, REPLY):
+    if type(kind) is not int or kind not in (HELLO, OPEN, FRAME, CLOSE, REPLY, TIMED_FRAME, TIMED_REPLY):
         raise ValueError('Unknown USB message type')
     if (kind == HELLO) != (request == 0):
         raise ValueError('Invalid USB request order')
     valid_size = {HELLO: size == 32, OPEN: 0 < size <= 128,
-                  FRAME: size == FRAME_BYTES, CLOSE: size == 0, REPLY: size == 1}
+                  FRAME: size == FRAME_BYTES, CLOSE: size == 0, REPLY: size == 1,
+                  TIMED_FRAME: size == FRAME_BYTES, TIMED_REPLY: size == TIMING.size}
     if not valid_size[kind]:
         raise ValueError('Invalid USB message length')
 

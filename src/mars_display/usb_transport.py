@@ -1,4 +1,5 @@
 """Explicit owned persistent transport; admission is decided by validated context."""
+from dataclasses import dataclass
 import secrets
 import socket
 import threading
@@ -7,6 +8,13 @@ import time
 from . import usb_ipc as ipc
 from .usb_process import OwnedWorker, WindowsGate, launch_worker
 from .usb_worker import IDENTITY, OK, WRITE_ERROR, DRAIN_ERROR, CLOSE_ERROR
+
+
+@dataclass(frozen=True)
+class SendTiming(ipc.WorkerTiming):
+    """Last successful send in seconds; exchange INCLUDES helper stages."""
+    body_encode: float
+    exchange: float
 
 
 class UsbError(RuntimeError):
@@ -27,7 +35,7 @@ class _Cancel:
 
 class UsbTransport:
     def __init__(self, identity, *, cancel=None, budgets=ipc.Budgets(),
-                 launcher=launch_worker, gate_factory=WindowsGate):
+                 launcher=launch_worker, gate_factory=WindowsGate, timing_clock=time.monotonic):
         if identity != IDENTITY:
             raise ValueError('An explicit supported USB identity is required')
         if not isinstance(budgets, ipc.Budgets):
@@ -39,6 +47,12 @@ class UsbTransport:
         self._operation = threading.Lock()
         self._owner, self._channel, self._listener = None, None, None
         self._opened, self._request = False, 0
+        self._timing_clock, self._last_send_timing = timing_clock, None
+
+    @property
+    def last_send_timing(self):
+        """Immutable success detail; retained after failure/close, reset on fresh open."""
+        return self._last_send_timing
 
     @property
     def owned(self):
@@ -93,7 +107,12 @@ class UsbTransport:
         self._request += 1
         ipc.send_packet(self._channel, kind, self._request, body, deadline, cancel=cancel)
         response, request, value = ipc.receive_packet(self._channel, deadline, cancel=cancel)
-        if (response, request) != (ipc.REPLY, self._request) or value[0] > CLOSE_ERROR:
+        if request != self._request:
+            raise ipc.ProtocolError('Unexpected USB reply')
+        if kind == ipc.TIMED_FRAME and response == ipc.TIMED_REPLY:
+            return ipc.decode_timing(value)
+        if (response != ipc.REPLY or len(value) != 1 or value[0] > CLOSE_ERROR
+                or (kind == ipc.TIMED_FRAME and value[0] == OK)):
             raise ipc.ProtocolError('Unexpected USB reply')
         return value[0]
 
@@ -104,6 +123,7 @@ class UsbTransport:
                 return
             if self.owned:
                 raise UsbError('cleanup required', ownership_uncertain=True)
+            self._last_send_timing = None
             self._stopping.clear()
             deadline = time.monotonic() + self.budgets.start
             try:
@@ -146,7 +166,9 @@ class UsbTransport:
             self._operation.release()
 
     def send(self, frame):
+        started = self._timing_clock()
         body = ipc.encode_frame(frame)  # Rejection has no channel/serial effects.
+        body_encode = self._timing_clock() - started
         self._enter()
         try:
             if not self._opened:
@@ -154,11 +176,16 @@ class UsbTransport:
             uncertain = True  # Lost/cancelled reply after submission cannot prove no writes.
             try:
                 deadline = time.monotonic() + self.budgets.frame
-                status = self._exchange(ipc.FRAME, body, deadline, cancel=self._cancel)
-                if status != OK:
-                    uncertain = status in (WRITE_ERROR, DRAIN_ERROR, CLOSE_ERROR)
+                started = self._timing_clock()
+                result = self._exchange(ipc.TIMED_FRAME, body, deadline, cancel=self._cancel)
+                exchange = self._timing_clock() - started
+                if not isinstance(result, ipc.WorkerTiming):
+                    uncertain = result in (WRITE_ERROR, DRAIN_ERROR, CLOSE_ERROR)
                     raise RuntimeError('USB frame failed')
+                detail = SendTiming(result.decode, result.identity, result.encode,
+                                    result.write, result.drain, body_encode, exchange)
                 self._check(deadline)
+                self._last_send_timing = detail
             except BaseException:
                 self._fail('frame', uncertain)
         finally:
