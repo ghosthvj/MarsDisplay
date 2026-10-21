@@ -16,7 +16,9 @@ with policy.external_dependencies():
         datas=[(str(root / 'tools/windows-usb-probe/pattern.rgb888'), '.')],
         hookspath=[str(root / 'packaging/hooks')],
         runtime_hooks=[str(root / 'packaging/grouping_bootstrap.py')],
-        hiddenimports=['mars_display.usb_grouping_worker'],
+        # Hashing can collect libcrypto alone. Include stdlib ssl so the existing
+        # reviewed Python OpenSSL pair is complete; no runtime network operation.
+        hiddenimports=['mars_display.usb_grouping_worker', 'ssl'],
         excludes=['mars_display.app', 'mars_display.browser', 'playwright', 'PIL',
                   'PyQt5', 'PyQt6', 'PySide2',
                   'PySide6.QtWebEngineCore', 'PySide6.QtWebEngineWidgets',

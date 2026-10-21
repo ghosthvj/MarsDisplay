@@ -64,3 +64,8 @@ A rejected experimental native closure reports bounded JSON differences after
 `ssl_missing` contain only fixed expected paths, and `unexpected_count` counts
 unrecognized components without disclosing their names. This is failure evidence,
 not permission to omit dependencies or bypass source/hash/license qualification.
+
+The experimental recipe explicitly collects Python's standard-library `ssl` module
+to include the complete reviewed Python OpenSSL pair (`libssl-3.dll` and
+`libcrypto-3.dll`). Hashing alone can collect only the crypto library. This is a
+packaging dependency, not a network operation or a relaxation of native checks.

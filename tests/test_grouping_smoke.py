@@ -40,6 +40,17 @@ runpy.run_path('packaging/grouping_entrypoint.py', run_name='__main__')
 
 
 class QualificationTests(unittest.TestCase):
+    def test_recipe_collects_complete_python_ssl_pair_without_starting_network(self):
+        import ast
+        tree = ast.parse((ROOT / 'packaging/MarsDisplayGroupingExperiment.spec').read_text())
+        analysis = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name) and node.func.id == 'Analysis']
+        self.assertEqual(len(analysis), 1)
+        options = {item.arg: item.value for item in analysis[0].keywords}
+        self.assertEqual(ast.literal_eval(options['hiddenimports']),
+                         ['mars_display.usb_grouping_worker', 'ssl'])
+        self.assertIn('playwright', ast.literal_eval(options['excludes']))
+
     def test_no_device_check_routes_both_arms_and_rejects_bad_stdout(self):
         import tempfile
         from unittest.mock import Mock, patch
