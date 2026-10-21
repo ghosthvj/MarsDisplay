@@ -187,6 +187,18 @@ The exact Stop press was not timed; the final four frames cannot be classified a
 post-Stop writes from these captures. Earlier stopped-count stability was separately
 reported in T1.
 
-Video inspection remains pending: the available local browser reported duration
-but yielded empty frames. No visual conclusion is drawn from that attempt, and no
-private video or image has been uploaded or included in the repository.
+The initial browser decoding attempt yielded empty frames and was rejected.
+After owner-authorized installation of an isolated local FFmpeg decoder, 22
+nonempty overview samples and 20 samples approximately 0.1 seconds apart around
+9–11 seconds were visually inspected. Upper-card changes precede replacement of
+the lower graph; intermediate samples show old and new graph traces together.
+This confirms progressive redraw in that recorded transition, not its cause or
+per-operation USB latency. Source animation, transmission, panel behavior and
+camera effects have not been separated. No private video or image was uploaded
+or included in the repository.
+
+Stage-level numeric timing is still needed to distinguish source capture, host
+send and pacing costs before choosing production deadlines or optimizations.
+The synchronous loop waits only the remainder of its one-second cadence target;
+it does not promise one completed frame per second. Existing safety caps remain
+unchanged. T3 is not fully accepted from this visual and aggregate-rate evidence.
