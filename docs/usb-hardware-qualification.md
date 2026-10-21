@@ -85,3 +85,17 @@ panel acknowledgement from it. No automatic native restart is expected. A contin
 running state after 30 seconds is evidence to investigate, not permission to widen
 safety deadlines. Reconnect, COM reassignment, duplicates and Exit are separate
 steps after this observation is reviewed.
+
+## Follow-up: reconnect without automatic resume
+
+After the disconnect evidence has been reviewed and output is reported closed:
+
+1. Reconnect the same screen to the same USB port. Do not change saved settings.
+2. Wait 10 seconds without pressing controls. Confirm that the host counter stays
+   at its disconnected value and capture does not return to running automatically.
+   A boot image on the panel is not evidence of application capture.
+3. If it stays idle, click **Start** exactly once. Observe whether the count advances
+   and physical portrait updates return. Send the before/after count and a screenshot.
+4. If capture resumes by itself, Start fails, or cleanup becomes uncertain, report
+   that outcome without another restart or unplug. Do not change protocol or force
+   process cleanup. This step does not yet qualify COM reassignment or duplicate units.
