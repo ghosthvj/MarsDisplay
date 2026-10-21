@@ -93,3 +93,12 @@ L17 — Owner report verbatim:
 > si tengo otro puerto USB disponible, pero no tengo ninguna otra pantalla
 
 L18 — Duplicate-unit physical test unavailable: owner has one screen. Keep duplicate rejection software evidence separate; physicalduplicatecoverage remainsunverified, not passed or silentlyremoved. AnotherUSBport available permits controlledphysicalportmove, but only a measured oldCOM/newCOMdifference proves COMreassignment. Next whileconnected recordcurrentCOMinDeviceManager, Stopandwaitack, movethesameunittootherUSBport, recordnewCOM, verify noautoresume, thenStartoncewithoutchangingsavedidentity/configuration. Observecount/physicalportrait; onerrorstopbeforeanyretry. Do not manuallyassignCOMnumbers/changeWindowsdrivers or attachunrelatedserialdevices. T2blocked on portmoveevidence; T3pending.
+
+L19 — Owner report verbatim:
+> puerto inicial: COM5
+> puerto al conectar a otro puerto fisico: COM5
+> no cambio el nombre del puerto.
+> Al iniciar nuevamente la captura funcionó correctamente y se muestra bien en la pantalla sin hacer ningun cambio en la configuracion
+> '/my-projects/pantalla/MarsDisplay/.herdr-web-ui/paste-20261021-182937-f50e2ac6.png'
+
+L20 — Inspected screenshotrunning/sourceReady/nativeHostComplete/count29/liveyes/staleno/nativeidentitypreserved/noerror. PhysicalportmoveCOM5→COM5 and manualStartwithoutconfigedit succeeded byownerreport. This passesportrelocationonly, not COMreassignment/oldCOMforeignoccupant orduplicateunitphysicalproof. T2remainspartial: availableportrait/Stop/disconnect/reconnect/Exit/coldstart/portrelocationscenarios observed; nosecondunit and stableCOM prevent remainingphysicalcoverage undercurrentprocedure. Needsownerdecision: proceedT3measurements with explicitlylimited singleunit/COM5qualification and leave missingphysicalscenariosunverified, or pauseuntilrequiredhardware/controlledCOMtestconditions available. No manualCOMreassignment/driverchange or blanketP6acceptance inferred. PendingT3metrics/budget not yet observed; do not tune from1–2svisualestimate.
