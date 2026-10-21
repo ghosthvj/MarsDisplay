@@ -58,3 +58,9 @@ Core/Gui/Widgets guard runtime and complete reviewed optional dependency closure
 Unknown or incomplete native closures fail closed. Existing `portable` defaults
 still require the full original policy; experiment qualification does not weaken
 normal package checks or claim absent browser components are bundled.
+
+A rejected experimental native closure reports bounded JSON differences after
+`Unmapped experimental native payload:`: `missing_required`, `network_missing`,
+`ssl_missing` contain only fixed expected paths, and `unexpected_count` counts
+unrecognized components without disclosing their names. This is failure evidence,
+not permission to omit dependencies or bypass source/hash/license qualification.

@@ -169,7 +169,14 @@ def _profile_policy(policy, runtime, profile):
             or not scope <= GROUPING_REQUIRED | GROUPING_OPTIONAL | GROUPING_SSL | GROUPING_NETWORK
             or scope & GROUPING_NETWORK not in (frozenset(), GROUPING_NETWORK)
             or scope & GROUPING_SSL not in (frozenset(), GROUPING_SSL)):
-        raise ValueError('Unmapped experimental native payload')
+        # Report only fixed allowlist differences, never arbitrary payload/host names.
+        differences = dict(
+            missing_required=sorted(GROUPING_REQUIRED - scope),
+            unexpected_count=len(scope - (GROUPING_REQUIRED | GROUPING_OPTIONAL |
+                                          GROUPING_SSL | GROUPING_NETWORK)),
+            network_missing=sorted(GROUPING_NETWORK - scope) if scope & GROUPING_NETWORK else [],
+            ssl_missing=sorted(GROUPING_SSL - scope) if scope & GROUPING_SSL else [])
+        raise ValueError('Unmapped experimental native payload: ' + json.dumps(differences, sort_keys=True))
     known = {item['path'] for item in policy['components'] + policy['supplemental']}
     if not scope <= known:
         raise ValueError('Experimental native payload lacks reviewed policy')

@@ -117,6 +117,22 @@ class ProfileTests(unittest.TestCase):
             self.prepare(base | {'_internal/libssl-3.dll': ssl['_internal/libssl-3.dll']}, name='partial')
         self.assertFalse((self.root / 'partial').exists())
 
+    def test_rejection_reports_only_fixed_profile_differences_without_output(self):
+        base = {name: self.runtime[name] for name in REQUIRED}
+        touch = '_internal/PySide6/plugins/generic/qtuiotouchplugin.dll'
+        runtime = base | {touch: self.runtime[touch],
+                          '_internal/PySide6/private-unexpected.dll': b'unknown'}
+        expected = {'missing_required': [], 'unexpected_count': 1,
+                    'network_missing': sorted(self.module.GROUPING_NETWORK - {touch}),
+                    'ssl_missing': []}
+        with self.assertRaises(ValueError) as error:
+            self.prepare(runtime)
+        self.assertEqual(str(error.exception), 'Unmapped experimental native payload: '
+                         + json.dumps(expected, sort_keys=True))
+        self.assertNotIn('private-unexpected', str(error.exception))
+        self.assertEqual(list(self.root.iterdir()), [])
+        self.evidence.collect.assert_not_called()
+
     def test_unknown_environment_profile_rejects_before_sdk_or_source_reads(self):
         with patch.object(self.module, 'read_inputs', side_effect=AssertionError('source read')):
             with self.assertRaisesRegex(ValueError, 'Unknown native profile'):
