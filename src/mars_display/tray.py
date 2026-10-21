@@ -176,6 +176,9 @@ class SettingsDialog(QDialog):
             line.setFixedHeight(1)
             details.addWidget(line, index * 2 + 1, 0, 1, 2)
         column.addLayout(details)
+        self.native_timing = _label()
+        self.native_timing.hide()
+        column.addWidget(self.native_timing)
         self.preview_action = QPushButton("Preview")
         self.preview_action.setAutoDefault(False)
         self.preview_action.setAccessibleName("Preview output frame")
@@ -453,6 +456,25 @@ class TrayShell(QObject):
         self.dialog.metadata.setText(
             f"Live connected: {word(status.live_connected)}; data stale: {word(status.data_stale)}")
         self.dialog.frames.setText(f"{status.frames_sent:,}")
+        report = status.native_timing if native else None
+        timing_lines = []
+        if report is not None:
+            timing_lines.append("Native timing — current/last Start; successful samples only (ms)")
+            for title, aggregate in (
+                ("Source read (observations)", report.source_read),
+                ("Host send (encoding / IPC / helper total)", report.host_send),
+                ("Cadence wait (non-cancelled)", report.cadence_wait),
+            ):
+                values = [f"{value * 1000:.3f}" if aggregate.count else "—"
+                          for value in (aggregate.latest, aggregate.minimum,
+                                        aggregate.maximum, aggregate.mean)]
+                timing_lines.append(
+                    f"{title}: count {aggregate.count}; last {values[0]}; min {values[1]}; "
+                    f"max {values[2]}; mean {values[3]}")
+            timing_lines.append("Host send is not isolated serial write/drain or panel rendering. "
+                                "Counts are independent, not panel FPS.")
+        self.dialog.native_timing.setText("\n".join(timing_lines))
+        self.dialog.native_timing.setVisible(report is not None)
         _tone(self.dialog.source, "success" if status.source_state == "ready" else
               "error" if status.source_state == "error" else
               "warning" if status.source_state == "loading" else "muted")

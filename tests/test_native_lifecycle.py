@@ -113,6 +113,9 @@ class NativeLifecycleTests(unittest.TestCase):
         output.release.set();self.assertTrue(output.close_entered.wait(1))
         before_ack=controller.snapshot()
         self.assertEqual(before_ack.frames_sent,1);self.assertIs(before_ack.latest_frame,FIRST)
+        self.assertEqual(before_ack.native_timing.source_read.count,1)
+        self.assertEqual(before_ack.native_timing.host_send.count,1)
+        self.assertEqual(before_ack.native_timing.cadence_wait.count,0)
         self.assertEqual(before_ack.state,'stopping')
         controller.request_exit();self.assertFalse(controller.snapshot().exit_ready)
         output.close_release.set();self.assertTrue(controller.wait_stopped(2))
@@ -148,6 +151,11 @@ class NativeLifecycleTests(unittest.TestCase):
         self.assertEqual(state.failure_kind,'native-delivery-uncertain')
         self.assertTrue(state.delivery_uncertain);self.assertFalse(state.ownership_uncertain)
         self.assertEqual((output.sends,len(output.accepted),len(contexts)),(2,1,1))
+        self.assertEqual(state.native_timing.source_read.count,2)
+        self.assertEqual(state.native_timing.host_send.count,1)
+        self.assertEqual(state.native_timing.cadence_wait.count,1)
+        controller.stop()
+        self.assertEqual(controller.snapshot().native_timing,state.native_timing)
 
     def test_native_source_failure_stops_without_retrying_source_or_output(self):
         output=NativeOutput();source=Source(failure='read');wait=Mock()
@@ -247,7 +255,9 @@ class NativeLifecycleTests(unittest.TestCase):
         self.assertIsNone(state.live_connected);self.assertIsNone(state.data_stale)
         with self.assertRaises(LifecycleError):controller.start()
         with self.assertRaises(LifecycleError):controller.save_settings(self.native)
+        report=state.native_timing
         controller.request_exit();controller.stop();self.assertFalse(controller.snapshot().exit_ready)
+        self.assertEqual(controller.snapshot().native_timing,report)
         self.assertEqual(len(children[0]),1)
 
     def test_switch_to_simulation_does_not_report_previous_native_state(self):
@@ -268,6 +278,7 @@ class NativeLifecycleTests(unittest.TestCase):
             controller.start();self.assertTrue(entered.wait(1));pending=controller.snapshot()
             self.assertEqual((pending.output_mode,pending.output_state),('simulated','simulated-closed'))
             self.assertEqual(pending.frames_sent,1);self.assertIs(pending.latest_frame,FIRST)
+            self.assertIsNone(pending.native_timing)
         finally:allow.set()
 
     def test_operation_uncertainty_is_visible_until_cleanup_confirms_release(self):

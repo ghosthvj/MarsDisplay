@@ -61,6 +61,33 @@ class StartContext:
 
 
 @dataclass(frozen=True)
+class TimingAggregate:
+    """Constant-space successful durations in seconds; zero fields mean no samples."""
+
+    count: int = 0
+    latest: float = 0.0
+    minimum: float = 0.0
+    maximum: float = 0.0
+    mean: float = 0.0
+
+    def observe(self, seconds: float) -> "TimingAggregate":
+        count = self.count + 1
+        return TimingAggregate(count, seconds,
+                               min(self.minimum, seconds) if self.count else seconds,
+                               max(self.maximum, seconds) if self.count else seconds,
+                               self.mean + (seconds - self.mean) / count)
+
+
+@dataclass(frozen=True)
+class NativeTiming:
+    """Numeric RAM-only aggregates, with independent stage sample counts."""
+
+    source_read: TimingAggregate = TimingAggregate()
+    host_send: TimingAggregate = TimingAggregate()
+    cadence_wait: TimingAggregate = TimingAggregate()
+
+
+@dataclass(frozen=True)
 class Snapshot:
     state: str = "stopped"
     source_state: str = "stopped"
@@ -79,6 +106,7 @@ class Snapshot:
     failure_kind: str | None = None
     delivery_uncertain: bool = False
     ownership_uncertain: bool = False
+    native_timing: NativeTiming | None = None
 
 
 _CLEANUP_ERROR = "Cleanup failed; restart the application before starting again."
@@ -102,7 +130,8 @@ class Coordinator:
                  transport_factory: Callable[[], Transport] | None = None, *,
                  transport_context_factory: Callable[[StartContext], Transport] | None = None,
                  inventory_provider=None,
-                 wait: Callable[[Event, float], bool] = _wait):
+                 wait: Callable[[Event, float], bool] = _wait,
+                 diagnostic_clock: Callable[[], float] = monotonic):
         if (transport_factory is None) == (transport_context_factory is None):
             raise TypeError("Provide exactly one transport factory path.")
         self._transport_context_factory = transport_context_factory
@@ -111,6 +140,8 @@ class Coordinator:
         self._source_factory = source_factory
         self._transport_factory = transport_factory
         self._wait = wait
+        # Separate from scheduling: this monotonic seam measures durations only.
+        self._diagnostic_clock = diagnostic_clock
         self._lock = Lock()
         self._cancel = Event()
         self._worker: Thread | None = None
@@ -123,6 +154,13 @@ class Coordinator:
     def _update(self, **changes):
         with self._lock:
             self._status = replace(self._status, **changes)
+
+    def _record_timing(self, stage: str, started: float):
+        seconds = self._diagnostic_clock() - started
+        # Only the admitted worker records samples; Start cannot replace its report.
+        report = self.snapshot().native_timing
+        aggregate = getattr(report, stage).observe(seconds)
+        self._update(native_timing=replace(report, **{stage: aggregate}))
 
     def _reap_locked(self):
         # Only an observer of a *completed* thread may acknowledge Stop/Exit.
@@ -169,6 +207,7 @@ class Coordinator:
             native = settings.output_mode == "native"
             self._status = replace(self._status, state="starting", source_state="starting",
                                    output_mode=settings.output_mode,
+                                   native_timing=NativeTiming() if native else None,
                                    output_state=("native-opening" if native else
                                                  "simulated-closed" if self._status.output_mode == "native"
                                                  else self._status.output_state),
@@ -368,7 +407,11 @@ class Coordinator:
                     while not cancel.is_set():
                         started = monotonic()
                         stage = "source"
+                        if native:
+                            stage_started = self._diagnostic_clock()
                         sample = source.read()
+                        if native:
+                            self._record_timing("source_read", stage_started)
                         if cancel.is_set():
                             break
                         if not isinstance(sample, SourceSample):
@@ -379,7 +422,11 @@ class Coordinator:
                             stage = "send" if native else "output"
                             if cancel.is_set():
                                 break
+                            if native:
+                                stage_started = self._diagnostic_clock()
                             output.send(sample.frame)
+                            if native:
+                                self._record_timing("host_send", stage_started)
                             with self._lock:
                                 self._status = replace(self._status, latest_frame=sample.frame,
                                                        frames_sent=self._status.frames_sent + 1,
@@ -389,8 +436,12 @@ class Coordinator:
                             if not cancel.is_set():
                                 self._status = replace(self._status, state="running", error=None)
                         # No queue: at most one synchronous capture/write at a time.
+                        if native:
+                            stage_started = self._diagnostic_clock()
                         if self._wait(cancel, max(0, 1 - (monotonic() - started))):
                             break
+                        if native:
+                            self._record_timing("cadence_wait", stage_started)
                 except Exception as error:
                     failed = True
                     if native:

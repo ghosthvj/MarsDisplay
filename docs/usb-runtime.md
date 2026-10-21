@@ -42,6 +42,36 @@ second capture, USB reception/panel acknowledgement or an image history. The
 lifetime counter is labeled “Host-accepted frames”; runtime output uses the actual
 snapshot mode, independent of draft settings and source live/stale observations.
 
+## Native numeric timing (diagnostic candidate)
+
+Status / Settings now shows **Native timing** in its scrollable body. This source
+change is not part of the immutable qualified P5 ZIP; a separate diagnostic Windows
+artifact must be verified before owner use.
+
+| Stage | Successful sample measures |
+|---|---|
+| Source read (observations) | One completed `source.read()`, including observations without a frame |
+| Host send (encoding / IPC / helper total) | One successfully returned `output.send()`; host-side total, not isolated serial write/drain or panel rendering |
+| Cadence wait (non-cancelled) | Actual elapsed wait, not the requested remainder; cancelled waits are excluded |
+
+Each stage shows its independent count, last, minimum, maximum and mean in
+milliseconds. A zero count displays dashes, not measured zero latency. The immutable
+snapshot holds only three fixed-size numeric aggregates in RAM (durations internally
+in seconds). There are no timestamps, images, URLs, identities, credentials, histories,
+logs or exports in this diagnostic. Reading the display does not capture another frame.
+
+Every admitted native Start resets the aggregates, including a Start that later
+fails during setup. Duplicate/rejected Start does not reset them. Stop and errors
+retain them; a subsequent Simulation Start removes the native report. Lifetime
+host-frame counters and the retained preview are unchanged. Successfully completed
+source/send calls may be counted during Stop; cancelled waits and failed calls are
+not counted. Source observations therefore need not equal accepted frames.
+
+The diagnostic monotonic clock is separate from scheduling. The one-second cadence
+target, synchronous backpressure, cancellation, zero native retries, transport and
+safety deadlines remain unchanged. Successful-duration aggregates omit failures and
+cannot alone establish failure deadlines, panel FPS or production capacity.
+
 ## Failure and cleanup policy
 
 Native mode has **zero automatic retries**, including safe pre-write and source

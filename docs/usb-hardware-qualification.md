@@ -202,3 +202,25 @@ send and pacing costs before choosing production deadlines or optimizations.
 The synchronous loop waits only the remainder of its one-second cadence target;
 it does not promise one completed frame per second. Existing safety caps remain
 unchanged. T3 is not fully accepted from this visual and aggregate-rate evidence.
+
+## Next diagnostic candidate — not yet delivered or qualified
+
+The source now includes a bounded RAM-only **Native timing** summary in Status /
+Settings. It is not present in the qualified P5 package above. Do not substitute a
+same-version ZIP: wait for a separately verified diagnostic source/artifact hash
+and owner-run instructions before running it on Windows. The original P5 ZIP stays
+immutable; this code change does not establish Windows or hardware acceptance.
+
+The summary reports count, last, minimum, maximum and mean milliseconds separately
+for source observations, successful host sends and non-cancelled cadence waits.
+Host send includes encoding, IPC and helper work; it does **not** isolate serial
+write/drain or panel rendering. Source observations without frames still count.
+Failed calls and cancelled waits do not count. Stop/error retain the current report;
+a new admitted native Start resets it. Simulation has no native report.
+
+For the later authorized observation, report only these numeric summaries alongside
+host count and exact failure/Stop status; avoid sharing private URLs or full settings.
+No diagnostic export, image capture, logging or timing history is added. Successful
+sample statistics alone cannot set failure deadlines or prove panel FPS. Existing
+cadence, safety caps, native zero retries and cleanup/rollback rules remain unchanged.
+See [the runtime timing contract](usb-runtime.md#native-numeric-timing-diagnostic-candidate).
