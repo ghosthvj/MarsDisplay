@@ -12,7 +12,7 @@ IDENTITY = 'usb:1a86:5722:USB35INCHIPSV2'
 PROFILE = 'tus35-portrait-v1'
 URL = 'https://mars.example/prefix'
 ACK_ERROR = 'Schema 2 is incompatible with older binaries; explicit acknowledgement is required.'
-NATIVE_START_ERROR = 'Native output is configured but is not enabled in this build. Select Simulation explicitly.'
+NATIVE_START_ERROR = 'Native output requires an explicit Start-context factory; no fallback was started.'
 
 
 def document(*, mode='simulated', profile=None, identity=None):

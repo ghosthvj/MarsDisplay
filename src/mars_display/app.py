@@ -5,13 +5,22 @@ import sys
 
 from .browser import BrowserSession
 from .lifecycle import Coordinator
-from .settings import SettingsError, SettingsStore
+from .settings import SettingsError, SettingsStore, _checked
 from .transport import SimulatedTransport
+from .usb_transport import UsbTransport
 
 _UNSUPPORTED = "MarsDisplay requires Windows x64; use Windows 11 x64."
 _STARTUP_ERROR = (
     "Cannot start MarsDisplay; check the interactive system tray and settings directory access."
 )
+
+
+def compose_transport(context):
+    """Passive construction from one validated, frozen Start; no mode fallback."""
+    settings = _checked(context.settings)
+    if settings.output_mode == "native":
+        return UsbTransport(settings.device_identity, cancel=context.cancel)
+    return SimulatedTransport()
 
 
 def build_shell(app, store: SettingsStore):
@@ -30,7 +39,7 @@ def build_shell(app, store: SettingsStore):
             "A system tray is required; run MarsDisplay in an interactive Windows session."
         )
     return create_shell(app, store, lambda: Coordinator(
-        store, BrowserSession, SimulatedTransport))
+        store, BrowserSession, transport_context_factory=compose_transport))
 
 
 def main() -> int:

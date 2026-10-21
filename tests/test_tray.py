@@ -281,7 +281,7 @@ class TrayTests(unittest.TestCase):
             shell=self.make(configured=False)
             for operation in (shell.start_action.trigger,shell.dialog.capture_action.click):
                 operation()
-                self.assertEqual(shell.dialog.message.text(),'Native output is configured but is not enabled in this build. Select Simulation explicitly.')
+                self.assertEqual(shell.dialog.message.text(),'Native output requires an explicit Start-context factory; no fallback was started.')
                 self.assertFalse(self.session.opened.is_set())
                 self.assertEqual(shell.coordinator.snapshot().frames_sent,0)
                 self.assertEqual(self.store.path.read_bytes(),raw)

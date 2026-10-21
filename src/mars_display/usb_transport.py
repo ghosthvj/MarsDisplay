@@ -1,4 +1,4 @@
-"""Explicit persistent USB transport, not wired into application composition."""
+"""Explicit owned persistent transport; admission is decided by validated context."""
 import secrets
 import socket
 import threading
@@ -13,6 +13,7 @@ class UsbError(RuntimeError):
     """Fixed diagnostic plus delivery/ownership uncertainty for future lifecycle use."""
     def __init__(self, phase, *, delivery_uncertain=False, ownership_uncertain=False):
         super().__init__('USB ' + phase + ' failed; no automatic retry.')
+        self.phase = phase
         self.delivery_uncertain = delivery_uncertain
         self.ownership_uncertain = ownership_uncertain
 

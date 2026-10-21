@@ -117,12 +117,15 @@ been added. Native configuration remains an API capability, not a GUI opt-in.
 
 The existing default settings path stays `%LOCALAPPDATA%\MarsDisplay\settings.json`.
 Errors contain fixed actionable text, not supplied URLs, identities or paths.
-A stored native mode reports:
+In the qualified P4 build, stored native mode was blocked unconditionally.
+P5's working native composition now requires the named context path; a legacy
+zero-argument-only Coordinator rejects native mode with:
 
-> Native output is configured but is not enabled in this build. Select Simulation explicitly.
+> Native output requires an explicit Start-context factory; no fallback was started.
 
-Do not interpret this as a connection failure, retry it or enable a fallback.
-There is no native GUI selector in P4. Production native lifecycle, truthful output
+This is composition admission, not a connection failure or fallback trigger.
+P4 itself did not include a native GUI selector; P5 runtime/UI work is tracked in
+[the runtime contract](usb-runtime.md), not qualified by the P4 evidence below. Production native lifecycle, truthful output
 states, Stop/Exit semantics and physical/performance qualification remain P5/P6.
 
 ## Verified P4 evidence and limits

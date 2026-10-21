@@ -9,6 +9,7 @@ from .frames import RGBFrame
 from .settings import Settings, SettingsError, SettingsStore, _checked, _ACK_ERROR
 from .devices import enumerate_devices
 from .transport import Transport
+from .usb_transport import UsbError
 
 
 class LifecycleError(RuntimeError):
@@ -74,6 +75,10 @@ class Snapshot:
     worker_alive: bool = False
     exit_requested: bool = False
     exit_ready: bool = False
+    output_mode: str = "simulated"
+    failure_kind: str | None = None
+    delivery_uncertain: bool = False
+    ownership_uncertain: bool = False
 
 
 _CLEANUP_ERROR = "Cleanup failed; restart the application before starting again."
@@ -87,7 +92,7 @@ def _wait(cancel: Event, seconds: float) -> bool:
 class Coordinator:
     """One worker; explicit Start only, with cancellable waits and backpressure.
 
-    Application integration must supply SimulatedTransport, never a USB adapter.
+    Native composition requires the explicit frozen-context factory path.
     The wait seam must honor cancellation and return True when cancelled; only
     deterministic tests should replace Event.wait. Counters are lifetime totals.
     """
@@ -112,6 +117,8 @@ class Coordinator:
         self._status = Snapshot()
         self._outcome = "stopped"
         self._cleanup_failed = False
+        self._retained_resources = []
+        self._native_close_failed = False
 
     def _update(self, **changes):
         with self._lock:
@@ -123,8 +130,12 @@ class Coordinator:
             self._worker = None
             changes = {"state": self._outcome, "worker_alive": False}
             if self._outcome == "stopped":
-                changes.update(source_state="stopped", output_state="simulated-closed",
-                               live_connected=None, data_stale=None, error=None)
+                native = self._status.output_mode == "native"
+                changes.update(source_state="stopped",
+                               output_state="native-closed" if native else "simulated-closed",
+                               live_connected=None, data_stale=None)
+                if not native or self._status.failure_kind is None:
+                    changes["error"] = None
             self._status = replace(self._status, **changes)
         self._status = replace(
             self._status,
@@ -150,11 +161,18 @@ class Coordinator:
             settings = self._store.load()
             if settings is None:
                 raise LifecycleError("Configure a MARS URL before starting.")
-            if settings.output_mode == "native":
-                raise LifecycleError("Native output is configured but is not enabled in this build. Select Simulation explicitly.")
+            if settings.output_mode == "native" and self._transport_context_factory is None:
+                raise LifecycleError("Native output requires an explicit Start-context factory; no fallback was started.")
             self._cancel = Event()
             self._outcome = "stopped"
+            self._native_close_failed = False
+            native = settings.output_mode == "native"
             self._status = replace(self._status, state="starting", source_state="starting",
+                                   output_mode=settings.output_mode,
+                                   output_state=("native-opening" if native else
+                                                 "simulated-closed" if self._status.output_mode == "native"
+                                                 else self._status.output_state),
+                                   failure_kind=None, delivery_uncertain=False, ownership_uncertain=False,
                                    live_connected=None, data_stale=None, error=None,
                                    worker_alive=True)
             context = StartContext(settings, self._cancel)
@@ -248,27 +266,82 @@ class Coordinator:
             self._configuration_stopped_locked()
             self._store.export_schema1(destination)
 
-    def _cleanup(self, source, output) -> bool:
-        failed = False
-        # Try both even if the first close fails; never clear/reset the output.
+    def _cleanup(self, source, output, *, native=False) -> bool:
+        failed, retained, close_problem, source_failed = False, [], False, False
         for resource in (source, output):
-            if resource is not None:
-                try:
-                    resource.close()
-                except Exception:
+            if resource is None:
+                continue
+            try:
+                resource.close()
+                if native and resource is output and getattr(resource, "owned", False):
                     failed = True
-        if failed:
-            with self._lock:
+                    retained.append(resource)
+            except Exception as error:
+                known_closed = False
+                if native and resource is output and isinstance(error, UsbError):
+                    try:
+                        known_closed = (not error.ownership_uncertain
+                                        and getattr(resource, "owned", True) is False)
+                    except Exception:
+                        pass
+                if known_closed:
+                    close_problem = True
+                else:
+                    failed = True
+                    if native:
+                        retained.append(resource)
+                        source_failed = source_failed or resource is source
+        with self._lock:
+            if failed:
                 self._cleanup_failed = True
-                self._status = replace(self._status, output_state="error", error=_CLEANUP_ERROR)
-        else:
-            with self._lock:
-                if self._status.output_state != "error":
-                    self._status = replace(self._status, output_state="simulated-closed")
+                if native:
+                    self._retained_resources.extend(retained)
+                    self._status = replace(self._status, output_state="native-cleanup-uncertain",
+                        source_state="error" if source_failed else "stopped",
+                        live_connected=None, data_stale=None,
+                        failure_kind="native-cleanup-uncertain", ownership_uncertain=True,
+                        error="Native cleanup is uncertain; resources and Exit ownership remain held.")
+                else:
+                    self._status = replace(self._status, output_state="error", error=_CLEANUP_ERROR)
+            elif native:
+                self._status = replace(self._status, output_state="native-closed",
+                    source_state="stopped", live_connected=None, data_stale=None,
+                    ownership_uncertain=False)
+                if close_problem:
+                    self._native_close_failed = True
+                    if self._status.failure_kind is None:
+                        self._status = replace(self._status, failure_kind="native-close",
+                            failures=self._status.failures + 1,
+                            error="Native close acknowledgement failed; owned resources are released.")
+            elif self._status.output_state != "error":
+                self._status = replace(self._status, output_state="simulated-closed")
         return not failed
+
+    def _native_failure(self, error, stage):
+        uncertain = False
+        if stage == "source":
+            kind = "native-source"
+            message = "Capture failed; native output was not retried."
+        elif stage == "send" and isinstance(error, (ValueError, TypeError)):
+            kind = "native-rejected"
+            message = "Native output rejected the frame before submission; only validated 320x480 portrait is supported."
+        else:
+            uncertain = (error.delivery_uncertain if isinstance(error, UsbError)
+                         else stage == "send" and not isinstance(error, (ValueError, TypeError)))
+            kind = "native-delivery-uncertain" if uncertain else "native-prewrite"
+            message = ("Native delivery is uncertain; the previous host-accepted frame is retained. No resend."
+                       if uncertain else
+                       "Native output failed before a confirmed transfer; use Start explicitly to retry.")
+        with self._lock:
+            self._status = replace(self._status, failures=self._status.failures + 1,
+                output_state="native-error", failure_kind=kind,
+                delivery_uncertain=uncertain,
+                ownership_uncertain=bool(isinstance(error, UsbError) and error.ownership_uncertain),
+                error=message)
 
     def _run(self, context: StartContext):
         settings, cancel = context.settings, context.cancel
+        native = settings.output_mode == "native"
         consecutive = 0
         outcome = "stopped"
         try:
@@ -291,7 +364,7 @@ class Coordinator:
                     if cancel.is_set():
                         break
                     output.open()
-                    self._update(output_state="simulated-open")
+                    self._update(output_state="native-open" if native else "simulated-open")
                     while not cancel.is_set():
                         started = monotonic()
                         stage = "source"
@@ -303,13 +376,14 @@ class Coordinator:
                         self._update(source_state=sample.state,
                                      live_connected=sample.live_connected, data_stale=sample.data_stale)
                         if sample.frame is not None:
-                            stage = "output"
+                            stage = "send" if native else "output"
                             if cancel.is_set():
                                 break
                             output.send(sample.frame)
                             with self._lock:
                                 self._status = replace(self._status, latest_frame=sample.frame,
-                                                       frames_sent=self._status.frames_sent + 1)
+                                                       frames_sent=self._status.frames_sent + 1,
+                                                       output_state="native-host-complete" if native else self._status.output_state)
                         consecutive = 0
                         with self._lock:
                             if not cancel.is_set():
@@ -317,19 +391,25 @@ class Coordinator:
                         # No queue: at most one synchronous capture/write at a time.
                         if self._wait(cancel, max(0, 1 - (monotonic() - started))):
                             break
-                except Exception:
+                except Exception as error:
                     failed = True
-                    with self._lock:
-                        changes = {"failures": self._status.failures + 1}
-                        if stage == "source":
-                            changes.update(source_state="error", live_connected=None, data_stale=None)
-                        else:
-                            changes.update(output_state="error")
-                        self._status = replace(self._status, **changes)
+                    if native:
+                        self._native_failure(error, stage)
+                    else:
+                        with self._lock:
+                            changes = {"failures": self._status.failures + 1}
+                            if stage == "source":
+                                changes.update(source_state="error", live_connected=None, data_stale=None)
+                            else:
+                                changes.update(output_state="error")
+                            self._status = replace(self._status, **changes)
                 finally:
-                    clean = self._cleanup(source, output)
+                    clean = self._cleanup(source, output, native=native)
                 if not clean:
                     outcome = "error"
+                    break
+                if native and (failed or self._native_close_failed):
+                    outcome = "stopped" if cancel.is_set() else "error"
                     break
                 if cancel.is_set() or not failed:
                     break
