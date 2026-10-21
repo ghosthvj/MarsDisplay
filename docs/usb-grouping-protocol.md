@@ -50,3 +50,11 @@ fixture. They **do not prove native Windows job assignment, frozen bootstrap
 behavior, or physical panel correctness**. T2/T3 must qualify separate console
 packaging, licenses, source manifest/hash, help/self-test/private rejection,
 admission and owned-reap on Windows.
+
+## Native qualification profile
+
+The explicit `usb-grouping-v1` inventory/material profile admits only the fixed
+Core/Gui/Widgets guard runtime and complete reviewed optional dependency closures.
+Unknown or incomplete native closures fail closed. Existing `portable` defaults
+still require the full original policy; experiment qualification does not weaken
+normal package checks or claim absent browser components are bundled.

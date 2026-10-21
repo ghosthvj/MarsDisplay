@@ -36,11 +36,13 @@ def python_license(sdk):
     return {'runtime/Python/' + name: data for name, data in payload.read_tree(sdk, ('LICENSE.txt',)).items()}
 
 
-def inspect_environment(repo):
-    """Inspect the real native SDK only after admission; never export environment."""
+def inspect_environment(repo, *, profile='portable'):
+    """Inspect pinned SDK; the explicit experiment excludes unbundled browsers."""
+    native_material.validate_profile(profile)
     native_material.read_inputs(repo)  # Genuine material/policy BEFORE any SDK or process work.
     from packaging.requirements import Requirement
-    import playwright
+    if profile == 'portable':
+        import playwright
     from PySide6.QtCore import qVersion
     notices = _load('notices')
     config = tomllib.loads((repo / 'pyproject.toml').read_text(encoding='utf-8'))
@@ -53,13 +55,17 @@ def inspect_environment(repo):
         if not re.fullmatch(r'==[^*,]+', str(requirement.specifier)) or metadata.version(requirement.name) not in requirement.specifier:
             raise ValueError('Installed SDK does not match exact pyproject pins')
         roots.append(requirement.name)
-    dependencies, material = notices.collect_distributions(roots[:len(project['dependencies'])])
+    runtime_roots = (roots[:len(project['dependencies'])] if profile == 'portable'
+                     else ['PySide6_Essentials', 'pyserial'])
+    dependencies, material = notices.collect_distributions(runtime_roots)
     tools, tool_material = notices.collect_distributions(['PyInstaller'])
     material.update(tool_material)  # Includes COPYING.txt and the bootloader exception.
     material.update(python_license(Path(sys.base_prefix)))
-    driver = Path(playwright.__file__).parent / 'driver'
-    browsers, vendor = notices.collect_vendor(driver)
-    material.update(vendor)
+    browsers = []
+    if profile == 'portable':
+        driver = Path(playwright.__file__).parent / 'driver'
+        browsers, vendor = notices.collect_vendor(driver)
+        material.update(vendor)
     native_material.preflight(repo, {'build': {'Qt': qVersion()}, 'dependencies': dependencies,
                                      'build_dependencies': tools})
     revision = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=repo, check=True,

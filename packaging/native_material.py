@@ -128,7 +128,56 @@ def preflight(repo, inventory):
     return bundle
 
 
-def source_access(bundle):
+GROUPING_PROFILE = 'usb-grouping-v1'
+GROUPING_REQUIRED = frozenset({PREFIX + name for name in (
+    'Qt6Core.dll', 'Qt6Gui.dll', 'Qt6Widgets.dll', 'QtCore.pyd', 'QtGui.pyd',
+    'QtWidgets.pyd', 'pyside6.abi3.dll', 'plugins/platforms/qwindows.dll')} | {
+    '_internal/shiboken6/Shiboken.pyd', '_internal/shiboken6/shiboken6.abi3.dll'})
+# Stock QtGui/Widgets hook roots; each still needs the exact reviewed policy
+# hash, RECORD association and fresh PE evidence. This is not a subset switch.
+GROUPING_OPTIONAL = frozenset(PREFIX + name for name in (
+    'plugins/platforms/qdirect2d.dll', 'plugins/platforms/qminimal.dll',
+    'plugins/platforms/qoffscreen.dll', 'plugins/styles/qmodernwindowsstyle.dll',
+    'plugins/imageformats/qgif.dll', 'plugins/imageformats/qicns.dll',
+    'plugins/imageformats/qico.dll', 'plugins/imageformats/qjpeg.dll',
+    'plugins/imageformats/qtga.dll', 'plugins/imageformats/qtiff.dll',
+    'plugins/imageformats/qwbmp.dll', 'plugins/imageformats/qwebp.dll'))
+GROUPING_SSL = frozenset({'_internal/libssl-3.dll', '_internal/libcrypto-3.dll'})
+# Stock TUIO may retain Network/TLS. Admit only its complete reviewed closure,
+# not arbitrary additional Qt modules or one orphaned DLL.
+GROUPING_NETWORK = frozenset({PREFIX + name for name in (
+    'plugins/generic/qtuiotouchplugin.dll', 'Qt6Network.dll', 'QtNetwork.pyd',
+    'plugins/networkinformation/qnetworklistmanager.dll',
+    'plugins/tls/qcertonlybackend.dll', 'plugins/tls/qopensslbackend.dll',
+    'plugins/tls/qschannelbackend.dll')} | {
+    '_internal/libssl-3-x64.dll', '_internal/libcrypto-3-x64.dll'})
+
+
+def validate_profile(profile):
+    if profile not in ('portable', GROUPING_PROFILE):
+        raise ValueError('Unknown native profile')
+
+
+def _profile_policy(policy, runtime, profile):
+    validate_profile(profile)
+    if profile == 'portable':
+        return policy
+    scope = {path for path in runtime if (
+        path.startswith((PREFIX, '_internal/shiboken6/')) and Path(path).suffix.lower() in {'.dll', '.pyd'})
+        or re.fullmatch(r'_internal/(?:libssl|libcrypto)[^/]*\.dll', path, re.I)}
+    if (not GROUPING_REQUIRED <= scope
+            or not scope <= GROUPING_REQUIRED | GROUPING_OPTIONAL | GROUPING_SSL | GROUPING_NETWORK
+            or scope & GROUPING_NETWORK not in (frozenset(), GROUPING_NETWORK)
+            or scope & GROUPING_SSL not in (frozenset(), GROUPING_SSL)):
+        raise ValueError('Unmapped experimental native payload')
+    known = {item['path'] for item in policy['components'] + policy['supplemental']}
+    if not scope <= known:
+        raise ValueError('Experimental native payload lacks reviewed policy')
+    return dict(policy, **{key: [item for item in policy[key] if item['path'] in scope]
+                           for key in ('components', 'supplemental')})
+
+
+def source_access(bundle, *, profile='portable'):
     lines = ['SOURCE ACCESS — MarsDisplay portable prototype', '',
              'The application and local build hooks/configuration are included in source/.',
              'For complete pinned upstream module sources, including build/configuration and',
@@ -148,13 +197,20 @@ def source_access(bundle):
                   'is not an exemption. No extra EULA/DRM overrides the applicable GPL/LGPL rights.',
                   'Unpacked dynamically linked DLLs remain replaceable with compatible modified builds.',
                   'Microsoft VC++ is an official external prerequisite, not redistributed here.', ''])
+    if profile == GROUPING_PROFILE:
+        lines = [line for line in lines if line not in (
+            'Other runtime sources and notices: inventory.json and notices/; CPython, Node,',
+            'Chromium, FFmpeg, winldd, Python packages and PyInstaller remain separately covered.')]
+        lines.extend(['Experimental runtime presence is recorded only in inventory.json and',
+                      'supplemental.json; retained full-source notices do not assert bundled features.', ''])
     return '\n'.join(lines).encode('utf-8')
 
 
-def prepare(repo, runtime, inventory, destination):
+def prepare(repo, runtime, inventory, destination, *, profile='portable'):
     """Materialize only after fresh exact facts match reviewed source policy; own stage only."""
+    validate_profile(profile)
     bundle = read_inputs(repo)
-    policy, registry = bundle['policy'], bundle['registry']
+    policy, registry = _profile_policy(bundle['policy'], runtime, profile), bundle['registry']
     required = {path for path in runtime if path.startswith(PREFIX) and Path(path).suffix.lower() in {'.dll', '.pyd'}}
     if required != {item['path'] for item in policy['components']} or inventory['build']['Qt'] != policy['qt_release']:
         raise ValueError('Unmapped native Qt payload for reviewed source policy')
@@ -185,7 +241,7 @@ def prepare(repo, runtime, inventory, destination):
                       version_evidence=['inputs/' + module['release_reference']], binary_evidence=fresh[item['path']])
         (components if item in policy['components'] else supplemental).append(record)
     texts = {'inputs/' + name: data for name, data in bundle['files'].items()}
-    texts.update({'SOURCE-ACCESS.txt': source_access(bundle), 'supplemental.json': _json(dict(
+    texts.update({'SOURCE-ACCESS.txt': source_access(bundle, profile=profile), 'supplemental.json': _json(dict(
         schema='marsdisplay-native-supplemental-v1', components=supplemental))})
     manifest = dict(schema='marsdisplay-native-material-v2', qt_release=policy['qt_release'],
                     qualification=policy['qualification'], components=components,
