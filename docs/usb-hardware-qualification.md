@@ -99,3 +99,24 @@ After the disconnect evidence has been reviewed and output is reported closed:
 4. If capture resumes by itself, Start fails, or cleanup becomes uncertain, report
    that outcome without another restart or unplug. Do not change protocol or force
    process cleanup. This step does not yet qualify COM reassignment or duplicate units.
+
+## Follow-up: Exit while capturing and cold relaunch
+
+After explicit reconnect/Start has succeeded:
+
+1. In Windows Task Manager's Details tab, note this application's `MarsDisplay.exe`
+   processes/PIDs while capture is running. There may be multiple processes because
+   the packaged application and its owned helper share an executable name. Do not
+   end tasks or infer ownership of unrelated browser processes from their name.
+2. Use the MarsDisplay notification-area icon menu and choose **Exit** while it is
+   capturing. Closing the settings window with X is not the same operation.
+3. Record elapsed time until the application icon/window and its previously noted
+   processes disappear. If any remain after a 30-second observation, or an error is
+   shown, report those names/PIDs and the exact message without killing them.
+4. Only after confirmed exit, launch the same verified executable once. Confirm it
+   starts stopped, preserves the saved output configuration and does not capture
+   automatically. Leave it stopped and report the result.
+
+A retained panel image after Exit is not evidence of continued USB writes. This
+check observes application/helper lifetime; it does not establish exclusive
+ownership or cleanup of every browser process on the machine.
