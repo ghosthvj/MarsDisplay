@@ -203,13 +203,28 @@ The synchronous loop waits only the remainder of its one-second cadence target;
 it does not promise one completed frame per second. Existing safety caps remain
 unchanged. T3 is not fully accepted from this visual and aggregate-rate evidence.
 
-## Next diagnostic candidate — not yet delivered or qualified
+## Verified numeric diagnostic package
 
-The source now includes a bounded RAM-only **Native timing** summary in Status /
-Settings. It is not present in the qualified P5 package above. Do not substitute a
-same-version ZIP: wait for a separately verified diagnostic source/artifact hash
-and owner-run instructions before running it on Windows. The original P5 ZIP stays
-immutable; this code change does not establish Windows or hardware acceptance.
+A separately verified diagnostic includes a bounded RAM-only **Native timing**
+summary in Status / Settings. It is not present in the original P5 ZIP above.
+Both packages use the same version filename: distinguish them by hash and source,
+not by filename. The original P5 ZIP remains immutable. Diagnostic software
+qualification does not establish physical stage timings or production budgets.
+
+- Source: `d79eb805a943ddc4f0ee08a108a885e3edc23833`.
+- [Diagnostic artifact 12372114144](https://github.com/ghosthvj/MarsDisplay/actions/runs/39657968799/artifacts/12372114144).
+- Inner ZIP: `MarsDisplay-0.1.4-Windows-x64.zip`, 205,696,203 bytes.
+- SHA256: `0b1cb758184e719fb743ac336a77b27f0c8b52df1697e238e2fa6dd48f18d321`.
+- Recorded artifact expiry: 2026-10-28 19:05:33 UTC; keep the verified local copy.
+
+Windows passed 259 tests / 65.332s with zero skips, then actual windowed build,
+owned-worker smoke and source/native/material gates. Parent and independent
+readback verified 1,251 payload hashes, 355 sources (351 exact Git Windows checkout
+plus four SDK records), 69 AMD64 PE32+ binaries, 27 Qt and six supplemental
+components, and 209 material hashes. Independent focused 69 plus two boundary
+probes passed; parent final spot passed 69. The 12-case preservation differential
+was exact, but does not replace tests for new timing fields. Earlier pending
+wording inside the immutable diagnostic ZIP is superseded by this record.
 
 The summary reports count, last, minimum, maximum and mean milliseconds separately
 for source observations, successful host sends and non-cancelled cadence waits.
@@ -218,9 +233,29 @@ write/drain or panel rendering. Source observations without frames still count.
 Failed calls and cancelled waits do not count. Stop/error retain the current report;
 a new admitted native Start resets it. Simulation has no native report.
 
-For the later authorized observation, report only these numeric summaries alongside
+For the authorized observation, report only these numeric summaries alongside
 host count and exact failure/Stop status; avoid sharing private URLs or full settings.
 No diagnostic export, image capture, logging or timing history is added. Successful
 sample statistics alone cannot set failure deadlines or prove panel FPS. Existing
 cadence, safety caps, native zero retries and cleanup/rollback rules remain unchanged.
 See [the runtime timing contract](usb-runtime.md#native-numeric-timing-diagnostic-candidate).
+
+### Measure with the diagnostic
+
+1. Exit the old app normally and confirm its processes close. Keep its extracted
+   folder and saved settings/backup; do not delete settings or overwrite old files.
+2. Download the diagnostic artifact above. Verify the **inner ZIP** using
+   `Get-FileHash .\MarsDisplay-0.1.4-Windows-x64.zip -Algorithm SHA256` against the
+   diagnostic hash, not the earlier P5 hash. Extract the whole inner ZIP into a new
+   folder and launch that `MarsDisplay.exe`. Stop on security warnings or mismatch.
+3. Confirm it starts stopped and retains the intended native configuration. Start
+   once; scroll to **Native timing** if necessary. This Start resets the aggregates,
+   not the lifetime frame counter. Do not change settings or restart during sampling.
+4. After approximately one minute, capture all three timing rows and host count.
+   At five minutes, capture them again with elapsed time. Hide private URLs.
+5. Stop and capture the retained timing report/status after acknowledgement. Report
+   any errors, visible freezes and whether the sweep changed; do not retry an error.
+
+The needed rows are **Source read (observations)**, **Host send (encoding / IPC /
+helper total)** and **Cadence wait (non-cancelled)**, each with count/last/min/max/mean.
+No command-line diagnostic mode, file export or per-frame disk log is required.

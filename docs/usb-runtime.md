@@ -44,9 +44,11 @@ snapshot mode, independent of draft settings and source live/stale observations.
 
 ## Native numeric timing (diagnostic candidate)
 
-Status / Settings now shows **Native timing** in its scrollable body. This source
-change is not part of the immutable qualified P5 ZIP; a separate diagnostic Windows
-artifact must be verified before owner use.
+Status / Settings shows **Native timing** in its scrollable body. Diagnostic source
+`d79eb805a943ddc4f0ee08a108a885e3edc23833` passed separate Windows and artifact
+qualification; it is not the immutable P5 ZIP. Use the
+[verified diagnostic package and measurement steps](usb-hardware-qualification.md#verified-numeric-diagnostic-package).
+Hardware stage measurements and production budgets remain pending.
 
 | Stage | Successful sample measures |
 |---|---|
