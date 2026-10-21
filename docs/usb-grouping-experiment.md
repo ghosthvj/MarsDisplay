@@ -119,7 +119,12 @@ An inventory is not a signature or hardware approval.
 
 Native Windows x64 only: install the existing pinned `.[build]` SDK, then run
 `python -B packaging/build_grouping_experiment.py`. The dedicated manual-only
-`.github/workflows/windows-usb-grouping.yml` runs source tests with zero skips,
+`.github/workflows/windows-usb-grouping.yml` supports manual dispatch once registered
+and a push trigger restricted to `feat/native-usb-hardware` and the explicitly
+listed experiment source, packaging, tests and documentation paths. It has no
+push trigger for `main`, tags, or unrelated file changes. This branch-only trigger
+bootstraps registration without changing the normal portable workflow.
+The workflow runs source tests with zero skips,
 then frozen help/self-test/private rejection, HELLO/CLOSE, malformed IPC,
 admission, parent-death and owned-reap checks. CI never sends OPEN or runs the
 experiment against real inventory. Browser installation in CI serves the existing
