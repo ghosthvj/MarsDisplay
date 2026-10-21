@@ -1,8 +1,8 @@
 # P3 bounded native USB helper
 
-P3 is under implementation. The framing and serial-session core are tested with
-fake providers; owned process admission, public UsbTransport and actual frozen
-Windows routing are not yet qualified. MarsDisplay still composes Simulation.
+P3 is under implementation. Framing, the serial core and the owned UsbTransport
+controller pass source-mode fake-provider tests. Native Windows job/handle behavior
+and the actual frozen application route are not yet qualified. MarsDisplay still composes Simulation.
 Do not invoke the worker core as an unowned production serial service.
 
 ## Private wire v1
@@ -71,7 +71,35 @@ within frame budget, graceful close 5s, owned kill/reap 2s. They are safety limi
 not measured production throughput. Diagnostic 90s is not reused. No P6 continuous,
 latency/FPS, reconnect or landscape claim is established by fake-provider tests.
 
-The remaining owned controller must retain late Popen/failed handle/reap ownership
-and reject reopen/success until cleanup is known; only its child may be terminated.
-The frozen private route must run before app/Qt/settings startup. These remaining
-requirements are tracked in [the P3 ledger](../odd/tasks/native-usb-helper.md).
+## Source API and ownership
+
+`UsbTransport(identity, cancel=None, budgets=Budgets())` performs no I/O during
+construction. Its explicit `open()`, `send(RGBFrame)` and `close()` return None
+on success; native operation is Windows-only. It is not selected by the app.
+Trusted Python-only launcher/gate injection supports isolated tests, never a
+shipping backend/endpoint/executable configuration switch.
+
+Repeated open while healthy is idempotent; accepted sends reuse one child and one
+serial session. Concurrent send rejects immediately instead of joining a queue.
+Close signals cancellation and uses one absolute graceful-close budget, then the
+separate bounded owned-reap budget. Failed/partial delivery never auto-resends.
+Explicit reopening is possible only after confirmed complete cleanup and fresh
+identity resolution. Cancel before startup performs no listener/process/device work.
+
+`owned` stays true while child, creation attempt or channel/native cleanup remains
+owned. A late Popen attempt remains retained and never releases its startup gate;
+a late child is disposed of before I/O. Failed native CloseHandle leaves the raw
+handle reference retryable; no false CLOSED state follows a failed reap/handle close.
+`UsbError` has fixed messages plus `delivery_uncertain` and `ownership_uncertain`
+flags for future lifecycle integration. Invalid frame input is rejected before new
+IPC effects without destroying a healthy session. These are not P5 UI semantics.
+
+Source self-launch uses `python -m mars_display.usb_worker`; frozen launch must use
+the current EXE, never EXE `-m`. The reserved internal form is
+`--usb-worker <ephemeral-port> <64-hex-nonce>`. It is not an interactive command:
+invalid/missing admission exits 2 without output or GUI, and no socket/device I/O
+precedes the owned Windows gate. Child stdin/stdout/stderr are explicitly DEVNULL,
+so windowed None streams cannot produce a pipe bootstrap/deadlock.
+
+The actual packaged route still must prove dispatch before app/Qt/settings startup.
+Pending native proof is tracked in [the P3 ledger](../odd/tasks/native-usb-helper.md).

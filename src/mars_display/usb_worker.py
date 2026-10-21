@@ -108,3 +108,32 @@ def run_session(channel, nonce, *, inventory=enumerate_devices,
                 # Process ownership/reap, not this return code, establishes
                 # cleanup certainty. Never retry a frame or leak native details.
                 pass
+
+
+def main(args=None):
+    """Reserved source/frozen route; no GUI, dialogs or raw error reporting."""
+    import socket
+    import sys
+    from .usb_process import await_admission
+    args = list(sys.argv[1:] if args is None else args)
+    if (len(args) != 3 or args[0] != '--usb-worker'
+            or not re.fullmatch(r'[1-9][0-9]{0,4}', args[1])
+            or int(args[1]) > 65535 or not re.fullmatch('[a-f0-9]{64}', args[2])):
+        return 2
+    forbidden = ('mars_display.app', 'mars_display.settings', 'PySide6.QtCore',
+                 'PySide6.QtGui', 'PySide6.QtWidgets')
+    if any(name in sys.modules for name in forbidden):
+        return 2
+    try:
+        if not await_admission(args[2]):
+            return 2
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as channel:
+            channel.settimeout(5)
+            channel.connect(('127.0.0.1', int(args[1])))
+            return run_session(channel, bytes.fromhex(args[2]))
+    except BaseException:
+        return 2
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
