@@ -1,10 +1,12 @@
 # P4 output configuration contracts
 
 **P4 is qualified at `91e20904cb5f729c520a6fd6799e69087a0cccc6`.**
-This stage is API/contracts only; the selector and native composition remain P5. The GUI has no new mode/profile/device controls.
-The application still starts stopped, defaults to Simulation and rejects saved
-native mode before creating a capture worker or transport. It never substitutes
-Simulation for an explicitly native configuration.
+That qualified stage was API/contracts only: it had no mode/profile/device controls
+and rejected saved native mode before creating a capture worker or transport.
+P5 now adds explicit native composition and stopped selection/recovery controls;
+see the [current runtime/UI guide](usb-runtime.md) for usage and pending acceptance.
+The application still starts stopped and defaults to Simulation. It never
+substitutes Simulation for an explicitly native configuration.
 
 Track implementation and proof in [the P4 ledger](../odd/tasks/native-usb-settings.md).
 [P3 helper qualification](usb-helper.md) is separate; the new P4 evidence is below.
@@ -109,11 +111,14 @@ passing both paths or neither is rejected before resources are created.
 were loaded once at Start and whose `cancel` is that same Start event. Worker/retry
 code never reloads settings or guesses callable arity. There is no TypeError-based
 fallback to another signature; ordinary simulated retry policy remains unchanged.
-Application composition still uses its existing Simulation factory, not USB.
+P4 application composition used its existing Simulation factory, not USB; P5's
+explicit context composition is documented in the runtime guide.
 
-The existing URL editor preserves loaded schema/output/profile/identity fields via
-validated replacement. No native picker, migration checkbox or rollback UI has
-been added. Native configuration remains an API capability, not a GUI opt-in.
+The URL editor preserves loaded schema/output/profile/identity fields via
+validated replacement. P5 adds an explicit mode/identity draft, passive Refresh,
+default-No migration warning and minimal export/restore controls through these same
+Coordinator APIs. Ordinary schema-1 URL Save remains schema 1. No legacy identity
+alone opts in to native mode, and Save does not start capture.
 
 The existing default settings path stays `%LOCALAPPDATA%\MarsDisplay\settings.json`.
 Errors contain fixed actionable text, not supplied URLs, identities or paths.

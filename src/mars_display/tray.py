@@ -1,17 +1,22 @@
 """Injectable Qt tray shell. No application entry point, browser, or USB I/O."""
 from collections.abc import Callable
+from dataclasses import replace
 
 from PySide6.QtCore import QLockFile, QObject, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
-    QApplication, QDialog, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMenu,
+    QApplication, QComboBox, QDialog, QFileDialog, QFrame, QGridLayout, QHBoxLayout,
+    QLabel, QLineEdit, QMenu, QMessageBox,
     QPushButton, QScrollArea, QSystemTrayIcon, QVBoxLayout, QWidget,
 )
 
 from .lifecycle import Coordinator, LifecycleError
 from .presentation import window_stylesheet
 from .preview import FramePreviewDialog
-from .settings import Settings, SettingsError, SettingsStore, SettingsStoreError
+from .settings import (Settings, SettingsError, SettingsStore, SettingsStoreError,
+                       NATIVE_IDENTITY, NATIVE_PROFILE)
+from .devices import (enumerate_devices, select_device, DeviceInventoryError,
+                      DeviceSelectionError)
 
 
 class SingleInstanceGuard:
@@ -51,15 +56,15 @@ def create_shell(app: QApplication, store: SettingsStore,
 
     The caller owns reporting startup errors/already-running and entering exec().
     Invalid settings propagate unchanged, before coordinator creation. The factory
-    must construct an idle Coordinator with this store and SimulatedTransport;
-    it must not start capture. Retain the returned shell for the entire event loop.
+    must construct an idle Coordinator with this store and an explicit output
+    factory; it must not start capture. Retain the shell for the entire event loop.
     """
     guard = SingleInstanceGuard(store)
     if not guard.acquire():
         return None
     try:
         configured = store.load()
-        return TrayShell(app, coordinator_factory(), configured, guard)
+        return TrayShell(app, coordinator_factory(), configured, guard, store=store)
     except Exception:
         guard.release()
         raise
@@ -161,7 +166,7 @@ class SettingsDialog(QDialog):
         details.setVerticalSpacing(12)
         for index, (title, widget) in enumerate((
             ("MARS source state", self.source), ("Output", self.output),
-            ("Source metadata", self.metadata), ("Frames sent (lifetime)", self.frames),
+            ("Source metadata", self.metadata), ("Host-accepted frames (lifetime)", self.frames),
         )):
             details.addWidget(_label(title, "muted"), index * 2, 0)
             alignment = Qt.AlignmentFlag.AlignLeft if index == 0 else Qt.AlignmentFlag(0)
@@ -189,6 +194,25 @@ class SettingsDialog(QDialog):
                              else "Not selected (hardware identification pending)")
         device_layout.addWidget(self.device)
         column.addWidget(device_card)
+        column.addWidget(_label("Output mode (draft until Save)"))
+        self.output_mode = QComboBox()
+        self.output_mode.setAccessibleName("Output mode")
+        self.output_mode.addItem("Simulation", "simulated")
+        self.output_mode.addItem("Native USB", "native")
+        column.addWidget(self.output_mode)
+        column.addWidget(_label(f"Supported native profile: {NATIVE_PROFILE} · 320 × 480 portrait"))
+        self.identity = QComboBox()
+        self.identity.setAccessibleName("Opaque USB identity")
+        column.addWidget(self.identity)
+        self.refresh_devices = QPushButton("Refresh USB identities")
+        self.export_settings = QPushButton("Export schema-1 settings…")
+        self.restore_settings = QPushButton("Restore preserved schema-1 backup…")
+        for button in (self.refresh_devices, self.export_settings, self.restore_settings):
+            button.setAutoDefault(False)
+            column.addWidget(button)
+        column.addWidget(_label("Refresh is passive; it does not open a port. Save checks native availability again. "
+                                "Drafts never change active output. Export does not change saved settings."))
+        self.load_configuration(configured)
         self.message = _label()
         self.message_kind = ""
         self.message.hide()
@@ -206,6 +230,19 @@ class SettingsDialog(QDialog):
         footer_row.addWidget(self.save)
         outer.addWidget(self.footer)
         self.set_dark_mode(False)
+
+    def load_configuration(self, configured):
+        self.url.setText(configured.mars_url if configured else "")
+        self.device.setText(configured.device_identity if configured and configured.device_identity
+                            else "Not selected (hardware identification pending)")
+        native = configured is not None and configured.output_mode == "native"
+        self.output_mode.setCurrentIndex(1 if native else 0)
+        self.identity.clear()
+        self.identity.addItem("Select an explicit USB identity", None)
+        # Only an explicit schema-2 native selection may initialize this draft.
+        if native:
+            self.identity.addItem(configured.device_identity, configured.device_identity)
+            self.identity.setCurrentIndex(1)
 
     def show_message(self, text: str, kind: str = "error"):
         self.message_kind = kind if text else ""
@@ -229,12 +266,15 @@ class TrayShell(QObject):
     """
 
     def __init__(self, app: QApplication, coordinator: Coordinator,
-                 configured: Settings | None, guard: SingleInstanceGuard):
+                 configured: Settings | None, guard: SingleInstanceGuard, *,
+                 store: SettingsStore | None = None):
         super().__init__()
         self.app = app
         self.coordinator = coordinator
         self.guard = guard
         self.configured = configured
+        self.store = store
+        self._inventory = None
         app.setQuitOnLastWindowClosed(False)
         self.dialog = SettingsDialog(configured)
         self.preview = None
@@ -249,6 +289,9 @@ class TrayShell(QObject):
         self.stop_action.triggered.connect(lambda: self._request(coordinator.stop))
         self.exit_action.triggered.connect(lambda: self._request(coordinator.request_exit))
         self.dialog.save.clicked.connect(self._save)
+        self.dialog.refresh_devices.clicked.connect(self._refresh_devices)
+        self.dialog.export_settings.clicked.connect(self._export)
+        self.dialog.restore_settings.clicked.connect(self._restore)
         self._capture_intent = None
         self.dialog.capture_action.pressed.connect(self._capture_pressed)
         self.dialog.capture_action.clicked.connect(self._capture_request)
@@ -303,18 +346,91 @@ class TrayShell(QObject):
             self.show_settings()
         self.refresh()
 
+    def _configuration_guard(self):
+        status = self.coordinator.snapshot()
+        if status.state != "stopped" or status.worker_alive or status.exit_requested:
+            raise LifecycleError("Settings can be saved only while stopped.")
+
+    def _confirm(self, title, text):
+        box = QMessageBox(self.dialog)
+        box.setWindowTitle(title)
+        box.setTextFormat(Qt.TextFormat.PlainText)
+        box.setText(text)
+        box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        box.setDefaultButton(QMessageBox.StandardButton.No)
+        box.setEscapeButton(QMessageBox.StandardButton.No)
+        return box.exec() == QMessageBox.StandardButton.Yes
+
+    def _refresh_devices(self):
+        try:
+            self._configuration_guard()
+            self._inventory = enumerate_devices()
+            self.dialog.identity.clear()
+            self.dialog.identity.addItem("Select an explicit USB identity", None)
+            for item in self._inventory:
+                if item.identity == NATIVE_IDENTITY:
+                    self.dialog.identity.addItem(item.identity, item.identity)
+            self.dialog.show_message("USB identities refreshed. Select explicitly; Save rechecks availability.", "saved")
+        except (LifecycleError, DeviceInventoryError) as error:
+            self._inventory = None
+            self.dialog.show_message(str(error))
+        self.refresh()
+
+    def _export(self):
+        try:
+            self._configuration_guard()
+            destination, _ = QFileDialog.getSaveFileName(
+                self.dialog, "Export schema-1 settings (new file only)", "", "JSON files (*.json)")
+            if destination:
+                self.coordinator.export_schema1_settings(destination)
+                self.dialog.show_message("Schema-1 settings exported. Saved settings are unchanged.", "saved")
+        except (LifecycleError, SettingsError) as error:
+            self.dialog.show_message(str(error))
+        self.refresh()
+
+    def _restore(self):
+        try:
+            self._configuration_guard()
+            if self._confirm("Restore schema 1", "Replace current settings with the preserved schema-1 backup? "
+                             "This restores Simulation and the original URL and identity. Capture will remain stopped."):
+                self.coordinator.restore_schema1_settings()
+                if self.store is not None:
+                    self.configured = self.store.load()
+                    self._inventory = None
+                    self.dialog.load_configuration(self.configured)
+                self.dialog.show_message("Schema-1 backup restored. Capture remains stopped.", "saved")
+        except (LifecycleError, SettingsError) as error:
+            self.dialog.show_message(str(error))
+        self.refresh()
+
     def _save(self):
         try:
             # Coordinator remains the stopped-only authority even if a stale Qt
             # action was queued just before Start.
-            from dataclasses import replace
+            self._configuration_guard()
             settings = (replace(self.configured, mars_url=self.dialog.url.text())
                         if self.configured is not None else Settings(self.dialog.url.text()))
-            self.coordinator.save_settings(settings)
-        except (SettingsError, LifecycleError) as error:
+            if self.dialog.output_mode.currentData() == "native":
+                identity = self.dialog.identity.currentData()
+                if self._inventory is not None or identity is None:
+                    select_device(self._inventory or (), identity)
+                settings = replace(settings, schema_version=2, output_mode="native",
+                                   device_identity=identity, native_profile=NATIVE_PROFILE)
+            else:
+                settings = replace(settings, output_mode="simulated", native_profile=None)
+            if settings.schema_version == 2 and (self.configured is None or self.configured.schema_version == 1):
+                if not self._confirm("Migrate to schema 2", "Schema 2 is incompatible with older binaries. "
+                                     "The original schema-1 settings will be preserved as a backup before replacement. "
+                                     "Use explicit export or restore for older binaries. Migrate and save?"):
+                    return
+                self.coordinator.migrate_settings(settings, acknowledge_legacy_incompatibility=True)
+            else:
+                self.coordinator.save_settings(settings)
+        except (SettingsError, LifecycleError, DeviceSelectionError) as error:
             self.dialog.show_message(str(error))
         else:
             self.configured = settings
+            self.dialog.device.setText(settings.device_identity or "Not selected (hardware identification pending)")
             self.dialog.show_message("Settings saved. Capture remains stopped.", "saved")
         self.refresh()
 
@@ -328,7 +444,11 @@ class TrayShell(QObject):
                 self.preview.update_snapshot(status)
         self.dialog.runtime.setText("recovering (retrying)" if status.state == "retrying" else status.state)
         self.dialog.source.setText(status.source_state)
-        self.dialog.output.setText(f"Simulated — {status.output_state} (no USB output)")
+        native = status.output_mode == "native"
+        self.dialog.output.setText(
+            f"Native USB — {status.output_state} (host completion, not panel acknowledgement)" if native
+            else f"Simulated — {status.output_state} (no USB output)")
+        self.tray.setToolTip(f"MarsDisplay — {'native' if native else 'simulated'} output")
         word = lambda value: "unknown" if value is None else "yes" if value else "no"
         self.dialog.metadata.setText(
             f"Live connected: {word(status.live_connected)}; data stale: {word(status.data_stale)}")
@@ -349,6 +469,10 @@ class TrayShell(QObject):
         can_save = idle and status.state == "stopped"
         self.dialog.save.setEnabled(can_save)
         self.dialog.url.setReadOnly(not can_save)
+        for widget in (self.dialog.output_mode, self.dialog.identity, self.dialog.refresh_devices,
+                       self.dialog.export_settings, self.dialog.restore_settings):
+            widget.setEnabled(can_save)
+        self.dialog.restore_settings.setEnabled(can_save and self.store is not None)
         stopping = status.worker_alive or status.state not in {"stopped", "error"}
         action = self.stop_action if stopping else self.start_action
         self.dialog.capture_action.setProperty("operation", "stop" if stopping else "start")

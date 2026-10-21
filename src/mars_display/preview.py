@@ -30,7 +30,7 @@ class FramePreviewDialog(QDialog):
         self.scroll_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.scroll_area.setWidget(self.image)
         layout.addWidget(self.scroll_area, 1)
-        note = QLabel("Latest frame accepted by simulated output, not USB reception.\n"
+        note = QLabel("Latest frame accepted by host output, not USB reception or panel acknowledgement.\n"
                       "Retained when no new frame arrives; no image history is saved.")
         note.setWordWrap(True)
         note.setObjectName("muted")
@@ -48,7 +48,7 @@ class FramePreviewDialog(QDialog):
         frame = status.latest_frame
         if frame is None:
             self._frame = None
-            self.image.setText("No frame has been delivered yet.\nStart capture to see the output preview.")
+            self.image.setText("No frame has been accepted yet.\nStart capture to see the output preview.")
             self.image.setFixedSize(300, 100)
         elif frame is not self._frame:
             # Own the Qt bytes; never lend a temporary Python buffer to painting.

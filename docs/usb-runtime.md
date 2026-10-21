@@ -1,7 +1,9 @@
 # P5 native runtime contract
 
 **Under implementation, not qualified.** Runtime composition/lifecycle tests are
-passing; selection, migration and truthful preview/status UI are not complete yet.
+passing; the stopped selector, migration/recovery controls and host-preview UI are
+implemented with focused offscreen tests. Final differential, Windows and independent
+acceptance remain pending.
 Do not interpret intermediate source commits or P3/P4 evidence as P5 acceptance.
 Track work in [the P5 ledger](../odd/tasks/native-usb-runtime.md).
 
@@ -35,8 +37,10 @@ both shared geometries. A send rejected before submission reports:
 Neither successful host writes nor an empty host queue prove panel rendering,
 health, physical pixel equivalence or FPS. A retained older Simulation frame must
 not become “USB received” merely because the next configuration is native.
-Preview remains an observer; host-acceptance wording/UI is dependent work, not a
-second capture or an image history.
+Preview remains an observer with neutral “accepted by host output” wording, not a
+second capture, USB reception/panel acknowledgement or an image history. The
+lifetime counter is labeled “Host-accepted frames”; runtime output uses the actual
+snapshot mode, independent of draft settings and source live/stale observations.
 
 ## Failure and cleanup policy
 
@@ -81,9 +85,35 @@ stopped or “force quit.” A lost close acknowledgement after confirmed reap m
 show failure without permanently blocking Exit. Source that really closed is not
 reported as still capturing. Existing simulated cleanup/Stop/Exit behavior remains.
 
-The explicit GUI selector, default-No migration warning, backup/recovery controls,
-reentrancy guards and final host-preview wording are still pending in P5. The
-[P4 configuration format and rollback contracts](usb-settings.md) are preserved.
+## Configure output while stopped
+
+1. Stop capture and wait for actual cleanup acknowledgement.
+2. Choose **Simulation** or **Native USB** under Configuration. Native supports only
+   `tus35-portrait-v1` (320 × 480 portrait).
+3. For a new native selection, click **Refresh USB identities** and explicitly
+   choose the supported opaque identity. Refresh never selects the first device,
+   opens a port or proves continuing availability. There is no periodic polling.
+4. Click **Save**. First native opt-in requires schema 2: the warning explains
+   older-binary incompatibility and preserved schema-1 backup, defaults to **No**,
+   and requires explicit **Yes**. Save rechecks current unique device admission.
+5. Start explicitly. Drafts, Refresh and Save never start or resume capture.
+
+A schema-1 URL-only Save stays schema 1, including with a legacy identity.
+Schema-2 URL edits preserve the output/profile/identity fields. Switching to
+Simulation keeps schema 2 and its passive identity; it is not a downgrade.
+Saved native identity is shown without enumeration. Refresh always requires a
+new explicit choice; missing/duplicate devices are not guessed or substituted.
+
+**Export schema-1 settings…** creates a new old-readable file without changing
+current settings or overwriting an existing destination. **Restore preserved
+schema-1 backup…** asks for default-No confirmation, restores original bytes through
+the Coordinator, and reloads the form in Simulation. Unknown data or invalid backup
+errors remain visible; neither action silently repairs or erases configuration.
+All configuration controls are in the keyboard-accessible scrollable body; Save
+remains in the visible footer. Queued actions and modal confirmations still pass
+through the Coordinator's stopped/no-worker/no-exit checks after the dialog returns.
+
+The [P4 configuration format and rollback contracts](usb-settings.md) are preserved.
 No real USB tests ran on the agent host; tests use controlled peers/children/fake
 ports. Continuous hardware, latency/capacity, hotplug, production deadline budgets
 and additional landscape qualification remain **P6**, not claims from unit tests.
