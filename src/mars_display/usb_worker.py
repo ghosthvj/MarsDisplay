@@ -28,7 +28,8 @@ def _resolve(inventory):
 
 def run_session(channel, nonce, *, inventory=enumerate_devices,
                 port_factory=serial_factory, budgets=ipc.Budgets(),
-                clock=time.monotonic, sleep=time.sleep, timing_clock=time.monotonic):
+                clock=time.monotonic, sleep=time.sleep, timing_clock=time.monotonic,
+                encoder=encode_portrait):
     """Serve one already-admitted channel; injection is Python-only, never CLI.
 
     The parent must bound blocking native calls by owning/terminating this worker
@@ -82,7 +83,7 @@ def run_session(channel, nonce, *, inventory=enumerate_devices,
                     status = WRITE_ERROR
                     deadline = clock() + budgets.frame
                     started = measure()
-                    packets = encode_portrait(frame)
+                    packets = encoder(frame)
                     encode = measure() - started
                     started = measure()
                     for index, packet in enumerate(packets):
