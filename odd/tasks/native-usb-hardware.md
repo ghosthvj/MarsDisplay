@@ -20,7 +20,7 @@ Accepted P6 scope comes from docs/usb-integration-plan.md, P6 section. Keep P0�
 > Keep the default capture cadence target of one/second with synchronous backpressure and no
 > extra queue; do not claim panel FPS from a timer or baud rate.
 
-Native P5 has zero automatic retries; do not introduce retry solely to test it. Ask for reproducible owner evidence, not private endpoint URLs or full user settings. Unavailable physical scenarios stay unqualified, never silently passed.
+Native P5 has zero automatic retries; do not introduce retry solely to test it. Ask for reproducible owner evidence, not private endpoint URLs or full user settings. Unavailable physical scenarios stay unqualified, never silently passed. Owner subsequently accepted continuing T3 with the stated single-screen/COM5 scope: physical COM reassignment and duplicate-unit rejection are excluded from current physical acceptance and explicitly remain unverified; software coverage is separate.
 
 ### S3 — Delivery and separate landscape gate
 > Qualify the packaged native helper, clean checkout build, dependency/license
@@ -42,8 +42,8 @@ Do not tune production deadlines from a single elapsed counter measurement. Reta
 
 - T0 [S1–S4] route: parent inline; status: done; commit: `2954357aa2511566eedfdd45e47dade1edabbbe6` — Pin artifact, reconcile historical documentation and prepare bounded initial owner procedure. Risk: none (documentation).
 - T1 [S1–S4] route: owner physical execution + parent evidence review; status: done; commit: `ee35544` (observations; confirmation in subsequent ledger commit) — Established initial portrait continuous output, accepted-frame correspondence and acknowledged Stop from qualified Windows app.
-- T2 [S2,S4] route: owner physical execution + parent evidence review; status: blocked; commit: pending — Await controlled-disconnect evidence, then exercise unplug/replug, explicit restart, identity/COM/duplicate admission, in-flight Stop and Exit/resource lifetime without forced unrelated cleanup.
-- T3 [S2–S4] route: parent analysis + owner measurement; status: pending; commit: pending — Measure latency/capacity, decide justified production budgets, verify any resulting bounded changes and close only observed hardware conditions. Landscape remains a separate gate.
+- T2 [S2,S4] route: owner physical execution + parent evidence review; status: done; commit: `792bff7` through `4d70a05` (evidence) — Unplug/replug, explicit restart, in-flight Stop, Exit/cold startup and physical port relocation observed. Owner accepted single-screen/COM5 scope; physical COM reassignment and duplicates remain unverified, not passed.
+- T3 [S2–S4] route: parent analysis + owner measurement; status: blocked; commit: pending — Measure latency/capacity, decide justified production budgets, verify any resulting bounded changes and close only observed hardware conditions. Landscape remains a separate gate.
 
 ## Log
 
@@ -102,3 +102,9 @@ L19 — Owner report verbatim:
 > '/my-projects/pantalla/MarsDisplay/.herdr-web-ui/paste-20261021-182937-f50e2ac6.png'
 
 L20 — Inspected screenshotrunning/sourceReady/nativeHostComplete/count29/liveyes/staleno/nativeidentitypreserved/noerror. PhysicalportmoveCOM5→COM5 and manualStartwithoutconfigedit succeeded byownerreport. This passesportrelocationonly, not COMreassignment/oldCOMforeignoccupant orduplicateunitphysicalproof. T2remainspartial: availableportrait/Stop/disconnect/reconnect/Exit/coldstart/portrelocationscenarios observed; nosecondunit and stableCOM prevent remainingphysicalcoverage undercurrentprocedure. Needsownerdecision: proceedT3measurements with explicitlylimited singleunit/COM5qualification and leave missingphysicalscenariosunverified, or pauseuntilrequiredhardware/controlledCOMtestconditions available. No manualCOMreassignment/driverchange or blanketP6acceptance inferred. PendingT3metrics/budget not yet observed; do not tune from1–2svisualestimate.
+
+L21 — Owner report verbatim:
+> cambié a varios puertos USB y siempre mantuvo COM5 como nombre del puerto.
+> Seguimos con T3
+
+L22 — Owner accepted prior offered limitedscope continuation. T2doneonlyforobserved single-screen/COM5conditions; physicalCOMreassignment/duplicates explicitlyunverified (S2updated), not fulloriginalhardwarecoverage. T3blocked awaiting initial5minute stability sample: no restart/configedit/disconnect duringwindow; C0/C1hostcounts withactualelapsed monotonicstopwatch, screenshots and observedfreeze/redraw/error behavior; StopafterC1andrecordfinalack/countstability separately. Five minutes is a firstmeasurementwindow, not a productionsoak requirement. Compute(C1−C0)/elapsedonlyashostacceptedrate, not panelFPS/maxcapacity/per-operationUSBtiming. Existingframe20s/write3s/drain15s caps remainunchanged/provisional; no productionbudgetclaim fromthissample. Iferrorappearsstopandreportwithoutautomaticretry.

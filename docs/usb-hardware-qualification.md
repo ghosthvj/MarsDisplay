@@ -139,3 +139,27 @@ A successful move with the same COM number proves only physical-port relocation,
 not COM reassignment. A second identical screen is currently unavailable, so
 physical duplicate-identity rejection is unverified; software coverage does not
 replace that missing physical scenario.
+
+## T3: first five-minute stability sample
+
+The owner accepted continuing with one screen on COM5. Physical COM reassignment
+and duplicate-screen rejection remain unverified. No Windows driver changes are
+needed to manufacture those scenarios.
+
+1. Use the same verified package, source and saved settings. If stopped, Start once;
+   if already running correctly, do not restart just to reset the lifetime counter.
+2. While running, record host count C0 and start a stopwatch. Capture the status.
+3. Leave capture running for five minutes without changing settings, unplugging,
+   restarting or resetting the counter. Observe physical redraw, freezes, corrupted
+   content and errors. If an error appears, end the observation and report it without
+   retrying; do not silently exclude the failed interval.
+4. Before Stop, record count C1, actual elapsed seconds and status screenshot.
+5. Then Stop. Record acknowledgement time and the count after another ten seconds;
+   report any delivery-uncertainty warning separately from the running interval.
+
+Report C0, C1, elapsed seconds, running errors/freezes and whether visible refresh
+remained roughly consistent. `(C1 - C0) / elapsed_seconds` measures average host
+acceptance during this observation, not physical panel FPS, maximum throughput or
+USB write/drain latency. Five minutes is an initial observation, not proof of an
+unbounded stable run. A successful sample alone cannot establish production
+operation deadlines; the existing safety caps remain unchanged and provisional.
