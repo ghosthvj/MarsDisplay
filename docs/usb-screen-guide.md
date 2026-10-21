@@ -1,16 +1,21 @@
 # Work with the USB screen
 
-**One native Windows diagnostic portrait frame is owner-validated. MarsDisplay
-0.1.4 still uses simulated output and does not drive this screen.** Use this guide
+**The standalone C# and Python native Windows portrait diagnostics are
+owner-validated for one frame each. MarsDisplay 0.1.4 still uses simulated output
+and does not drive this screen.** Use this guide
 for the known-good diagnostic; see the [integration proposal](usb-integration-plan.md)
 for future application work. The owner has now authorized **P0–P2 only**, tracked
 in [the Python bridge ledger](../odd/tasks/native-python-usb-probe.md). The
-production output stages remain proposals; Python rendering is not yet qualified.
+production output stages remain proposals; Python acceptance covers only the
+single frozen portrait image, not continuous output or application integration.
 
-## Python P2 owner test pending
+<a id="python-p2-owner-test-pending"></a>
 
-The separate **PythonUsbProbe 1.0.0** package is now Windows-qualified, but its
-physical output has not been owner-accepted. MarsDisplay still uses Simulation.
+## Python P2 owner-validated frame
+
+The separate **PythonUsbProbe 1.0.0** package is Windows-qualified, and the owner
+provided matching console and physical-image evidence on **2026-10-21**.
+**P0–P2 are complete.** MarsDisplay still uses Simulation.
 The C# artifact below remains preserved; do not confuse the two executables.
 
 - Source: `a26350dd74d1d03d999bbead5195dfc20d4a5344`.
@@ -40,13 +45,22 @@ empty input cancels without opening. Do not automate confirmation or resend.
 
 Expected completion is exactly:
 `Host transfer complete: 122 packets, 307222 bytes; not a rendering ACK.`
-Supply the final console and a photo matching the packaged `pattern.png`. If an
-error or corrupted image occurs, stop and retain both; do not change protocol or
-retry automatically. No GUI/continuous output is enabled by this test.
+The owner observed that exact completion after entering `COM5` and `SEND COM5`.
+The accompanying photo visually matches the upright TOP/up arrow, corners 1/2/3/4,
+horizontal RGB bands, white bottom-left, black bottom-right and border in
+`pattern.png`. The paired evidence closes the Python single-frame P2 gate; the
+host message alone is not a rendering ACK. COM5 remains an observation, not a default.
+Owner photos remain private and are not embedded in the repository or distribution.
+
+No repeat is needed to close this gate. If a later explicit test fails, preserve
+console and photo, stop, and do not automatically resend or change protocol.
+Continuous output, latency/FPS, reconnect, landscape and application integration
+remain unqualified; P3–P6 require separate authorization.
 
 The immutable packaged README retains its pre-CI preparation wording. The native
-receipts and this dated-candidate record establish packaging qualification only;
-its physical-acceptance warning still applies.
+receipts establish packaging qualification; the owner's paired evidence above
+separately establishes one-frame physical acceptance. This current record supersedes
+the historical pending wording without modifying the qualified ZIP.
 
 ## Previously accepted C# path: Windows 11 x64
 
@@ -101,8 +115,9 @@ seconds. The parent's final Enter prompt is outside that budget.
 | Label | SHCHV TUS-35; USB Screen; Input DC 5V 100mA; IP30 indoor. Label rating, not measured current. |
 | Boot display | `PLEASE RUN THE APP WWW.TURZX.COM` |
 | USB | VID `1A86`, PID `5722`, serial `USB35INCHIPSV2` |
-| Owner test | Current COM5, exact WMI identity, health 0; explicit selection and typed confirmation worked. |
-| Qualification | One frozen 320×480 portrait frame through the native C# diagnostic. |
+| Earlier C# owner test | COM5, exact WMI identity, health 0; explicit selection and typed confirmation worked. |
+| Python owner test | 2026-10-21: COM5, typed SEND COM5, 122 packets/307222 bytes completed; matching reference photo. |
+| Qualification | One frozen 320×480 portrait frame through each standalone C# and Python diagnostic; no continuous-output claim. |
 
 VID/PID are shared by protocol A/B devices; they do not select a protocol.
 The serial may be reused across units. Missing, unknown or duplicate identities

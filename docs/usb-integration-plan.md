@@ -2,23 +2,28 @@
 
 **Proposal only: no native application output is implemented or authorized here.**
 The [working diagnostic guide](usb-screen-guide.md) establishes one owner-accepted
-portrait frame. It does not qualify continuous output or a Python transport.
+portrait frame through each standalone C# and Python diagnostic. It does not
+qualify continuous output or a production Python transport.
 
 **Implementation update:** the owner has authorized `ok, vamos con P0 - P2`.
 Track only those stages in [the Python bridge ledger](../odd/tasks/native-python-usb-probe.md).
 P3–P6 remain proposals; this does not authorize application USB output.
 
-**Current gate:** P0 and P1 are complete. The standalone Python P2 package at
+**Current gate:** P0–P2 are complete, including owner physical acceptance of one
+frozen portrait image on 2026-10-21. The standalone Python P2 package at
 `a26350dd74d1d03d999bbead5195dfc20d4a5344` passed
 [Windows qualification](https://github.com/ghosthvj/MarsDisplay/actions/runs/39512376268):
 70 tests without skips, extracted frozen commands and owned-process lifetime checks.
 Source, licenses, native bytes and checksums passed parent and independent readback.
 The final local regression run passed 226 tests, with three Windows-only skips;
 independent focused verification passed 67, with the same three expected skips.
-**P2 physical acceptance remains pending:** the owner must run this Python package
-and supply its console result and a matching reference photo. See the
-[Python owner-test steps](usb-screen-guide.md#python-p2-owner-test-pending).
-Neither CI nor earlier C# success permits application integration.
+**P2 physical acceptance is observed:** the owner supplied the Python console
+(`COM5`, typed `SEND COM5`, 122 packets/307222 bytes completed) and a photo visually
+matching the canonical reference. See the
+[Python evidence and limits](usb-screen-guide.md#python-p2-owner-validated-frame).
+This is one-frame proof, not a device rendering ACK or continuous-output qualification.
+The next proposed stage is P3's persistent bounded helper, but P3–P6 remain
+unauthorized. MarsDisplay stays in Simulation; no application wiring is enabled.
 
 Original request, verbatim:
 > documenta todo lo necesario para poder trabajar con la pantalla y prepara el plan de integracion en MarsDisplay!
