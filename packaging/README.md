@@ -25,6 +25,14 @@ application output, P5/P6 or continuous hardware claim; mechanical bindings are
 not legal certification. See [P4 contracts/evidence](../docs/usb-settings.md) and
 [the P4 ledger](../odd/tasks/native-usb-settings.md).
 
+## P5 source-guide inclusion (qualification pending)
+
+The explicit helper source allowlist now also includes `docs/usb-runtime.md`
+byte-for-byte. This is not a whole-documentation-directory glob; build output,
+ODD ledgers and private workspace state remain excluded. The previous P5 ZIP
+omitted this guide and is not the qualified replacement. See the
+[P5 runtime contract](../docs/usb-runtime.md) for the pending qualification.
+
 ## Qualified P3 helper — application remains simulated
 
 The `feat/native-usb-helper` candidate keeps 0.1.4 application output simulated.

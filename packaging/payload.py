@@ -165,7 +165,7 @@ def collect_source(root):
         fixtures = ['tools/windows-usb-probe/' + name for name in
                     ('pattern.png', 'pattern.rgb565', 'pattern.rgb888', 'pattern.json',
                      'rgb888-provenance.json')]
-        files.update(read_tree(root, (*fixtures, 'docs/usb-helper.md')))
+        files.update(read_tree(root, (*fixtures, 'docs/usb-helper.md', 'docs/usb-runtime.md')))
     workflow = '.github/workflows/windows-portable.yml'
     if (root / workflow).exists() or (root / workflow).is_symlink():
         files.update(read_tree(root, (workflow,)))

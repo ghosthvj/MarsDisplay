@@ -85,6 +85,14 @@ class PayloadTests(unittest.TestCase):
         self.assertIn('src/mars_display/usb_worker.py', source)
         self.assertFalse(any(name.startswith(('build/', 'odd/', '.herdr-web-ui/')) for name in source))
 
+    def test_p5_runtime_guide_is_packaged_byte_exact(self):
+        source = self.payload.collect_source(Path('.'))
+        name = 'docs/usb-runtime.md'
+        self.assertIn(name, source)
+        self.assertEqual(source[name], Path(name).read_bytes())
+        self.assertFalse(any(path.startswith(('build/', 'odd/', '.herdr-web-ui/'))
+                             for path in source))
+
     def test_source_allowlist_and_symlink_rejection(self):
         repo = self.root / 'repo'; repo.mkdir()
         for name in ['src/mars_display/app.py', 'packaging/entrypoint.py', 'tests/fixtures/display.html', 'README.md', 'LICENSE', 'pyproject.toml', 'requirements.txt', 'requirements-build.txt', '.env', 'odd/tasks/private.md', 'src/settings.json', 'tests/__pycache__/test.pyc']:
