@@ -471,6 +471,9 @@ class TrayShell(QObject):
                 ("Helper queue drain (ms)", report.drain),
                 ("Host IPC body encode (ms)", report.body_encode),
                 ("Host exchange (includes helper work) (ms)", report.exchange),
+                ("Helper orientation write (ms)", report.orientation),
+                ("Helper bitmap-header write (ms)", report.header),
+                ("Helper pixel writes (ms)", report.pixels),
             ):
                 if title.endswith("(ms)") and not aggregate.count:
                     timing_lines.append(f"{title}: unavailable (count 0)")
@@ -481,6 +484,7 @@ class TrayShell(QObject):
                 timing_lines.append(
                     f"{title}: count {aggregate.count}; last {values[0]}; min {values[1]}; "
                     f"max {values[2]}; mean {values[3]}")
+            timing_lines.append("Write groups are subsets of total packet writes, not additional costs.")
             timing_lines.append("Host send is not isolated serial write/drain or panel rendering. "
                                 "Counts are independent, not panel FPS.")
             timing_lines.append("Host exchange includes helper work; do not add exchange and helper stages as separate costs.")

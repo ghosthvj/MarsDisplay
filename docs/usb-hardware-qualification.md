@@ -328,3 +328,17 @@ separate costs. Host-send total still is not panel rendering latency. Stop/error
 retain the successful report; an admitted native Start resets it. Failures are
 excluded, so even these finer successful measurements cannot alone establish
 failure deadlines or justify protocol, serial, retry or cadence changes.
+
+## Pending grouped-write diagnostic — not delivered
+
+The next candidate preserves all ten rows and adds **Helper orientation write**,
+**Helper bitmap-header write** and **Helper pixel writes** with count/last/min/max/mean
+milliseconds. They are subsets of total packet writes, not extra costs. Existing
+packages above remain immutable and do not contain these rows. Do not use this
+candidate on hardware before separate exact-source Windows/artifact qualification.
+
+After that delivery is verified, the same bounded measurement procedure should
+capture all thirteen rows and host count near one/five minutes and after Stop.
+Report unavailable detail as unavailable, never zero. No private URLs, packet
+histories or exports are needed. These successful-only measurements do not authorize
+orientation omission, chunk/baud/CTS changes, retries or deadline tuning.

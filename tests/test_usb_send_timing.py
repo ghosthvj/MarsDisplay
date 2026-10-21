@@ -140,17 +140,17 @@ class TimingTests(unittest.TestCase):
                 original = ipc.receive_packet
                 def receive(channel, *a, **kw):
                     kind, request, body = original(channel, *a, **kw)
-                    if kind != ipc.TIMED_REPLY:return kind, request, body
+                    if kind != ipc.GROUPED_REPLY:return kind, request, body
                     if mode == 'cancel':cancel.set()
                     if mode == 'ordinary_ok':return ipc.REPLY, request, b'\x00'
                     if mode == 'failure':return ipc.REPLY, request, bytes([worker.WRITE_ERROR])
                     if mode == 'wrong_request':request += 1
                     if mode == 'wrong_kind':kind = ipc.FRAME
                     if mode == 'short':body = b'\x00'
-                    if mode == 'status':body = struct.pack('!B5d', 1, 0, 0, 0, 0, 0)
+                    if mode == 'status':body = struct.pack('!B8d', 1, *([0.] * 8))
                     if mode in ('negative', 'nan', 'inf'):
                         value = -1 if mode == 'negative' else float(mode)
-                        body = struct.pack('!B5d', 0, 0, 0, 0, 0, value)
+                        body = struct.pack('!B8d', 0, 0, 0, 0, 0, value, 0, 0, 0)
                     return kind, request, body
                 stdout, stderr = io.StringIO(), io.StringIO()
                 with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr), \

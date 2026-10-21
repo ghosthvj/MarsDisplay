@@ -38,17 +38,23 @@ class TimingUITests(unittest.TestCase):
                 'Helper queue drain (ms): unavailable (count 0)\n'
                 'Host IPC body encode (ms): unavailable (count 0)\n'
                 'Host exchange (includes helper work) (ms): unavailable (count 0)\n'
+                'Helper orientation write (ms): unavailable (count 0)\n'
+                'Helper bitmap-header write (ms): unavailable (count 0)\n'
+                'Helper pixel writes (ms): unavailable (count 0)\n'
+                'Write groups are subsets of total packet writes, not additional costs.\n'
                 'Host send is not isolated serial write/drain or panel rendering. Counts are independent, not panel FPS.\n'
                 'Host exchange includes helper work; do not add exchange and helper stages as separate costs.')
             self.assertEqual(dialog.native_timing.textFormat(), Qt.TextFormat.PlainText)
             measured = replace(report, decode=stage, identity=stage, encode=stage, write=stage,
-                               drain=stage, body_encode=stage, exchange=stage)
+                               drain=stage, body_encode=stage, exchange=stage,
+                               orientation=stage, header=stage, pixels=stage)
             with patch.object(shell.coordinator, 'snapshot', return_value=replace(
                     before, output_mode='native', native_timing=measured)):
                 shell.refresh()
                 for title in ('Helper frame decode', 'Helper identity resolution',
                               'Helper RGB565 encode', 'Helper packet writes', 'Helper queue drain',
-                              'Host IPC body encode', 'Host exchange (includes helper work)'):
+                              'Host IPC body encode', 'Host exchange (includes helper work)',
+                              'Helper orientation write', 'Helper bitmap-header write', 'Helper pixel writes'):
                     self.assertIn(f'{title} (ms): count 2; last 125.000; min 62.500; '
                                   'max 187.500; mean 125.000', dialog.native_timing.text())
             shell.refresh()

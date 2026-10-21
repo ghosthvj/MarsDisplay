@@ -32,6 +32,8 @@ Each message starts with the 16-byte network-order struct `!4sBBHII`:
 | REPLY | 5 | Exactly one fixed status byte; request must match the operation |
 | TIMED_FRAME | 6 | Same exact validated payload as FRAME; diagnostic pair only |
 | TIMED_REPLY | 7 | Exactly 41 bytes, `!B5d`: OK (0), then five duration seconds |
+| GROUPED_FRAME | 8 | Same exact validated payload as FRAME; grouped diagnostic pair only |
+| GROUPED_REPLY | 9 | Exactly 65 bytes, `!B8d`: OK (0), five original durations, then orientation/header/pixels |
 
 Frames support only 320x480 portrait, 460800 tightly packed RGB bytes, and a finite
 nonnegative capture time. This does not narrow shared RGBFrame/Simulation support
@@ -45,7 +47,7 @@ absolute deadline. Send/receive cancellation and partial progress never renew it
 ### Additive send diagnostic (unqualified candidate)
 
 Legacy OPEN/FRAME/CLOSE and one-byte replies remain byte-for-byte unchanged.
-The new parent sends TIMED_FRAME and requires a matching TIMED_REPLY success;
+The original diagnostic uses TIMED_FRAME with matching TIMED_REPLY success;
 ordinary OK, wrong request/kind/status, malformed sizes and negative/nonfinite
 values are terminal failures, never fallback or resend. Timed failures carry only
 the existing non-OK REPLY status, never partial measurements.
@@ -56,6 +58,20 @@ the connection: no diagnostic timestamps, identities, ports or payload history.
 The Python-only `timing_clock` injection is independent of deadline clocks; safety
 budgets, serial options and the device stream below are unchanged. This extension
 requires the same packaged parent/helper pair and separate artifact qualification.
+
+### Grouped write diagnostic (unqualified candidate)
+
+The current parent sends GROUPED_FRAME and requires GROUPED_REPLY; it never accepts
+an older timed success in its place or resends with an older kind. Legacy FRAME and
+41-byte TIMED_REPLY semantics stay intact. The 65-byte reply appends orientation
+write, bitmap-header write and all pixel writes, in seconds. Each numeric slot must
+be finite and nonnegative; length, kind, request and OK status are strict. Failures
+return only the existing non-OK status and never publish partial detail.
+
+These three durations are subsets of the unchanged total write-loop measurement,
+not additive costs. Only the diagnostic clock is consulted at group boundaries;
+122 writes/307222 bytes, order, 2560-byte pixel chunks, serial options and deadline
+checks are unchanged. No per-packet history or new device commands are introduced.
 
 ## Persistent serial session
 
@@ -105,6 +121,9 @@ identity resolution. Cancel before startup performs no listener/process/device w
 
 `last_send_timing` is a read-only optional frozen `SendTiming` value, in seconds:
 `decode`, `identity`, `encode`, `write`, `drain`, `body_encode`, `exchange`.
+An optional keyword-only `groups` holds frozen `WriteTiming(orientation, header,
+pixels)`. Existing seven-argument constructors remain valid; absent/None groups
+mean unavailable, not measured zeros.
 The parent measures IPC-body encoding and the full request/reply exchange. Exchange
 **includes helper work**, not pure IPC latency; do not sum it with helper stages as
 independent costs. `send()` still returns None. Publication occurs only after full

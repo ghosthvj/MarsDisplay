@@ -65,11 +65,12 @@ def run_session(channel, nonce, *, inventory=enumerate_devices,
                     port.dtr = True
                     port.port = selected
                     port.open()
-                elif kind in (ipc.FRAME, ipc.TIMED_FRAME):
+                elif kind in (ipc.FRAME, ipc.TIMED_FRAME, ipc.GROUPED_FRAME):
                     if port is None:
                         raise ValueError('USB session is not open')
                     # Legacy operations do not consult the diagnostic clock.
-                    measure = timing_clock if kind == ipc.TIMED_FRAME else lambda: 0
+                    grouped = kind == ipc.GROUPED_FRAME
+                    measure = timing_clock if kind != ipc.FRAME else lambda: 0
                     started = measure()
                     frame = ipc.decode_frame(body)
                     decode = measure() - started
@@ -84,11 +85,20 @@ def run_session(channel, nonce, *, inventory=enumerate_devices,
                     packets = encode_portrait(frame)
                     encode = measure() - started
                     started = measure()
-                    for packet in packets:
+                    for index, packet in enumerate(packets):
+                        if grouped and index < 3:
+                            group_started = measure()
                         if clock() >= deadline:
                             raise TimeoutError('USB frame deadline exceeded')
                         if port.write(packet) != len(packet):
                             raise OSError('USB write failed')
+                        if grouped:
+                            if index == 0:
+                                orientation = measure() - group_started
+                            elif index == 1:
+                                header = measure() - group_started
+                            elif index == len(packets) - 1:
+                                pixels = measure() - group_started
                     write = measure() - started
                     status = DRAIN_ERROR
                     deadline = min(deadline, clock() + budgets.drain)
@@ -98,10 +108,13 @@ def run_session(channel, nonce, *, inventory=enumerate_devices,
                             raise TimeoutError('USB queue drain exceeded')
                         sleep(0.01)
                     drain = measure() - started
-                    if kind == ipc.TIMED_FRAME:
-                        detail = ipc.WorkerTiming(decode, identity, encode, write, drain)
-                        ipc.send_packet(channel, ipc.TIMED_REPLY, request,
-                                        ipc.encode_timing(detail), time.monotonic() + budgets.start)
+                    if kind != ipc.FRAME:
+                        groups = ipc.WriteTiming(orientation, header, pixels) if grouped else None
+                        detail = ipc.WorkerTiming(decode, identity, encode, write, drain, groups=groups)
+                        reply_kind = ipc.GROUPED_REPLY if grouped else ipc.TIMED_REPLY
+                        payload = ipc.encode_grouped_timing(detail) if grouped else ipc.encode_timing(detail)
+                        ipc.send_packet(channel, reply_kind, request,
+                                        payload, time.monotonic() + budgets.start)
                         continue
                 elif kind == ipc.CLOSE:
                     status = CLOSE_ERROR

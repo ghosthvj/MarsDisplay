@@ -25,7 +25,8 @@ class SendTimingTests(unittest.TestCase):
     assert_stage = timing.TimingTests.assert_stage
 
     def test_real_transport_success_then_invalid_reply_retains_all_accepted_detail(self):
-        for mode in ('failure', 'short', 'negative', 'nan', 'inf', 'wrong_request', 'wrong_kind', 'status'):
+        invalid_slots = tuple(f'{value}:{slot}' for value in ('negative', 'nan', 'inf') for slot in range(5, 8))
+        for mode in ('failure', 'short', 'wrong_request', 'wrong_kind', 'status', 'legacy', *invalid_slots):
             with self.subTest(mode=mode):
                 outputs, children, gates = [], [], []
                 snapshots = []
@@ -34,20 +35,24 @@ class SendTimingTests(unittest.TestCase):
                 ticks = itertools.count()
                 def receive(channel, *args, **kwargs):
                     kind, request, body = original_receive(channel, *args, **kwargs)
-                    if kind == ipc.TIMED_REPLY and request == 3:
+                    if kind == ipc.GROUPED_REPLY and request == 3:
                         if mode == 'failure':
                             return ipc.REPLY, request, bytes([worker.WRITE_ERROR])
                         if mode == 'short':
                             body = b'\x00'
-                        if mode in ('negative', 'nan', 'inf'):
-                            value = -1 if mode == 'negative' else float(mode)
-                            body = struct.pack('!B5d', 0, value, 0, 0, 0, 0)
+                        if ':' in mode:
+                            value, slot = mode.split(':')
+                            durations = [0.] * 8
+                            durations[int(slot)] = -1 if value == 'negative' else float(value)
+                            body = struct.pack('!B8d', 0, *durations)
+                        if mode == 'legacy':
+                            return ipc.TIMED_REPLY, request, struct.pack('!B5d', 0, *([0.] * 5))
                         if mode == 'wrong_request':
                             request += 1
                         if mode == 'wrong_kind':
                             kind = ipc.FRAME
                         if mode == 'status':
-                            body = struct.pack('!B5d', 1, 0, 0, 0, 0, 0)
+                            body = struct.pack('!B8d', 1, *([0.] * 8))
                     return kind, request, body
                 def factory(context):
                     output, peers, handles = transport.TransportTests.make(
@@ -83,6 +88,11 @@ class SendTimingTests(unittest.TestCase):
                     self.assert_stage(getattr(status.native_timing, name), 1, value, value, value, value)
                     self.assertEqual(getattr(status.native_timing, name),
                                      getattr(snapshots[0].native_timing, name))
+                for name in ('orientation', 'header', 'pixels'):
+                    value = getattr(outputs[0].last_send_timing.groups, name)
+                    self.assert_stage(getattr(status.native_timing, name), 1, value, value, value, value)
+                    self.assertEqual(getattr(status.native_timing, name),
+                                     getattr(snapshots[0].native_timing, name))
                 self.assertEqual(status.native_timing.host_send.count, 1)
                 self.assertEqual(status.native_timing.source_read.count, 2)
                 self.assertEqual(self.store.path.read_bytes(), raw)
@@ -94,16 +104,17 @@ class SendTimingTests(unittest.TestCase):
                 self.assertEqual(controller.snapshot().native_timing, status.native_timing)
 
     def test_optional_details_and_independent_numeric_aggregates(self):
-        for optional in ('absent', None, 'measured'):
+        for optional in ('absent', None, 'measured', 'grouped'):
             with self.subTest(optional=optional):
                 gate = GateWait()
                 class Output(NativeOutput):
                     def send(self, frame):
                         super().send(frame)
-                        if optional == 'measured':
+                        if optional in ('measured', 'grouped'):
                             # Real measured zero must differ from unavailable detail.
-                            self.last_send_timing = (SendTiming(*([0.] * 7)) if self.sends == 1
-                                                     else SendTiming(*([.5] * 7)))
+                            value = 0. if self.sends == 1 else .5
+                            groups = ipc.WriteTiming(value, value, value) if optional == 'grouped' else None
+                            self.last_send_timing = SendTiming(*([value] * 7), groups=groups)
                 output = Output()
                 if optional is None:
                     output.last_send_timing = None
@@ -118,9 +129,12 @@ class SendTimingTests(unittest.TestCase):
                 before = controller.snapshot()
                 self.assertEqual((before.frames_sent, before.failures, before.retries), (2, 0, 0))
                 self.assertIs(before.latest_frame, FIRST)
-                self.assertEqual(len(fields(before.native_timing)), 10)
+                self.assertEqual(len(fields(before.native_timing)), 13)
                 for name in STAGES:
-                    expected = (2, .5, 0, .5, .25) if optional == 'measured' else (0, 0, 0, 0, 0)
+                    expected = (2, .5, 0, .5, .25) if optional in ('measured', 'grouped') else (0, 0, 0, 0, 0)
+                    self.assert_stage(getattr(before.native_timing, name), *expected)
+                for name in ('orientation', 'header', 'pixels'):
+                    expected = (2, .5, 0, .5, .25) if optional == 'grouped' else (0, 0, 0, 0, 0)
                     self.assert_stage(getattr(before.native_timing, name), *expected)
                 self.assertFalse(controller.start())
                 self.assertEqual(controller.snapshot().native_timing, before.native_timing)

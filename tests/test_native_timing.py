@@ -86,7 +86,8 @@ class TimingTests(unittest.TestCase):
         before = controller.snapshot()
         report = before.native_timing
         self.assertEqual({f.name for f in fields(report)}, {'source_read', 'host_send', 'cadence_wait',
-                          'decode', 'identity', 'encode', 'write', 'drain', 'body_encode', 'exchange'})
+                          'decode', 'identity', 'encode', 'write', 'drain', 'body_encode', 'exchange',
+                          'orientation', 'header', 'pixels'})
         with self.assertRaises(FrozenInstanceError):
             report.source_read = None
         self.assert_stage(report.source_read, 2, .375, .125, .375, .25)

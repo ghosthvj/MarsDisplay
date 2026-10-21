@@ -92,6 +92,9 @@ class NativeTiming:
     drain: TimingAggregate = TimingAggregate()
     body_encode: TimingAggregate = TimingAggregate()
     exchange: TimingAggregate = TimingAggregate()
+    orientation: TimingAggregate = TimingAggregate()
+    header: TimingAggregate = TimingAggregate()
+    pixels: TimingAggregate = TimingAggregate()
 
 
 @dataclass(frozen=True)
@@ -172,6 +175,10 @@ class Coordinator:
             # includes helper stages; these aggregates are not additive costs.
             for name in ("decode", "identity", "encode", "write", "drain", "body_encode", "exchange"):
                 changes[name] = getattr(report, name).observe(getattr(detail, name))
+            groups = getattr(detail, "groups", None)
+            if groups is not None:
+                for name in ("orientation", "header", "pixels"):
+                    changes[name] = getattr(report, name).observe(getattr(groups, name))
         self._update(native_timing=replace(report, **changes))
 
     def _reap_locked(self):

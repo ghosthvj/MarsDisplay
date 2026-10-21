@@ -1,5 +1,5 @@
 """Bounded private USB IPC. No sockets, files or devices opened at import."""
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 import math
 import socket
 import struct
@@ -10,6 +10,8 @@ from .frames import RGBFrame, _validate_frame
 HELLO, OPEN, FRAME, CLOSE, REPLY = range(1, 6)
 TIMED_FRAME, TIMED_REPLY = 6, 7
 TIMING = struct.Struct('!B5d')
+GROUPED_FRAME, GROUPED_REPLY = 8, 9
+GROUPED_TIMING = struct.Struct('!B8d')
 HEADER = struct.Struct('!4sBBHII')
 METADATA = struct.Struct('!HHd')
 FRAME_BYTES = METADATA.size + 320 * 480 * 3
@@ -21,6 +23,23 @@ class ProtocolError(ValueError):
 
 
 @dataclass(frozen=True)
+class WriteTiming:
+    """Three successful write-loop subsets, not additional costs."""
+    orientation: float
+    header: float
+    pixels: float
+
+    def __post_init__(self):
+        for item in fields(self):
+            _timing_seconds(getattr(self, item.name))
+
+
+def _timing_seconds(value):
+    if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+        raise ValueError('USB timings must be nonnegative finite seconds')
+
+
+@dataclass(frozen=True)
 class WorkerTiming:
     """Successful helper stages, in seconds; never clock timestamps."""
     decode: float
@@ -28,12 +47,16 @@ class WorkerTiming:
     encode: float
     write: float
     drain: float
+    groups: WriteTiming | None = field(default=None, kw_only=True)
 
     def __post_init__(self):
-        for field in fields(self):
-            value = getattr(self, field.name)
-            if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
-                raise ValueError('USB timings must be nonnegative finite seconds')
+        for item in fields(self):
+            value = getattr(self, item.name)
+            if item.name == 'groups':
+                if value is not None and not isinstance(value, WriteTiming):
+                    raise ValueError('Invalid USB write timing detail')
+            else:
+                _timing_seconds(value)
 
 
 def encode_timing(detail):
@@ -48,6 +71,23 @@ def decode_timing(body):
     if status != 0:
         raise ProtocolError('Invalid USB timing status')
     return WorkerTiming(*durations)
+
+
+def encode_grouped_timing(detail):
+    if not isinstance(detail.groups, WriteTiming):
+        raise ValueError('USB grouped timing is required')
+    return GROUPED_TIMING.pack(0, detail.decode, detail.identity, detail.encode,
+                              detail.write, detail.drain, detail.groups.orientation,
+                              detail.groups.header, detail.groups.pixels)
+
+
+def decode_grouped_timing(body):
+    if not isinstance(body, bytes) or len(body) != GROUPED_TIMING.size:
+        raise ProtocolError('Invalid USB grouped timing length')
+    status, *durations = GROUPED_TIMING.unpack(body)
+    if status != 0:
+        raise ProtocolError('Invalid USB grouped timing status')
+    return WorkerTiming(*durations[:5], groups=WriteTiming(*durations[5:]))
 
 
 class Cancelled(RuntimeError):
@@ -94,13 +134,15 @@ def _remaining(deadline, cancel):
 def _shape(kind, request, size):
     if type(request) is not int or not 0 <= request <= 0xffffffff:
         raise ValueError('Invalid USB request identifier')
-    if type(kind) is not int or kind not in (HELLO, OPEN, FRAME, CLOSE, REPLY, TIMED_FRAME, TIMED_REPLY):
+    if type(kind) is not int or kind not in (HELLO, OPEN, FRAME, CLOSE, REPLY,
+                                             TIMED_FRAME, TIMED_REPLY, GROUPED_FRAME, GROUPED_REPLY):
         raise ValueError('Unknown USB message type')
     if (kind == HELLO) != (request == 0):
         raise ValueError('Invalid USB request order')
     valid_size = {HELLO: size == 32, OPEN: 0 < size <= 128,
                   FRAME: size == FRAME_BYTES, CLOSE: size == 0, REPLY: size == 1,
-                  TIMED_FRAME: size == FRAME_BYTES, TIMED_REPLY: size == TIMING.size}
+                  TIMED_FRAME: size == FRAME_BYTES, TIMED_REPLY: size == TIMING.size,
+                  GROUPED_FRAME: size == FRAME_BYTES, GROUPED_REPLY: size == GROUPED_TIMING.size}
     if not valid_size[kind]:
         raise ValueError('Invalid USB message length')
 

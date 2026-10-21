@@ -111,8 +111,10 @@ class UsbTransport:
             raise ipc.ProtocolError('Unexpected USB reply')
         if kind == ipc.TIMED_FRAME and response == ipc.TIMED_REPLY:
             return ipc.decode_timing(value)
+        if kind == ipc.GROUPED_FRAME and response == ipc.GROUPED_REPLY:
+            return ipc.decode_grouped_timing(value)
         if (response != ipc.REPLY or len(value) != 1 or value[0] > CLOSE_ERROR
-                or (kind == ipc.TIMED_FRAME and value[0] == OK)):
+                or (kind in (ipc.TIMED_FRAME, ipc.GROUPED_FRAME) and value[0] == OK)):
             raise ipc.ProtocolError('Unexpected USB reply')
         return value[0]
 
@@ -177,13 +179,13 @@ class UsbTransport:
             try:
                 deadline = time.monotonic() + self.budgets.frame
                 started = self._timing_clock()
-                result = self._exchange(ipc.TIMED_FRAME, body, deadline, cancel=self._cancel)
+                result = self._exchange(ipc.GROUPED_FRAME, body, deadline, cancel=self._cancel)
                 exchange = self._timing_clock() - started
                 if not isinstance(result, ipc.WorkerTiming):
                     uncertain = result in (WRITE_ERROR, DRAIN_ERROR, CLOSE_ERROR)
                     raise RuntimeError('USB frame failed')
                 detail = SendTiming(result.decode, result.identity, result.encode,
-                                    result.write, result.drain, body_encode, exchange)
+                                    result.write, result.drain, body_encode, exchange, groups=result.groups)
                 self._check(deadline)
                 self._last_send_timing = detail
             except BaseException:

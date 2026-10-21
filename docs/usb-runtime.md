@@ -58,7 +58,7 @@ Hardware stage measurements and production budgets remain pending.
 
 Each stage shows its independent count, last, minimum, maximum and mean in
 milliseconds. A zero count displays dashes, not measured zero latency. The immutable
-snapshot holds only ten fixed-size numeric aggregates in RAM (durations internally
+snapshot holds only thirteen fixed-size numeric aggregates in RAM (durations internally
 in seconds). There are no timestamps, images, URLs, identities, credentials, histories,
 logs or exports in this diagnostic. Reading the display does not capture another frame.
 
@@ -95,11 +95,26 @@ exchange pure IPC/USB latency or panel rendering. Missing/None optional detail
 leaves counts unchanged; count-zero detail rows show `unavailable (count 0)`, not
 measured zero latency. A successful measured zero has a positive sample count.
 Failed sends never aggregate retained stale detail. Admitted native Start resets
-all ten aggregates; Stop/error retain them and Simulation has no native report.
+all thirteen aggregates; Stop/error retain them and Simulation has no native report.
 No extra capture, history, settings, logs or export is introduced.
 
 Existing qualified P5 and `d79eb80` diagnostic ZIPs remain immutable; this new
 candidate requires its own Windows/source/artifact qualification before owner use.
+
+### Grouped writes (unqualified candidate)
+
+The original ten rows remain. Three more rows show **Helper orientation write**,
+**Helper bitmap-header write**, and **Helper pixel writes**, each with independent
+count/last/min/max/mean milliseconds. These are subsets of **Helper packet writes**,
+not additional costs; the total write measurement remains available.
+
+Only fully validated successful sends contribute. Optional earlier transport detail
+without `groups` leaves these rows unavailable, not measured zero. Stop/error retain
+all successful aggregates; admitted Start resets them and Simulation removes the
+report. The existing scrollable status body keeps Save in its reachable footer.
+Device bytes, serial options, scheduling, cancellation and deadlines are unchanged.
+This richer IPC pair needs independent exact-source Windows/artifact qualification;
+none of the earlier immutable diagnostic packages acquires these rows retroactively.
 
 ## Failure and cleanup policy
 
