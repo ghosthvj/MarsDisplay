@@ -329,16 +329,34 @@ retain the successful report; an admitted native Start resets it. Failures are
 excluded, so even these finer successful measurements cannot alone establish
 failure deadlines or justify protocol, serial, retry or cadence changes.
 
-## Pending grouped-write diagnostic — not delivered
+## Verified grouped-write diagnostic package
 
-The next candidate preserves all ten rows and adds **Helper orientation write**,
+- Source: `7a7fe1d8d86afcf549f77c263c83991703e34a01`.
+- [Grouped diagnostic artifact 12379222327](https://github.com/ghosthvj/MarsDisplay/actions/runs/39670365388/artifacts/12379222327).
+- Inner ZIP: `MarsDisplay-0.1.4-Windows-x64.zip`, 205,712,143 bytes.
+- SHA256: `67438b701952e588a3417c8101b1c79ced9fde021a9cb2baa22c9d73fa9efe34`.
+
+Windows passed 270 tests / 69.567s with zero skips. Independent focused verification
+passed 55 tests plus one numeric/framing boundary probe. Its initial isolated run
+failed before tests because the verifier omitted a public fixture; after repairing
+that copy, the authorized corrected run passed without candidate source changes.
+Parent and independent ZIP checks verified all 1,254 payload files, 354 exact Git
+Windows-checkout source files plus four SDK records, 69 AMD64 PE32+ binaries,
+native material/license references and the recorded packaged helper smoke.
+The owner explicitly declined native RDD for this candidate; no approval or global
+switch change is claimed. Pending wording inside the immutable ZIP is superseded here.
+
+This package preserves all ten rows and adds **Helper orientation write**,
 **Helper bitmap-header write** and **Helper pixel writes** with count/last/min/max/mean
 milliseconds. They are subsets of total packet writes, not extra costs. Existing
-packages above remain immutable and do not contain these rows. Do not use this
-candidate on hardware before separate exact-source Windows/artifact qualification.
+packages above remain immutable and do not contain these rows.
 
-After that delivery is verified, the same bounded measurement procedure should
+Exit the prior app normally, preserve settings/backups and old extracted folders,
+verify this inner ZIP hash, and extract the complete package into a new folder.
+Confirm stopped startup before one explicit Start. Use the same bounded procedure:
 capture all thirteen rows and host count near one/five minutes and after Stop.
+Stop on an error and report it without retrying. Do not disable Windows protections;
+a publisher/reputation warning is separate from checksum verification.
 Report unavailable detail as unavailable, never zero. No private URLs, packet
 histories or exports are needed. These successful-only measurements do not authorize
 orientation omission, chunk/baud/CTS changes, retries or deadline tuning.
