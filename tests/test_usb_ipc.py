@@ -69,6 +69,22 @@ class IPCTests(unittest.TestCase):
         for direction in ('read','write'):
             a,b=socket.socketpair();self.addCleanup(a.close);self.addCleanup(b.close)
             a.setsockopt(socket.SOL_SOCKET,socket.SO_SNDBUF,1024)
+            b.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,1024)
+            if direction == 'write':
+                # SO_SNDBUF alone does not bound the peer's Windows receive queue.
+                # Establish actual backpressure before timing the public operation.
+                fill_deadline, filled = time.monotonic()+2, 0
+                while True:
+                    remaining = fill_deadline-time.monotonic()
+                    self.assertGreater(remaining, 0, 'Could not establish socket backpressure')
+                    self.assertLess(filled, 16*1024*1024, 'Socket backpressure fill exceeded cap')
+                    a.settimeout(min(0.05, remaining))
+                    try:
+                        sent = a.send(b'x'*65536)
+                    except socket.timeout:
+                        break
+                    self.assertGreater(sent, 0)
+                    filled += sent
             start=time.monotonic()
             with self.subTest(direction=direction), self.assertRaises(TimeoutError):
                 if direction=='read':ipc.receive_packet(a,start+0.05)
