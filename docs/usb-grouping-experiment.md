@@ -2,8 +2,9 @@
 
 This is an **owner-run experiment**, not a change to normal MarsDisplay or a
 performance claim. Do not run it unattended. The agent does not run real USB tests.
-A separate frozen Windows console delivery is pending T2 qualification; do not
-substitute the normal application executable.
+The separate console is named **MarsDisplayGroupingExperiment.exe**; do not
+substitute the normal application executable. Native Windows artifact qualification
+is still required before delivery; source tests alone are not binary evidence.
 
 ## Safe commands
 
@@ -25,7 +26,8 @@ profile, fixture-path, repeat, or environment-profile options.
 1. For a packaged delivery, verify the published artifact SHA-256 and source
    manifest first. Close MarsDisplay **and all vendor/probe software**; the app
    lock cannot exclude unrelated vendor applications. Nothing kills them for you.
-2. Explicitly opt in with `python -m mars_display.usb_grouping_experiment --run`.
+2. Explicitly opt in with `python -m mars_display.usb_grouping_experiment --run`,
+   or `.\MarsDisplayGroupingExperiment.exe --run` from PowerShell for a qualified ZIP.
 3. Read the currently resolved COM port. Type exactly the displayed confirmation,
    for example `A COM5`. Empty input, other input, Ctrl-C at a prompt, or EOF
    cancels. Inventory must identify exactly one supported device and no competing
@@ -95,6 +97,46 @@ Code 4 is returned only once owned cleanup is known complete. Self-test success:
 ```text
 Self-test OK: fixed public fixture; A=122 B=62 writes; identical 307222 bytes; no device access.
 ```
+
+## Separate Windows build and artifact verification
+
+Prerequisite: official **VC++ v14 x64 14.51+**; Microsoft DLLs are not bundled.
+Extract the entire qualified ZIP into a fresh directory. In PowerShell:
+
+```powershell
+Get-FileHash .\MarsDisplayGroupingExperiment-0.1.4-Windows-x64.zip -Algorithm SHA256
+.\MarsDisplayGroupingExperiment.exe --help
+.\MarsDisplayGroupingExperiment.exe --self-test
+```
+
+Compare the ZIP digest with its `.zip.sha256` sidecar. `inventory.json` uses
+`schema: marsdisplay-grouping-v1`, `profile: usb-grouping-v1`, `source_commit`,
+`source_files` (relative source path → SHA256), and `files` (relative payload
+path → SHA256, excluding inventory itself). Verify every declared file and reject
+undeclared ZIP members. `native_components` bind actual native bytes to source,
+licenses and fresh binary evidence; `packaged_smoke` records no-device checks.
+An inventory is not a signature or hardware approval.
+
+Native Windows x64 only: install the existing pinned `.[build]` SDK, then run
+`python -B packaging/build_grouping_experiment.py`. The dedicated manual-only
+`.github/workflows/windows-usb-grouping.yml` runs source tests with zero skips,
+then frozen help/self-test/private rejection, HELLO/CLOSE, malformed IPC,
+admission, parent-death and owned-reap checks. CI never sends OPEN or runs the
+experiment against real inventory. Browser installation in CI serves the existing
+source regression suite only; the experimental payload excludes Playwright.
+
+The additive `usb-grouping-v1` API retains all SDK pins and original source-policy
+trust anchors. Core/Gui/Widgets, the shared guard's native bindings, qwindows and
+Shiboken are mandatory. Only named stock GUI plugins, the exact optional paired
+Python SSL DLLs, and the complete reviewed stock TUIO/Network/TLS closure can
+supplement them, each with original policy hash/RECORD/PE binding. A partial
+Network/TLS closure is rejected; absent components are not inventoried. Unknown/missing material fails closed. Normal profile defaults remain
+unchanged. No generic subset option or unbundled-component presence claim exists.
+
+Only a successful build uploads the separately named ZIP and checksum. Failures
+are unqualified, never uploaded as binaries. Existing outputs are never replaced;
+a partial experimental publication after an I/O failure requires investigation
+and a fresh build location, not an overwrite. Normal outputs/settings are untouched.
 
 ## T2 console entry
 
