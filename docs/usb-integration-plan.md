@@ -1,4 +1,18 @@
-# USB integration proposal for MarsDisplay
+# USB integration plan for MarsDisplay
+
+**Current status:** P0–P5 are complete for their recorded scope. P5 software is
+qualified at `56ea091cfae996101e5106cf1acc64898bd52b59`; native output requires
+explicit stopped opt-in and Simulation remains the default. The owner authorized
+P6 with `continuamos con P6`. Physical qualification is now pending owner evidence,
+not completed by CI. See [P5 evidence](usb-runtime.md#verified-p5-evidence),
+[the P6 procedure](usb-hardware-qualification.md) and
+[the P6 ledger](../odd/tasks/native-usb-hardware.md).
+
+## Historical proposal and stage context
+
+The authorization and code-map statements below describe the earlier proposal,
+not the current P5 runtime. Their P5/P6 authorization restrictions are superseded
+by the current status above; stage requirements and safety boundaries still apply.
 
 **Application wiring remains a proposal: the app still uses Simulation.**
 P0–P4 are complete. P4 delivered API/contracts only;

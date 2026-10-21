@@ -1,5 +1,16 @@
 # Work with the USB screen
 
+**Current application status:** P5 now supports explicit native output and passed
+[software qualification](usb-runtime.md#verified-p5-evidence). P6 owner-run hardware
+testing is authorized but not yet accepted. Use [the P6 procedure](usb-hardware-qualification.md)
+for the application, not the standalone commands below.
+
+## Historical standalone diagnostic evidence
+
+The following Simulation-only and pending-authorization statements describe the
+older diagnostic milestones. Current application status is above; the historical
+one-frame evidence and its hardware limitations remain unchanged.
+
 **The standalone C# and Python native Windows portrait diagnostics are
 owner-validated for one frame each. MarsDisplay 0.1.4 still uses simulated output
 and does not drive this screen.** Use this guide
