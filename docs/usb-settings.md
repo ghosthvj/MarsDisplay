@@ -45,8 +45,9 @@ Static settings validity is not hardware permission or proof of current selectio
 An old binary rejects schema 2. Trusted callers must acknowledge that fact and
 preserve old-readable data before replacing configuration. The low-level store
 APIs are not lifecycle authority: application operations must pass through the
-Coordinator's stopped-only transaction admission (dependent P4 work still pending).
-Do not use them to bypass a running application or an instance lock.
+Coordinator's stopped-only transaction admission. Save, migration, export and
+restore share Start's lock and reject active, stopping or exiting state.
+Do not use raw store methods to bypass an application or its instance lock.
 
 ```python
 store.migrate_to_v2(
@@ -82,6 +83,37 @@ operations through the Coordinator and keep external editors closed.
   Unknown/invalid current configuration or an invalid backup is not erased.
 - No automatic downgrade, backup deletion, settings-directory scan or hardware
   reset is performed. Keep the original backup for the older binary.
+
+## Coordinator and Start-context API
+
+Use these trusted, explicit operations while stopped:
+
+- `coordinator.save_settings(value)` edits without changing schema version.
+- `coordinator.migrate_settings(value, acknowledge_legacy_incompatibility=True)`
+  preserves schema 1 before incompatible migration.
+- `coordinator.export_schema1_settings(destination)` and
+  `coordinator.restore_schema1_settings()` perform explicit recovery operations.
+
+An explicit native Save/migration passively resolves the current unique identity
+and COM occupancy using the unchanged P3 selection rule. Missing/duplicate/unknown
+or competing current-COM observations reject before persistence. A device moved
+to COM8 is not followed to its old COM5 when another device occupies COM5.
+Loading, simulated Save, native Start rejection and recovery never enumerate.
+No port is opened by these configuration operations.
+
+Existing zero-argument output injection remains:
+`Coordinator(store, source_factory, transport_factory)`. The distinct named path is
+`Coordinator(store, source_factory, transport_context_factory=context_factory)`;
+passing both paths or neither is rejected before resources are created.
+`context_factory(context)` receives one immutable `StartContext` whose `settings`
+were loaded once at Start and whose `cancel` is that same Start event. Worker/retry
+code never reloads settings or guesses callable arity. There is no TypeError-based
+fallback to another signature; ordinary simulated retry policy remains unchanged.
+Application composition still uses its existing Simulation factory, not USB.
+
+The existing URL editor preserves loaded schema/output/profile/identity fields via
+validated replacement. No native picker, migration checkbox or rollback UI has
+been added. Native configuration remains an API capability, not a GUI opt-in.
 
 The existing default settings path stays `%LOCALAPPDATA%\MarsDisplay\settings.json`.
 Errors contain fixed actionable text, not supplied URLs, identities or paths.

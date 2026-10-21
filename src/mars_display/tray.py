@@ -307,8 +307,9 @@ class TrayShell(QObject):
         try:
             # Coordinator remains the stopped-only authority even if a stale Qt
             # action was queued just before Start.
-            settings = Settings(self.dialog.url.text(),
-                                self.configured.device_identity if self.configured else None)
+            from dataclasses import replace
+            settings = (replace(self.configured, mars_url=self.dialog.url.text())
+                        if self.configured is not None else Settings(self.dialog.url.text()))
             self.coordinator.save_settings(settings)
         except (SettingsError, LifecycleError) as error:
             self.dialog.show_message(str(error))

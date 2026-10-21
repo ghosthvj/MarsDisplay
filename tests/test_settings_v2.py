@@ -193,7 +193,7 @@ class SettingsV2Tests(unittest.TestCase):
         self.path.write_bytes(raw);source,output=Mock(),Mock()
         coordinator=Coordinator(self.store,source,output)
         before=coordinator.snapshot()
-        with patch('mars_display.devices.enumerate_devices') as inventory,patch('mars_display.usb_process.launch_worker') as launch:
+        with patch('mars_display.lifecycle.enumerate_devices') as inventory,patch('mars_display.usb_process.launch_worker') as launch:
             with self.assertRaises(LifecycleError) as error:coordinator.start()
         self.assertEqual(str(error.exception),NATIVE_START_ERROR)
         source.assert_not_called();output.assert_not_called();inventory.assert_not_called();launch.assert_not_called()

@@ -255,6 +255,43 @@ class TrayTests(unittest.TestCase):
         self.assertEqual(shell.coordinator.snapshot().frames_sent, retained)
         self.assertEqual(self.store.path.read_bytes(), original)
 
+    def test_schema2_simulated_url_edit_preserves_version_and_fields(self):
+        self.store.save(Settings('https://mars.example','passive-id'))
+        original=Settings('https://mars.example','passive-id',2,'simulated',None)
+        self.store.migrate_to_v2(original,acknowledge_legacy_incompatibility=True)
+        backup=self.store.schema1_backup_path.read_bytes()
+        shell=self.make(configured=False)
+        shell.dialog.url.setText('https://changed.example')
+        shell.dialog.save.click()
+        self.assertEqual(self.store.load(),Settings('https://changed.example','passive-id',2,'simulated',None))
+        self.assertEqual(self.store.schema1_backup_path.read_bytes(),backup)
+        self.assertEqual(shell.dialog.message.text(),'Settings saved. Capture remains stopped.')
+        self.assertFalse(self.session.opened.is_set())
+        self.assertEqual(shell.coordinator.snapshot().frames_sent,0)
+
+    def test_schema2_native_url_edit_and_both_start_controls_stay_safe(self):
+        from mars_display.devices import USBSerialDescriptor
+        identity='usb:1a86:5722:USB35INCHIPSV2';profile='tus35-portrait-v1'
+        self.store.save(Settings('https://mars.example'))
+        original=Settings('https://mars.example',identity,2,'native',profile)
+        self.store.migrate_to_v2(original,acknowledge_legacy_incompatibility=True)
+        raw=self.store.path.read_bytes();backup=self.store.schema1_backup_path.read_bytes()
+        observation=USBSerialDescriptor('COM8',0x1a86,0x5722,'USB35INCHIPSV2',None,None,None,None,None)
+        with patch('mars_display.lifecycle.enumerate_devices',return_value=(observation,),create=True) as inventory:
+            shell=self.make(configured=False)
+            for operation in (shell.start_action.trigger,shell.dialog.capture_action.click):
+                operation()
+                self.assertEqual(shell.dialog.message.text(),'Native output is configured but is not enabled in this build. Select Simulation explicitly.')
+                self.assertFalse(self.session.opened.is_set())
+                self.assertEqual(shell.coordinator.snapshot().frames_sent,0)
+                self.assertEqual(self.store.path.read_bytes(),raw)
+            inventory.assert_not_called()
+            shell.dialog.url.setText('https://changed.example');shell.dialog.save.click()
+            self.assertEqual(self.store.load(),Settings('https://changed.example',identity,2,'native',profile))
+            inventory.assert_called_once()
+        self.assertEqual(self.store.schema1_backup_path.read_bytes(),backup)
+        self.assertFalse(self.session.opened.is_set())
+
     def test_url_footer_and_feedback_follow_stopped_only_authority(self):
         shell = self.make()
         original = self.store.path.read_bytes()
