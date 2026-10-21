@@ -88,3 +88,8 @@ L15 — Owner report verbatim:
 > al pulsar Exit los procesos se cerraron completamente de forma instantanea. al iniciar la aplicacion esta se mantuvo en Stopped hasta que yo manualmente le dia Start Capture
 
 L16 — Accept bounded Exit/coldrelaunch scenario from ownerconfirmation plus priorPID/screenshots: previousapp/helperprocesses disappearedbeforefreshlaunch, perceivedinstantaneousExit(noquantifiedlatency), newlaunchstayedStoppeduntilmanualStart. No forcedcleanup or spontaneousresume reported; savednativeconfiguration preserved in priorcapture. T2remaining scope is physicalCOMreassignment/duplicateidentity availability, not repeatingpassedExit/reconnect. Ask whether anotherUSBport andsecondmatchingunit are available; changingports doesnotguaranteeCOMchange and no manualdriver/COM reassignment authorizedhere. No availableduplicate device must remain an explicituntestedboundary, not fakepass. T3productionlatency/capacitybudgetstillpending.
+
+L17 — Owner report verbatim:
+> si tengo otro puerto USB disponible, pero no tengo ninguna otra pantalla
+
+L18 — Duplicate-unit physical test unavailable: owner has one screen. Keep duplicate rejection software evidence separate; physicalduplicatecoverage remainsunverified, not passed or silentlyremoved. AnotherUSBport available permits controlledphysicalportmove, but only a measured oldCOM/newCOMdifference proves COMreassignment. Next whileconnected recordcurrentCOMinDeviceManager, Stopandwaitack, movethesameunittootherUSBport, recordnewCOM, verify noautoresume, thenStartoncewithoutchangingsavedidentity/configuration. Observecount/physicalportrait; onerrorstopbeforeanyretry. Do not manuallyassignCOMnumbers/changeWindowsdrivers or attachunrelatedserialdevices. T2blocked on portmoveevidence; T3pending.

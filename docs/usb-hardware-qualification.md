@@ -120,3 +120,22 @@ After explicit reconnect/Start has succeeded:
 A retained panel image after Exit is not evidence of continued USB writes. This
 check observes application/helper lifetime; it does not establish exclusive
 ownership or cleanup of every browser process on the machine.
+
+## Follow-up: move the same screen to another USB port
+
+With one screen and a spare USB port, record the screen's current COM number in
+Windows Device Manager before moving it. Do not change driver settings or assign
+COM numbers manually.
+
+1. Click Stop and wait for acknowledged `stopped` and closed output.
+2. Move only that screen to the spare USB port. Record its new COM number in
+   Device Manager. Keep the application's saved identity and settings unchanged.
+3. Confirm capture has not resumed automatically. Click Start once and observe
+   host-count advancement and physical portrait updates. If it fails, report the
+   message before retrying. If it succeeds, Stop again and report both COM values,
+   count and physical result.
+
+A successful move with the same COM number proves only physical-port relocation,
+not COM reassignment. A second identical screen is currently unavailable, so
+physical duplicate-identity rejection is unverified; software coverage does not
+replace that missing physical scenario.
