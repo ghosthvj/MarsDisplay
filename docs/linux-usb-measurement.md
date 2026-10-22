@@ -105,5 +105,8 @@ wire/command/admission and actual fake-child parent-death probes, and the full
 full-suite attempt aborted before tests because Qt's default xcb plugin could not
 initialize; the final run used the project's existing `QT_QPA_PLATFORM=offscreen`
 configuration without installing anything. These are offline source checks, not
-Linux hardware timing or native Windows qualification. Real hardware execution
-and permission changes remain out of scope.
+Linux hardware timing or native Windows qualification. Hardware execution and
+permission changes were outside that preparation scope. The owner subsequently
+authorized one controlled real run; see the [first hardware result](linux-usb-measurement-results.md)
+for observed host timings, unchanged device metadata and pending visual validation.
+That separate execution authorization is not an unattended-run permission.
