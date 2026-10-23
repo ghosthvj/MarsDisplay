@@ -6,7 +6,8 @@ from time import monotonic
 from typing import Callable, Protocol
 
 from .frames import RGBFrame
-from .settings import Settings, SettingsError, SettingsStore, _checked, _ACK_ERROR
+from .settings import (Settings, SettingsError, SettingsStore, _checked, _ACK_ERROR,
+                       _ACK_V3_ERROR, BRIGHTNESS_LEVELS)
 from .devices import enumerate_devices
 from .transport import Transport
 from .usb_transport import UsbError
@@ -117,6 +118,8 @@ class Snapshot:
     delivery_uncertain: bool = False
     ownership_uncertain: bool = False
     native_timing: NativeTiming | None = None
+    brightness_requested: int | None = None
+    brightness_applied: int | None = None
 
 
 _CLEANUP_ERROR = "Cleanup failed; restart the application before starting again."
@@ -159,6 +162,7 @@ class Coordinator:
         self._outcome = "stopped"
         self._cleanup_failed = False
         self._retained_resources = []
+        self._active_settings = None
         self._native_close_failed = False
 
     def _update(self, **changes):
@@ -220,6 +224,7 @@ class Coordinator:
                 raise LifecycleError("Configure a MARS URL before starting.")
             if settings.output_mode == "native" and self._transport_context_factory is None:
                 raise LifecycleError("Native output requires an explicit Start-context factory; no fallback was started.")
+            self._active_settings = settings
             self._cancel = Event()
             self._outcome = "stopped"
             self._native_close_failed = False
@@ -227,6 +232,9 @@ class Coordinator:
             self._status = replace(self._status, state="starting", source_state="starting",
                                    output_mode=settings.output_mode,
                                    native_timing=NativeTiming() if native else None,
+                                   brightness_requested=(settings.brightness_percent
+                                       if native and settings.schema_version == 3 else None),
+                                   brightness_applied=None,
                                    output_state=("native-opening" if native else
                                                  "simulated-closed" if self._status.output_mode == "native"
                                                  else self._status.output_state),
@@ -314,6 +322,57 @@ class Coordinator:
             checked = self._configuration_selection_locked(settings)
             self._store.migrate_to_v2(checked, acknowledge_legacy_incompatibility=True)
 
+    def enable_brightness(self, *, acknowledge_legacy_incompatibility=False) -> Settings:
+        """Explicit stopped-only migration of the saved native configuration."""
+        with self._lock:
+            self._configuration_stopped_locked()
+            if acknowledge_legacy_incompatibility is not True:
+                raise SettingsError(_ACK_V3_ERROR)
+            current = self._store.load()
+            if current is None or current.output_mode != "native":
+                raise LifecycleError("Save a native USB configuration before enabling brightness.")
+            checked = self._configuration_selection_locked(replace(current, schema_version=3))
+            self._store.migrate_to_v3(checked, acknowledge_legacy_incompatibility=True)
+            self._status = replace(self._status, brightness_requested=checked.brightness_percent,
+                                   brightness_applied=None)
+            return checked
+
+    def set_brightness(self, percent: int) -> Settings:
+        """Persist only brightness, then publish latest intent; never perform USB I/O."""
+        if type(percent) is not int or percent not in BRIGHTNESS_LEVELS:
+            raise SettingsError("Brightness must be an integer percentage: 20, 40, 60, 80 or 100.")
+        with self._lock:
+            self._reap_locked()
+            if (self._status.exit_requested or self._cleanup_failed
+                    or (self._worker is not None and (self._cancel.is_set() or self._status.failure_kind))
+                    or self._status.state not in {"stopped", "starting", "running"}):
+                raise LifecycleError("Brightness cannot change during stopping, error or Exit.")
+            current = self._store.load()
+            if current is None or current.output_mode != "native" or current.schema_version != 3:
+                raise LifecycleError("Enable saved brightness for native USB while stopped first.")
+            if self._worker is not None and current != self._active_settings:
+                raise LifecycleError("Settings changed outside this session; stop before changing brightness.")
+            checked = replace(current, brightness_percent=percent)
+            if checked != current:
+                self._store.save(checked)
+            self._active_settings = checked
+            self._status = replace(self._status, brightness_requested=percent)
+            return checked
+
+    def restore_pre_brightness_settings(self) -> None:
+        with self._lock:
+            self._configuration_stopped_locked()
+            self._store.restore_pre_brightness()
+            self._status = replace(self._status, brightness_requested=None, brightness_applied=None)
+
+    def _apply_brightness(self, output, cancel):
+        # Only the capture thread calls this, between whole synchronous frames.
+        status = self.snapshot()
+        value = status.brightness_requested
+        if value is not None and value != status.brightness_applied and not cancel.is_set():
+            output.set_brightness(value)
+            self._update(brightness_applied=value)
+
     def restore_schema1_settings(self) -> None:
         with self._lock:
             self._configuration_stopped_locked()
@@ -380,6 +439,11 @@ class Coordinator:
         if stage == "source":
             kind = "native-source"
             message = "Capture failed; native output was not retried."
+        elif stage == "brightness":
+            uncertain = error.delivery_uncertain if isinstance(error, UsbError) else True
+            kind = "native-brightness-uncertain" if uncertain else "native-brightness"
+            message = ("Brightness delivery is uncertain; no automatic retry. Use Start explicitly."
+                       if uncertain else "Brightness failed; no automatic retry. Use Start explicitly.")
         elif stage == "send" and isinstance(error, (ValueError, TypeError)):
             kind = "native-rejected"
             message = "Native output rejected the frame before submission; only validated 320x480 portrait is supported."
@@ -425,6 +489,11 @@ class Coordinator:
                     self._update(output_state="native-open" if native else "simulated-open")
                     while not cancel.is_set():
                         started = monotonic()
+                        if native:
+                            stage = "brightness"
+                            self._apply_brightness(output, cancel)
+                        if cancel.is_set():
+                            break
                         stage = "source"
                         if native:
                             stage_started = self._diagnostic_clock()

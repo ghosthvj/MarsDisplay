@@ -7,13 +7,41 @@ performance or interactive Windows-tray acceptance; those boundaries remain belo
 The immutable ZIP contains earlier pending wording, superseded by this record.
 Track work in [the P5 ledger](../odd/tasks/native-usb-runtime.md).
 
+## Saved brightness candidate
+
+Schema-3 native settings add five brightness choices: **20%, 40%, 60%, 80%, 100%**.
+Older schema-1/2 configurations retain their previous behavior with no brightness
+commands until explicit stopped migration. See [settings recovery](usb-settings.md).
+
+`Coordinator.enable_brightness(acknowledge_legacy_incompatibility=True)` migrates
+only the saved native configuration while stopped and rechecks device selection.
+`set_brightness(percent)` validates and atomically saves only brightness, then
+replaces one latest requested value. It never applies unsaved URL/device drafts,
+opens a port, or performs USB work on the UI thread. Failed saves leave intent
+unchanged. Live changes reject an externally changed configuration; stop and
+review it rather than overwriting it. Stop/error/Exit reject changes.
+
+The existing capture thread applies the saved value after explicit native Start
+and subsequent changes between complete frame operations on the same connection.
+Rapid pending changes coalesce to the latest value. No frame is interrupted,
+resent or counted for a brightness command, and frame timing excludes that command.
+Loading/empty source observations do not prevent brightness application. The
+snapshot separates `brightness_requested` from `brightness_applied` (last successful
+host completion in this Start), never a measured panel value.
+
+Brightness failure stops native output without automatic retry or restoration:
+`native-brightness` means reported failure without known transfer;
+`native-brightness-uncertain` means delivery is uncertain. Explicit Start reloads
+the saved choice; Stop/Exit sends no brightness command. Windows packaged acceptance
+of this integration remains separate from the earlier isolated Linux test.
+
 ## Explicit output composition
 
 The app constructs output from one validated, immutable StartContext:
 
 - Schema 1 or explicit simulated mode constructs Simulation, even with a saved
   opaque device identity. No identity alone grants native permission.
-- Explicit validated schema-2 native mode/profile/identity constructs the
+- Explicit validated schema-2/3 native mode/profile/identity constructs the
   [owned USB transport](usb-helper.md) with that Start's same cancellation event.
 - Construction/import/load does not enumerate, open a port or launch a helper.
 - A legacy zero-argument-only factory cannot start native settings. It reports:
