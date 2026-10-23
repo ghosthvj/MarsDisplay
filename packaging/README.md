@@ -18,8 +18,10 @@ The existing 27 native/six supplemental components and 209 material hashes remai
 bound to shipped files. Four Stop regressions and four Windows-native tests passed.
 Packaged bootstrap smoke still means no OPEN/device request, not physical acceptance.
 
-Owner confirmation of corrected configuration Stop/Exit is pending. rc1 brightness
-and persistence are already owner-confirmed. Updating rc1 to rc2 needs no new schema
+The owner confirmed rc2 configuration Stop returns to `stopped` and allows settings
+edits; rc1 brightness and persistence are also owner-confirmed. The reported defect
+is accepted as corrected. Unchanged Exit was not separately requalified physically
+on rc2; automated preservation checks remain its evidence, not a new manual claim. Updating rc1 to rc2 needs no new schema
 migration; extract the whole ZIP into a new folder and preserve the prior folder.
 The following rc1 evidence is historical, not substituted for the corrected binary.
 
@@ -47,7 +49,8 @@ mechanical checks do not establish legal certification.
 The packaged helper proof is explicitly no-OPEN/no-device. **The owner confirmed
 physical brightness changes and persistence across closing/reopening rc1.**
 Configuration Stop after Start errors needs the rc2 UI correction above; the
-immutable rc1 artifact does not include it. Corrected Stop/Exit acceptance is pending. No immutable historical
+immutable rc1 artifact does not include it. Corrected configuration Stop is now
+owner-accepted on rc2 as recorded above. No immutable historical
 artifact below gains this feature retroactively, and later documentation does not
 rebuild this candidate. Native packaged proof and physical acceptance are separate.
 No installer, signature, automatic update, release or new driver is implied.

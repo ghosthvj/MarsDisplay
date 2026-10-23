@@ -49,8 +49,11 @@ hashes and 69 AMD64 native binaries against source
 `2b973d9a8786191dbf686b0881ac872936e48916`.
 **The owner confirmed brightness changes and retention of the selected percentage
 across closing and reopening 0.2.0rc1.** The rc2 package corrects the reported
-configuration Stop omission after Start errors. Owner acceptance of that corrected
-Stop/Exit path remains pending. This is a release candidate, not a final release.
+configuration Stop omission after Start errors. **The owner confirmed that rc2
+Stop returns to `stopped` and permits configuration editing.** The requested
+brightness/persistence and error-Stop behavior are accepted. Unchanged Exit was
+not separately requalified physically on rc2; its regression coverage is retained.
+This is an accepted release candidate, not a published final release.
 Later documentation commits do not rebuild this immutable artifact.
 
 Keep the previous folder as a fallback. Updating rc1 to rc2 needs no settings
