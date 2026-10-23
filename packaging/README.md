@@ -6,9 +6,25 @@ The current source adds schema-3 persisted brightness and a five-position slider
 (20/40/60/80/100%). Native output is explicitly selected, portrait 320×480 only;
 legacy schema 1/2 behavior remains until explicit migration. See
 [the current runtime guide](../docs/usb-runtime.md#saved-brightness-candidate).
-Build a new portable ZIP and verify its source/inventory hashes before owner use;
-none of the immutable historical artifacts below gains this feature retroactively.
-Native packaged tests and Windows 11 physical acceptance are separate requirements.
+The [candidate artifact](https://github.com/ghosthvj/MarsDisplay/actions/runs/40019131570/artifacts/12529498400)
+is bound to source `2bc1d7e2c3ddcc112ab2766b2c5b024812979c2c` and passed
+[Windows run 40019131570](https://github.com/ghosthvj/MarsDisplay/actions/runs/40019131570):
+356 tests in 86.408 seconds, zero skips, native build, isolated packaged smoke,
+qualification, source stability and upload. It expires **2026-10-30 20:30 UTC**.
+
+Inner ZIP: **205,778,731 bytes**, SHA256
+`3fec83924736997d3db19482e721fa9a09e83514da9a77991971e394fe1211de`.
+Parent and independent verification matched all 1,276 payload hashes and 380
+source hashes: 376 tracked candidate files (266 exact, 110 permitted Windows CRLF)
+and four intentional SDK metadata files. All 69 native binaries are AMD64/PE32+;
+the EXE has GUI subsystem 2. The 27 native components, six supplemental components
+and 209 material hashes retain the existing external-runtime profile. These
+mechanical checks do not establish legal certification.
+
+The packaged helper proof is explicitly no-OPEN/no-device; **physical Windows
+brightness and persistence acceptance remain pending**. No immutable historical
+artifact below gains this feature retroactively, and later documentation does not
+rebuild this candidate. Native packaged proof and physical acceptance are separate.
 No installer, signature, automatic update, release or new driver is implied.
 
 The following sections retain historical artifact evidence and stage limitations.

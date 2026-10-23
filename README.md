@@ -26,12 +26,32 @@ reconnect: resolve the cause and use Start explicitly. Legacy settings are not
 silently migrated; use **Restore settings from before brightness…** while stopped
 if returning to the prior configuration/binary (later settings edits are lost).
 
-**Candidate status:** source checks and independent verification passed. A new Windows
-artifact and owner acceptance are required; historical download links below are
-not brightness-enabled builds. The earlier isolated Linux brightness observation
-is not proof of this executable's Windows behavior. This remains a full portable
-folder, not a standalone EXE or installer; official VC++ v14 x64 runtime 14.51+
-is an external prerequisite. Do not disable Windows security protections.
+### Download the Windows candidate
+
+[Download MarsDisplay 0.2.0rc1 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/40019131570/artifacts/12529498400)
+from [verified Windows run 40019131570](https://github.com/ghosthvj/MarsDisplay/actions/runs/40019131570).
+Artifact retention ends **2026-10-30 20:30 UTC**; GitHub sign-in may be required.
+Extract the Actions download, then the complete application ZIP into a new folder.
+The inner `MarsDisplay-0.2.0rc1-Windows-x64.zip` is **205,778,731 bytes**; SHA256:
+
+```text
+3fec83924736997d3db19482e721fa9a09e83514da9a77991971e394fe1211de
+```
+
+**Verified:** 356 Windows tests with zero skips, native build and isolated packaged
+smoke. Parent and independent checks verified 1,276 payload hashes, 380 source
+hashes and 69 AMD64 native binaries against source
+`2bc1d7e2c3ddcc112ab2766b2c5b024812979c2c`.
+**Owner physical Windows brightness, persistence and Start/Stop/Exit acceptance
+remain pending.** The isolated Linux observation and packaged bootstrap smoke do
+not establish that acceptance. This is a release candidate, not a final release.
+Later documentation commits do not rebuild this immutable artifact.
+
+Keep the previous folder as a fallback. Returning to an older binary requires
+stopped **Restore settings from before brightness…** if schema 3 was enabled;
+that restores the old configuration and discards later settings edits. This remains
+a full portable folder, not a standalone EXE or installer; official VC++ v14 x64
+runtime 14.51+ is an external prerequisite. Do not disable Windows security protections.
 
 See [runtime and brightness controls](docs/usb-runtime.md),
 [settings and recovery](docs/usb-settings.md), and
