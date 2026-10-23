@@ -4,8 +4,8 @@
 
 The rc2 source adds **Stop capture** beside **Start capture** after an idle capture
 error. Stop uses the same tray action; explicit Start retry remains available.
-It never clears uncertain cleanup or bypasses Exit. The new Windows artifact is
-being qualified; the verified rc1 download below does **not** include this fix.
+It never clears uncertain cleanup or bypasses Exit. The verified rc2 Windows
+artifact below includes this fix and keeps existing schema-3 settings unchanged.
 
 MarsDisplay is a Windows 11 x64 tray companion that renders MARS with bundled
 Chromium. The current candidate supports Simulation and explicitly selected native
@@ -33,28 +33,28 @@ if returning to the prior configuration/binary (later settings edits are lost).
 
 ### Download the Windows candidate
 
-[Download MarsDisplay 0.2.0rc1 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/40019131570/artifacts/12529498400)
-from [verified Windows run 40019131570](https://github.com/ghosthvj/MarsDisplay/actions/runs/40019131570).
-Artifact retention ends **2026-10-30 20:30 UTC**; GitHub sign-in may be required.
+[Download MarsDisplay 0.2.0rc2 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/40023603045/artifacts/12531318437)
+from [verified Windows run 40023603045](https://github.com/ghosthvj/MarsDisplay/actions/runs/40023603045).
+Artifact retention ends **2026-10-30 21:04 UTC**; GitHub sign-in may be required.
 Extract the Actions download, then the complete application ZIP into a new folder.
-The inner `MarsDisplay-0.2.0rc1-Windows-x64.zip` is **205,778,731 bytes**; SHA256:
+The inner `MarsDisplay-0.2.0rc2-Windows-x64.zip` is **205,781,620 bytes**; SHA256:
 
 ```text
-3fec83924736997d3db19482e721fa9a09e83514da9a77991971e394fe1211de
+c00fb9d50e86845e9ff96f56a738fb4cfc704e358670dfe4f30a12238482f9d2
 ```
 
-**Verified:** 356 Windows tests with zero skips, native build and isolated packaged
-smoke. Parent and independent checks verified 1,276 payload hashes, 380 source
+**Verified:** 360 Windows tests with zero skips, native build and isolated packaged
+smoke. Parent and independent checks verified 1,277 payload hashes, 381 source
 hashes and 69 AMD64 native binaries against source
-`2bc1d7e2c3ddcc112ab2766b2c5b024812979c2c`.
+`2b973d9a8786191dbf686b0881ac872936e48916`.
 **The owner confirmed brightness changes and retention of the selected percentage
-across closing and reopening 0.2.0rc1.** A reported configuration Stop omission after
-Start errors is corrected in the upcoming 0.2.0rc2 source: idle errors offer a
-separate Stop capture alongside explicit Start retry. The rc1 download above does
-not contain that correction. Corrected-package Stop/Exit acceptance remains pending. This is a release candidate, not a final release.
+across closing and reopening 0.2.0rc1.** The rc2 package corrects the reported
+configuration Stop omission after Start errors. Owner acceptance of that corrected
+Stop/Exit path remains pending. This is a release candidate, not a final release.
 Later documentation commits do not rebuild this immutable artifact.
 
-Keep the previous folder as a fallback. Returning to an older binary requires
+Keep the previous folder as a fallback. Updating rc1 to rc2 needs no settings
+migration. Returning to a pre-schema-3 binary requires
 stopped **Restore settings from before brightness…** if schema 3 was enabled;
 that restores the old configuration and discards later settings edits. This remains
 a full portable folder, not a standalone EXE or installer; official VC++ v14 x64

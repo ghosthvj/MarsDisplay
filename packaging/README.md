@@ -4,8 +4,24 @@
 
 The current source adds configuration **Stop capture** for idle capture errors,
 without changing explicit Start retry, brightness, serial or cleanup behavior.
-Windows build/artifact qualification for rc2 is pending. The following rc1 evidence
-is retained, not reused as proof of the corrected binary.
+[Windows run 40023603045](https://github.com/ghosthvj/MarsDisplay/actions/runs/40023603045)
+passed 360 tests in 71.828 seconds with zero skips, native build, packaged smoke,
+qualification and upload for source `2b973d9a8786191dbf686b0881ac872936e48916`.
+[Download rc2](https://github.com/ghosthvj/MarsDisplay/actions/runs/40023603045/artifacts/12531318437)
+before **2026-10-30 21:04 UTC**. Inner ZIP: **205,781,620 bytes**, SHA256
+`c00fb9d50e86845e9ff96f56a738fb4cfc704e358670dfe4f30a12238482f9d2`.
+
+Parent and independent checks verified 1,277 payload hashes, 381 source hashes
+(377 tracked sources: 266 exact and 111 permitted CRLF; four SDK records), all eight
+selected changed source files, 69 AMD64/PE32+ native files and GUI subsystem 2.
+The existing 27 native/six supplemental components and 209 material hashes remain
+bound to shipped files. Four Stop regressions and four Windows-native tests passed.
+Packaged bootstrap smoke still means no OPEN/device request, not physical acceptance.
+
+Owner confirmation of corrected configuration Stop/Exit is pending. rc1 brightness
+and persistence are already owner-confirmed. Updating rc1 to rc2 needs no new schema
+migration; extract the whole ZIP into a new folder and preserve the prior folder.
+The following rc1 evidence is historical, not substituted for the corrected binary.
 
 ## Verified brightness candidate — 0.2.0rc1
 
@@ -30,7 +46,7 @@ mechanical checks do not establish legal certification.
 
 The packaged helper proof is explicitly no-OPEN/no-device. **The owner confirmed
 physical brightness changes and persistence across closing/reopening rc1.**
-Configuration Stop after Start errors needs the upcoming rc2 UI correction; the
+Configuration Stop after Start errors needs the rc2 UI correction above; the
 immutable rc1 artifact does not include it. Corrected Stop/Exit acceptance is pending. No immutable historical
 artifact below gains this feature retroactively, and later documentation does not
 rebuild this candidate. Native packaged proof and physical acceptance are separate.
