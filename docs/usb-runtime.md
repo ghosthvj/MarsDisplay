@@ -11,10 +11,12 @@ Track work in [the P5 ledger](../odd/tasks/native-usb-runtime.md).
 
 The configuration window has a fixed height selected on creation: up to 760
 logical pixels, capped to the available desktop height minus 48 pixels for window
-chrome (minimum width 650). There is no main scroll area. MARS URL is unchanged. The USB selector and **Refresh USB
-identities** share one row; the Output mode selector, schema-1 export/restore
-buttons, and Refresh explanation are omitted. Logs/Preview and Save stay in the
-footer. Error messages remain visible in the form.
+chrome (minimum width 650). The body scrolls vertically only when its content
+cannot fit; no scrollbar is shown when there is enough room. MARS URL is unchanged.
+The USB selector and **Refresh USB identities** share one row; the Output mode
+selector, schema-1 export/restore buttons, and Refresh explanation are omitted.
+Logs/Preview and Save stay in a fixed footer outside the scroll area. Error text
+is retained in full and can be reached by scrolling on constrained desktops.
 
 This interface saves **Native USB only**, still requiring explicit device selection,
 Save, and Start. Existing Simulation settings are not converted just by opening the

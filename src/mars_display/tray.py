@@ -137,7 +137,7 @@ class NativeTimingDialog(QDialog):
 
 
 class SettingsDialog(QDialog):
-    """Fixed-height native configuration form with a persistent action footer."""
+    """Fixed-height form with overflow scrolling and a persistent action footer."""
 
     def __init__(self, configured: Settings | None):
         super().__init__()
@@ -289,7 +289,12 @@ class SettingsDialog(QDialog):
         self.message.hide()
         column.addWidget(self.message)
         column.addStretch()
-        outer.addWidget(self.body, 1)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.scroll_area.setWidget(self.body)
+        outer.addWidget(self.scroll_area, 1)
         self.footer = QFrame()
         self.footer.setObjectName("footer")
         footer_row = QHBoxLayout(self.footer)

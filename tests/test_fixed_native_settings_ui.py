@@ -4,7 +4,8 @@ from unittest.mock import patch
 import unittest
 
 from PySide6.QtCore import QPoint, QRect
-from PySide6.QtWidgets import QComboBox, QLabel, QMessageBox, QScrollArea
+from PySide6.QtGui import QScreen
+from PySide6.QtWidgets import QComboBox, QLabel, QMessageBox
 
 from mars_display.settings import NATIVE_IDENTITY, NATIVE_PROFILE
 import test_native_output_ui as native_fixture
@@ -83,14 +84,61 @@ class FixedNativeSettingsTests(unittest.TestCase):
             self.assertTrue(available.contains(bounds), (button.text(), bounds.getRect()))
         self.assertFalse(self.session.opened.is_set())
 
-    def test_fixed_height_keeps_configuration_footer_and_error_visible_without_scroll(self):
+    def test_small_desktop_scrolls_content_without_moving_footer(self):
+        available = QRect(0, 0, 800, 600)
+        with patch.object(QScreen, 'availableGeometry', return_value=available):
+            shell = self.make()
+            shell.show_settings()
+        dialog = shell.dialog
+        dialog.move(10, 10)
+        raw = self.store.path.read_bytes()
+        before = shell.coordinator.snapshot()
+        message = ('Native delivery is uncertain; the previous host-accepted frame is retained. '
+                   'Exit is blocked: check owned browser/output resources; resolve cleanup before '
+                   'restarting MarsDisplay. Do not close your normal browser.')
+        status = replace(before, state='error', source_state='error', output_mode='native',
+                         output_state='native-uncertain', ownership_uncertain=True, error=message)
+        with patch.object(shell, 'configured', native()), patch.object(
+                shell.coordinator, 'snapshot', return_value=status):
+            shell.refresh()
+            fixture.APP.processEvents()
+            area = dialog.scroll_area
+            self.assertGreater(area.verticalScrollBar().maximum(), 0)
+            self.assertEqual(area.horizontalScrollBar().maximum(), 0)
+            self.assertEqual(dialog.message.text(), message)
+            for label in dialog.body.findChildren(QLabel):
+                if label.isVisible() and label.text():
+                    self.assertGreaterEqual(label.height(), label.heightForWidth(label.width()), label.text())
+            buttons = (dialog.logs_action, dialog.preview_action, dialog.save)
+            bounds = [QRect(button.mapToGlobal(QPoint()), button.size()) for button in buttons]
+            self.assertTrue(available.contains(dialog.frameGeometry()))
+            self.assertTrue(all(available.contains(rect) for rect in bounds))
+            area.ensureWidgetVisible(dialog.message)
+            fixture.APP.processEvents()
+            viewport = QRect(area.viewport().mapToGlobal(QPoint()), area.viewport().size())
+            self.assertTrue(viewport.contains(QRect(dialog.message.mapToGlobal(QPoint()), dialog.message.size())))
+            self.assertEqual([QRect(button.mapToGlobal(QPoint()), button.size()) for button in buttons], bounds)
+        self.assertEqual(self.store.path.read_bytes(), raw)
+        self.assertEqual(shell.coordinator.snapshot(), before)
+        self.assertFalse(self.session.opened.is_set())
+
+    def test_roomy_desktop_keeps_scrollbar_hidden(self):
+        with patch.object(QScreen, 'availableGeometry', return_value=QRect(0, 0, 1920, 1080)):
+            shell = self.make()
+            shell.show_settings()
+        fixture.APP.processEvents()
+        self.assertEqual(shell.dialog.scroll_area.verticalScrollBar().maximum(), 0)
+        self.assertFalse(shell.dialog.scroll_area.verticalScrollBar().isVisible())
+        self.assertFalse(self.session.opened.is_set())
+
+    def test_fixed_height_keeps_configuration_footer_and_error_readable_with_fallback(self):
         shell = self.make()
         dialog = shell.dialog
         shell.show_settings()
         height = dialog.height()
         self.assertEqual(dialog.minimumHeight(), dialog.maximumHeight())
-        for area in dialog.findChildren(QScrollArea):
-            self.assertFalse(area.isAncestorOf(dialog.url))
+        self.assertTrue(dialog.scroll_area.isAncestorOf(dialog.url))
+        self.assertFalse(dialog.scroll_area.isAncestorOf(dialog.footer))
         message = ('Native delivery is uncertain; the previous host-accepted frame is retained. '
                    'Exit is blocked: check owned browser/output resources; resolve cleanup before '
                    'restarting MarsDisplay. Do not close your normal browser.')

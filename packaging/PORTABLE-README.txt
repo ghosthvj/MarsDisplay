@@ -29,8 +29,9 @@ Use the tray Status / Settings to configure; Start/Stop control capture, Exit cl
 After a capture error, the configuration window offers both Start capture (explicit
 retry) and Stop capture (same action as tray Stop). Stop enables editing only when
 cleanup is known; it cannot bypass uncertain cleanup or Exit ownership.
-The fixed-height configuration form has no main scrolling. USB selection and
-Refresh share a row. Capitalized states use icons; transitions show a loading wheel.
+The fixed-height form uses vertical overflow scrolling only when content cannot
+fit; Logs, Preview and Save stay fixed in the footer. USB selection and Refresh
+share a row. Capitalized states use icons; transitions show a loading wheel.
 The centered compact brightness slider keeps all five percentages without extra
 status/explanation text. Logs and Preview are grouped in the footer, apart from Save.
 Logs opens the same live native timing report in an independent modeless window;

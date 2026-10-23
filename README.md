@@ -10,8 +10,9 @@ The new candidate combines the requested UI changes:
 - Native-USB-only configuration, explicit device selection, Save and Start.
 - USB selector and Refresh in one row; legacy recovery/export controls hidden,
   with their guarded functions retained internally and no new advanced menu.
-- Fixed-height form bounded by desktop space, without main scrolling or clipped
-  cleanup errors. Simulation remains a backend capability, not a UI mode selector.
+- Fixed-height form bounded by desktop space, with vertical overflow scrolling
+  only when needed and a fixed footer; cleanup errors remain readable.
+  Simulation remains a backend capability, not a UI mode selector.
 
 Existing rc2 schema-3 settings and brightness carry over without another migration.
 Extract the full new portable ZIP into a separate folder after exiting rc2; retain
