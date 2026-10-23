@@ -350,7 +350,7 @@ class TrayTests(unittest.TestCase):
         self.assertTrue(shell.dialog.url.isReadOnly())
         self.assertEqual(shell.dialog.source.property("tone"), "error")
         self.assertEqual(shell.dialog.hint.text(),
-                         "Capture is in error. Use tray Stop to edit settings.")
+                         "Capture is in error. Use Stop capture to edit settings.")
         self.session.read_error = False
         shell.dialog.capture_action.click()
         until(lambda: shell.coordinator.snapshot().frames_sent >= 1)

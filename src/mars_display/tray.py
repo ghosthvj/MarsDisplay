@@ -154,6 +154,10 @@ class SettingsDialog(QDialog):
         self.capture_action = QPushButton("Start capture")
         self.capture_action.setAutoDefault(False)
         self.capture_row.addWidget(self.capture_action)
+        self.error_stop_action = QPushButton("Stop capture")
+        self.error_stop_action.setAutoDefault(False)
+        self.error_stop_action.hide()
+        self.capture_row.addWidget(self.error_stop_action)
         column.addWidget(self.runtime_card)
         self.source = _label("stopped", "sourceBadge")
         self.output = _label("Simulated — simulated-closed (no USB output)")
@@ -328,6 +332,7 @@ class TrayShell(QObject):
         self._capture_intent = None
         self.dialog.capture_action.pressed.connect(self._capture_pressed)
         self.dialog.capture_action.clicked.connect(self._capture_request)
+        self.dialog.error_stop_action.clicked.connect(self.stop_action.trigger)
         self.tray = QSystemTrayIcon(_icon(), self)
         self.tray.setToolTip("MarsDisplay — simulated output")
         self.tray.setContextMenu(self.menu)
@@ -599,6 +604,9 @@ class TrayShell(QObject):
         self.dialog.capture_action.setProperty("operation", "stop" if stopping else "start")
         self.dialog.capture_action.setText("Stop capture" if stopping else "Start capture")
         self.dialog.capture_action.setEnabled(action.isEnabled())
+        # Idle errors offer both deliberate retry and Stop-to-edit, like the tray.
+        self.dialog.error_stop_action.setVisible(idle and status.state == "error")
+        self.dialog.error_stop_action.setEnabled(self.stop_action.isEnabled())
         if status.exit_requested:
             hint = "Exiting. Waiting for owned resources."
         elif can_save:
@@ -606,7 +614,7 @@ class TrayShell(QObject):
         elif status.state == "stopping":
             hint = "Stopping capture. Waiting for owned resources."
         elif status.state == "error":
-            hint = "Capture is in error. Use tray Stop to edit settings."
+            hint = "Capture is in error. Use Stop capture to edit settings."
         else:
             hint = f"Capture is {status.state}. Stop capture to save changes."
         self.dialog.hint.setText(hint)

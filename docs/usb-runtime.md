@@ -189,6 +189,13 @@ there is no new cleanup registry, retry-close UI or forced unrelated-process kil
 
 ## Stop and Exit
 
+When capture ends in an error, **Status / Settings** offers both **Start capture**
+(explicit retry) and **Stop capture** (the same action as tray Stop). Stop clears a
+recoverable error and enables configuration editing only after cleanup is known.
+It cannot clear an uncertain-cleanup latch or bypass Exit ownership. During normal
+capture, the existing primary Start/Stop button is unchanged; the extra Stop is
+shown only for an idle error and is disabled during Exit.
+
 Stop only signals cancellation; it does not join a thread or close output on the
 UI thread. A currently in-flight operation may finish before acknowledgement and
 may therefore advance host acceptance while stopping. Actual worker completion
