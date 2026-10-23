@@ -7,6 +7,7 @@ import time
 
 from . import usb_ipc as ipc
 from .usb_process import OwnedWorker, WindowsGate, launch_worker
+from .usb_protocol import encode_brightness
 from .usb_worker import IDENTITY, OK, WRITE_ERROR, DRAIN_ERROR, CLOSE_ERROR
 
 
@@ -190,6 +191,31 @@ class UsbTransport:
                 self._last_send_timing = detail
             except BaseException:
                 self._fail('frame', uncertain)
+        finally:
+            self._operation.release()
+
+    def set_brightness(self, percent):
+        """Set a supported percentage on the open session; no retry or readback.
+
+        Host completion does not establish the display's physical brightness.
+        This operation leaves last_send_timing unchanged.
+        """
+        encode_brightness(percent)  # Validate before locking or channel effects.
+        body = bytes([percent])
+        self._enter()
+        try:
+            if not self._opened:
+                raise UsbError('not open')
+            uncertain = True
+            try:
+                deadline = time.monotonic() + self.budgets.frame
+                result = self._exchange(ipc.BRIGHTNESS, body, deadline, cancel=self._cancel)
+                if result != OK:
+                    uncertain = result in (WRITE_ERROR, DRAIN_ERROR, CLOSE_ERROR)
+                    raise RuntimeError('USB brightness failed')
+                self._check(deadline)
+            except BaseException:
+                self._fail('brightness', uncertain)
         finally:
             self._operation.release()
 

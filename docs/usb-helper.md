@@ -34,6 +34,7 @@ Each message starts with the 16-byte network-order struct `!4sBBHII`:
 | TIMED_REPLY | 7 | Exactly 41 bytes, `!B5d`: OK (0), then five duration seconds |
 | GROUPED_FRAME | 8 | Same exact validated payload as FRAME; grouped diagnostic pair only |
 | GROUPED_REPLY | 9 | Exactly 65 bytes, `!B8d`: OK (0), five original durations, then orientation/header/pixels |
+| BRIGHTNESS | 10 | Exactly one percentage byte: 20, 40, 60, 80 or 100; existing REPLY status |
 
 Frames support only 320x480 portrait, 460800 tightly packed RGB bytes, and a finite
 nonnegative capture time. This does not narrow shared RGBFrame/Simulation support
@@ -72,6 +73,28 @@ These three durations are subsets of the unchanged total write-loop measurement,
 not additive costs. Only the diagnostic clock is consulted at group boundaries;
 122 writes/307222 bytes, order, 2560-byte pixel chunks, serial options and deadline
 checks are unchanged. No per-packet history or new device commands are introduced.
+
+### Discrete brightness (unqualified candidate)
+
+`UsbTransport.set_brightness(percent)` returns None after host completion on an
+already-open session. Only exact integers 20/40/60/80/100 are accepted; booleans,
+floats and zero/off are rejected before channel effects. The pure
+`usb_protocol.encode_brightness(percent)` applies the same validation.
+
+BRIGHTNESS is serialized between complete frames on the existing channel/port,
+with fresh identity/COM checks and no reopen, frame resend or vendor driver.
+The RevA six-byte command is `absolute >> 2`, `(absolute & 3) << 6`, three zeros,
+then `0x6E`, where `absolute = int(255 - ((percent / 100) * 255))`.
+For the five allowed levels the implementation's integer arithmetic is equivalent:
+100% is `00000000006e`, 60% is `19800000006e`. No zero-level behavior is inferred.
+
+The existing frame, write and drain budgets also bound brightness. Partial writes,
+drain failures and lost/cancelled replies are terminal with delivery uncertainty;
+known validation/identity rejection does not claim uncertain delivery. There is no
+retry or physical readback. Concurrent operations reject as busy; close cancels
+and reaps through the same ownership rules. `last_send_timing` remains unchanged.
+Legacy frame packets, counts and timing measurements are untouched. Source fake
+coverage does not qualify a Windows executable or physical brightness behavior.
 
 ## Persistent serial session
 

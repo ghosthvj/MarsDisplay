@@ -3,6 +3,15 @@
 from .frames import RGBFrame, _validate_frame
 
 
+def encode_brightness(percent: int) -> bytes:
+    """Encode only the five supported RevA brightness levels, without I/O."""
+    if type(percent) is not int or percent not in (20, 40, 60, 80, 100):
+        raise ValueError('USB brightness must be an integer in 20, 40, 60, 80, 100')
+    # Equivalent to int(255 - ((percent / 100) * 255)) for these five levels.
+    absolute = 255 - percent * 255 // 100
+    return bytes((absolute >> 2, (absolute & 3) << 6, 0, 0, 0, 0x6E))
+
+
 def encode_portrait(frame: RGBFrame) -> tuple[bytes, ...]:
     """Return orientation, header and 120 RGB565LE chunks without any I/O.
 

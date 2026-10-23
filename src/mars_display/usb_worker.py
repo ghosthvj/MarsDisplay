@@ -4,7 +4,7 @@ import time
 
 from . import usb_ipc as ipc
 from .devices import enumerate_devices, select_device
-from .usb_protocol import encode_portrait
+from .usb_protocol import encode_brightness, encode_portrait
 
 IDENTITY = 'usb:1a86:5722:USB35INCHIPSV2'
 OK, IDENTITY_ERROR, INVALID, OPEN_ERROR, WRITE_ERROR, DRAIN_ERROR, CLOSE_ERROR = range(7)
@@ -117,6 +117,25 @@ def run_session(channel, nonce, *, inventory=enumerate_devices,
                         ipc.send_packet(channel, reply_kind, request,
                                         payload, time.monotonic() + budgets.start)
                         continue
+                elif kind == ipc.BRIGHTNESS:
+                    if port is None:
+                        raise ValueError('USB session is not open')
+                    packet = encode_brightness(body[0])
+                    status = IDENTITY_ERROR
+                    if _resolve(inventory) != selected:
+                        raise ValueError('Current USB port changed')
+                    status = WRITE_ERROR
+                    deadline = clock() + budgets.frame
+                    if clock() >= deadline:
+                        raise TimeoutError('USB brightness deadline exceeded')
+                    if port.write(packet) != len(packet):
+                        raise OSError('USB write failed')
+                    status = DRAIN_ERROR
+                    deadline = min(deadline, clock() + budgets.drain)
+                    while port.out_waiting:
+                        if clock() >= deadline:
+                            raise TimeoutError('USB queue drain exceeded')
+                        sleep(0.01)
                 elif kind == ipc.CLOSE:
                     status = CLOSE_ERROR
                     if port is not None:

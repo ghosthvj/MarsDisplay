@@ -11,6 +11,7 @@ HELLO, OPEN, FRAME, CLOSE, REPLY = range(1, 6)
 TIMED_FRAME, TIMED_REPLY = 6, 7
 TIMING = struct.Struct('!B5d')
 GROUPED_FRAME, GROUPED_REPLY = 8, 9
+BRIGHTNESS = 10
 GROUPED_TIMING = struct.Struct('!B8d')
 HEADER = struct.Struct('!4sBBHII')
 METADATA = struct.Struct('!HHd')
@@ -135,14 +136,16 @@ def _shape(kind, request, size):
     if type(request) is not int or not 0 <= request <= 0xffffffff:
         raise ValueError('Invalid USB request identifier')
     if type(kind) is not int or kind not in (HELLO, OPEN, FRAME, CLOSE, REPLY,
-                                             TIMED_FRAME, TIMED_REPLY, GROUPED_FRAME, GROUPED_REPLY):
+                                             TIMED_FRAME, TIMED_REPLY, GROUPED_FRAME, GROUPED_REPLY,
+                                             BRIGHTNESS):
         raise ValueError('Unknown USB message type')
     if (kind == HELLO) != (request == 0):
         raise ValueError('Invalid USB request order')
     valid_size = {HELLO: size == 32, OPEN: 0 < size <= 128,
                   FRAME: size == FRAME_BYTES, CLOSE: size == 0, REPLY: size == 1,
                   TIMED_FRAME: size == FRAME_BYTES, TIMED_REPLY: size == TIMING.size,
-                  GROUPED_FRAME: size == FRAME_BYTES, GROUPED_REPLY: size == GROUPED_TIMING.size}
+                  GROUPED_FRAME: size == FRAME_BYTES, GROUPED_REPLY: size == GROUPED_TIMING.size,
+                  BRIGHTNESS: size == 1}
     if not valid_size[kind]:
         raise ValueError('Invalid USB message length')
 
