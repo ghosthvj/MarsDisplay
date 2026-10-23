@@ -20,7 +20,8 @@ This interface saves **Native USB only**, still requiring explicit device select
 Save, and Start. Existing Simulation settings are not converted just by opening the
 window; Simulation and schema-1 export/recovery remain backend/test capabilities.
 Neither a saved legacy identity nor Refresh silently opts into native output.
-These source changes have not been compiled into a new Windows executable.
+These changes are introduced in 0.2.0rc3; see the README for Windows artifact
+qualification and download evidence.
 
 ## Status presentation (current source)
 
@@ -30,8 +31,8 @@ The lifecycle and MARS source badges use capitalized labels with leading icons:
 and **Recovering (retrying)** use an animated loading wheel. Icons follow the
 existing light/dark theme and animate only while visible. Backend state strings,
 capture controls, diagnostics, and settings are unchanged. These presentation
-changes and the separate Logs window are not in the delivered 0.2.0rc2 ZIP;
-compilation of the next executable is deferred while UI adjustments continue.
+changes and the separate Logs window are introduced in 0.2.0rc3, not retroactively
+in the previously delivered 0.2.0rc2 ZIP.
 
 ## Saved brightness candidate
 

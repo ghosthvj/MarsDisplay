@@ -8,23 +8,33 @@ https://aka.ms/vc14/vc_redist.x64.exe
 MarsDisplay does not download/install prerequisites or redistribute Microsoft DLLs.
 Windows 11 provides the OS UCRT/API-set components. No MarsDisplay installer exists.
 Open MarsDisplay.exe in an interactive desktop session; capture starts STOPPED.
-Output is Simulation unless Native USB is explicitly configured and saved.
+Configuration saves Native USB only, after explicit USB selection and Save.
+Existing Simulation records are not converted merely by opening the application;
+legacy schema migration still requires explicit confirmation and a preserved backup.
 Native USB supports the qualified 320x480 portrait profile only, not landscape.
-While stopped, Enable saved brightness offers explicit schema-3 migration with a
+While stopped, Enable Brightness appears only when needed and offers explicit
+schema-3 migration with a
 preserved pre-brightness settings backup; older binaries cannot read schema 3.
 The slider selects only 20%, 40%, 60%, 80%, 100% (initially 100%), never zero/off.
 Release it or use arrow keys to save that percentage independently of URL drafts.
 Start applies the saved choice; live changes wait for a complete image and reuse
 the same connection. Stop/Exit sends no brightness restoration. Host-completed is
 not a measured panel value. USB failure has no automatic retry/reconnect.
-Restore settings from before brightness is an explicit stopped-only rollback;
-it restores the old URL/output too and discards later settings changes.
+Brightness and schema-1 recovery/export functions remain implemented internally,
+but their buttons are hidden in rc3. No advanced menu was added. Keep the previous
+rc2 folder as fallback; existing schema-3 settings need no new migration for rc3.
 --usb-worker is a reserved owned-child route, not an operator command; do not
 invoke it manually. Packaged smoke does not establish physical USB acceptance.
 Use the tray Status / Settings to configure; Start/Stop control capture, Exit closes.
 After a capture error, the configuration window offers both Start capture (explicit
 retry) and Stop capture (same action as tray Stop). Stop enables editing only when
 cleanup is known; it cannot bypass uncertain cleanup or Exit ownership.
+The fixed-height configuration form has no main scrolling. USB selection and
+Refresh share a row. Capitalized states use icons; transitions show a loading wheel.
+The centered compact brightness slider keeps all five percentages without extra
+status/explanation text. Logs and Preview are grouped in the footer, apart from Save.
+Logs opens the same live native timing report in an independent modeless window;
+it does not start capture or issue USB commands.
 Preview opens one modeless view of the latest RGB frame accepted by host output.
 It updates while visible without another capture/browser or writing images to disk.
 Stop retains the last frame; read the lifecycle/live/stale labels, not just the image.

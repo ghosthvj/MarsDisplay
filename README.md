@@ -1,6 +1,25 @@
 # MarsDisplay
 
-## 0.2.0rc2: brightness candidate with configuration Stop
+## 0.2.0rc3: compact native configuration candidate
+
+The new candidate combines the requested UI changes:
+
+- Capitalized status labels and vector icons, with animated transition wheels.
+- Independent live **Logs**, grouped with **Preview** in the footer apart from Save.
+- Centered 320px brightness slider; compact **Enable Brightness** only when needed.
+- Native-USB-only configuration, explicit device selection, Save and Start.
+- USB selector and Refresh in one row; legacy recovery/export controls hidden,
+  with their guarded functions retained internally and no new advanced menu.
+- Fixed-height form bounded by desktop space, without main scrolling or clipped
+  cleanup errors. Simulation remains a backend capability, not a UI mode selector.
+
+Existing rc2 schema-3 settings and brightness carry over without another migration.
+Extract the full new portable ZIP into a separate folder after exiting rc2; retain
+that folder as fallback. No dependencies, USB transport or packaging recipe changed.
+Windows artifact qualification and the new download are pending; the rc2 link below
+is historical and does not include these UI changes. See [current controls](docs/usb-runtime.md).
+
+## Previously delivered 0.2.0rc2: brightness and configuration Stop
 
 The rc2 source adds **Stop capture** beside **Start capture** after an idle capture
 error. Stop uses the same tray action; explicit Start retry remains available.

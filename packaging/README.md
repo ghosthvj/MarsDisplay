@@ -1,5 +1,16 @@
 # Windows portable build and verified delivery
 
+## UI candidate — 0.2.0rc3
+
+Source is prepared with independent Logs, capitalized icon states, compact centered
+brightness, footer observers and a fixed-height native-only configuration form.
+The existing Windows workflow and dependency/native-material requirements are
+unchanged. A new build must bind its ZIP, hashes, bundled source and native smoke
+to the exact rc3 source commit; rc2 evidence is not substituted for that check.
+Windows qualification and artifact download are pending. This is a test candidate,
+not a final release, installer or new driver. Existing schema-3 settings need no
+new migration; keep the complete previous rc2 folder as fallback.
+
 ## Corrected candidate — 0.2.0rc2
 
 The current source adds configuration **Stop capture** for idle capture errors,
