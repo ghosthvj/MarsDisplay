@@ -194,6 +194,28 @@ class BrightnessLifecycleTests(unittest.TestCase):
         self.assertEqual(self.store.path.read_bytes(), raw)
         self.assertEqual(self.controller.snapshot(), before)
 
+    def test_exit_discards_pending_write_but_keeps_saved_intent(self):
+        import hashlib
+
+        self.enable()
+        self.output.release.clear()
+        self.controller.start()
+        self.assertTrue(self.output.entered.wait(1))
+        self.controller.set_brightness(20)
+        digest = hashlib.sha256(self.store.path.read_bytes()).digest()
+        self.controller.request_exit()
+        with self.assertRaises(LifecycleError) as caught:
+            self.controller.set_brightness(40)
+        self.assertEqual(str(caught.exception),
+                         'Brightness cannot change during stopping, error or Exit.')
+        self.assertEqual(hashlib.sha256(self.store.path.read_bytes()).digest(), digest)
+        self.output.release.set()
+        self.assertTrue(self.controller.wait_stopped(2))
+        self.assertEqual(self.output.events, [
+            'open', ('brightness', 100), 'frame-start', 'frame-end', 'close'])
+        self.assertEqual(self.store.load().brightness_percent, 20)
+        self.assertTrue(self.controller.snapshot().exit_ready)
+
     def test_legacy_native_and_simulation_do_not_issue_brightness(self):
         self.controller.start()
         self.assertTrue(self.wait.entered.wait(1))
