@@ -4,7 +4,7 @@ from unittest.mock import patch
 import unittest
 
 from PySide6.QtCore import QPoint, QRect
-from PySide6.QtGui import QScreen
+from PySide6.QtGui import QFontInfo, QScreen
 from PySide6.QtWidgets import QComboBox, QLabel, QMessageBox
 
 from mars_display.settings import NATIVE_IDENTITY, NATIVE_PROFILE
@@ -128,6 +128,18 @@ class FixedNativeSettingsTests(unittest.TestCase):
             self.assertEqual([QRect(button.mapToGlobal(QPoint()), button.size()) for button in buttons], bounds)
         self.assertEqual(self.store.path.read_bytes(), raw)
         self.assertEqual(shell.coordinator.snapshot(), before)
+        self.assertFalse(self.session.opened.is_set())
+
+    def test_font_resolves_printable_text_before_geometry_checks(self):
+        shell = self.make()
+        shell.show_settings()
+        fixture.APP.processEvents()
+        button = shell.dialog.refresh_devices
+        info = QFontInfo(button.font())
+        self.assertTrue(info.family(), 'Offscreen geometry requires a resolved font family')
+        self.assertGreater(info.pixelSize(), 0)
+        for character in 'MARS Refresh USB identities 20% ×':
+            self.assertTrue(button.fontMetrics().inFontUcs4(ord(character)), character)
         self.assertFalse(self.session.opened.is_set())
 
     def test_roomy_desktop_keeps_scrollbar_hidden(self):

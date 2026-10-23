@@ -1,7 +1,7 @@
 """Capture the existing failing fixture, not the user's settings or hardware.
 
 Run from the repository root with PYTHONPATH=src:tests (src;tests on Windows)
-and QT_QPA_PLATFORM=offscreen. Exit status preserves the seven UI test results.
+and QT_QPA_PLATFORM=offscreen. Exit status preserves the UI test results.
 The JSON/PNG are diagnostic evidence, never executable qualification.
 """
 import json
@@ -87,6 +87,7 @@ class DiagnosticCase(cases.FixedNativeSettingsTests):
             'diagnostic_only': True, 'source_commit': os.environ.get('GITHUB_SHA'),
             'python': sys.version, 'platform': sys.platform, 'qt': qVersion(),
             'qt_platform': fixture.APP.platformName(), 'style': fixture.APP.style().objectName(),
+            'font_directory': os.environ.get('QT_QPA_FONTDIR'),
             'fixture': TARGET, 'safety': safety,
             'body': dialog.body.size().toTuple(),
             'body_minimum': dialog.body.minimumSizeHint().toTuple(),

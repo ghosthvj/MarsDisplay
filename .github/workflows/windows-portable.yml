@@ -33,6 +33,7 @@ jobs:
         if: ${{ !inputs.layout_diagnostics }}
         env:
           QT_QPA_PLATFORM: offscreen
+          QT_QPA_FONTDIR: C:/Windows/Fonts
           PLAYWRIGHT_BROWSERS_PATH: '0'
           PYTHONPATH: src;tests
         run: python -B -c "import unittest; r=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('tests')); raise SystemExit(0 if r.wasSuccessful() and not r.skipped else 1)"
@@ -41,6 +42,7 @@ jobs:
         shell: pwsh
         env:
           QT_QPA_PLATFORM: offscreen
+          QT_QPA_FONTDIR: C:/Windows/Fonts
           PLAYWRIGHT_BROWSERS_PATH: '0'
           PYTHONPATH: src;tests
           TEMP: ${{ github.workspace }}/build/windows-layout-diagnostics/tmp
