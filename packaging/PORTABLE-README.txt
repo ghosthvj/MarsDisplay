@@ -22,6 +22,9 @@ it restores the old URL/output too and discards later settings changes.
 --usb-worker is a reserved owned-child route, not an operator command; do not
 invoke it manually. Packaged smoke does not establish physical USB acceptance.
 Use the tray Status / Settings to configure; Start/Stop control capture, Exit closes.
+After a capture error, the configuration window offers both Start capture (explicit
+retry) and Stop capture (same action as tray Stop). Stop enables editing only when
+cleanup is known; it cannot bypass uncertain cleanup or Exit ownership.
 Preview opens one modeless view of the latest RGB frame accepted by host output.
 It updates while visible without another capture/browser or writing images to disk.
 Stop retains the last frame; read the lifecycle/live/stale labels, not just the image.

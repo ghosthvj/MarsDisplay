@@ -1,6 +1,11 @@
 # MarsDisplay
 
-## 0.2.0rc1: persistent USB brightness candidate
+## 0.2.0rc2: brightness candidate with configuration Stop
+
+The rc2 source adds **Stop capture** beside **Start capture** after an idle capture
+error. Stop uses the same tray action; explicit Start retry remains available.
+It never clears uncertain cleanup or bypasses Exit. The new Windows artifact is
+being qualified; the verified rc1 download below does **not** include this fix.
 
 MarsDisplay is a Windows 11 x64 tray companion that renders MARS with bundled
 Chromium. The current candidate supports Simulation and explicitly selected native
@@ -42,9 +47,11 @@ The inner `MarsDisplay-0.2.0rc1-Windows-x64.zip` is **205,778,731 bytes**; SHA25
 smoke. Parent and independent checks verified 1,276 payload hashes, 380 source
 hashes and 69 AMD64 native binaries against source
 `2bc1d7e2c3ddcc112ab2766b2c5b024812979c2c`.
-**Owner physical Windows brightness, persistence and Start/Stop/Exit acceptance
-remain pending.** The isolated Linux observation and packaged bootstrap smoke do
-not establish that acceptance. This is a release candidate, not a final release.
+**The owner confirmed brightness changes and retention of the selected percentage
+across closing and reopening 0.2.0rc1.** A reported configuration Stop omission after
+Start errors is corrected in the upcoming 0.2.0rc2 source: idle errors offer a
+separate Stop capture alongside explicit Start retry. The rc1 download above does
+not contain that correction. Corrected-package Stop/Exit acceptance remains pending. This is a release candidate, not a final release.
 Later documentation commits do not rebuild this immutable artifact.
 
 Keep the previous folder as a fallback. Returning to an older binary requires

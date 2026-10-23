@@ -1,6 +1,13 @@
 # Windows portable build and verified delivery
 
-## Current brightness candidate — 0.2.0rc1
+## Corrected candidate — 0.2.0rc2
+
+The current source adds configuration **Stop capture** for idle capture errors,
+without changing explicit Start retry, brightness, serial or cleanup behavior.
+Windows build/artifact qualification for rc2 is pending. The following rc1 evidence
+is retained, not reused as proof of the corrected binary.
+
+## Verified brightness candidate — 0.2.0rc1
 
 The current source adds schema-3 persisted brightness and a five-position slider
 (20/40/60/80/100%). Native output is explicitly selected, portrait 320×480 only;
@@ -21,8 +28,10 @@ the EXE has GUI subsystem 2. The 27 native components, six supplemental componen
 and 209 material hashes retain the existing external-runtime profile. These
 mechanical checks do not establish legal certification.
 
-The packaged helper proof is explicitly no-OPEN/no-device; **physical Windows
-brightness and persistence acceptance remain pending**. No immutable historical
+The packaged helper proof is explicitly no-OPEN/no-device. **The owner confirmed
+physical brightness changes and persistence across closing/reopening rc1.**
+Configuration Stop after Start errors needs the upcoming rc2 UI correction; the
+immutable rc1 artifact does not include it. Corrected Stop/Exit acceptance is pending. No immutable historical
 artifact below gains this feature retroactively, and later documentation does not
 rebuild this candidate. Native packaged proof and physical acceptance are separate.
 No installer, signature, automatic update, release or new driver is implied.
