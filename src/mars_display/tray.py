@@ -7,14 +7,14 @@ from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QComboBox, QDialog, QFileDialog, QFrame, QGridLayout, QHBoxLayout,
     QLabel, QLineEdit, QMenu, QMessageBox,
-    QPushButton, QScrollArea, QSystemTrayIcon, QVBoxLayout, QWidget,
+    QPushButton, QScrollArea, QSlider, QSystemTrayIcon, QVBoxLayout, QWidget,
 )
 
 from .lifecycle import Coordinator, LifecycleError
 from .presentation import window_stylesheet
 from .preview import FramePreviewDialog
 from .settings import (Settings, SettingsError, SettingsStore, SettingsStoreError,
-                       NATIVE_IDENTITY, NATIVE_PROFILE)
+                       NATIVE_IDENTITY, NATIVE_PROFILE, BRIGHTNESS_LEVELS)
 from .devices import (enumerate_devices, select_device, DeviceInventoryError,
                       DeviceSelectionError)
 
@@ -183,6 +183,33 @@ class SettingsDialog(QDialog):
         self.preview_action.setAutoDefault(False)
         self.preview_action.setAccessibleName("Preview output frame")
         column.addWidget(self.preview_action, 0, Qt.AlignmentFlag.AlignRight)
+        column.addWidget(_label("Native USB brightness", "sectionHeading"))
+        self.brightness = QSlider(Qt.Orientation.Horizontal)
+        self.brightness.setAccessibleName("Brightness percentage")
+        self.brightness.setRange(0, len(BRIGHTNESS_LEVELS) - 1)
+        self.brightness.setPageStep(1)
+        self.brightness.setTickInterval(1)
+        self.brightness.setTickPosition(QSlider.TickPosition.TicksBelow)
+        self.brightness.setTracking(False)
+        self.brightness.setValue(BRIGHTNESS_LEVELS.index(configured.brightness_percent if configured else 100))
+        column.addWidget(self.brightness)
+        levels = QHBoxLayout()
+        for percent in BRIGHTNESS_LEVELS:
+            label = _label(f"{percent}%")
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            levels.addWidget(label)
+            if percent != BRIGHTNESS_LEVELS[-1]:
+                levels.addStretch(1)
+        column.addLayout(levels)
+        self.brightness_status = _label()
+        column.addWidget(self.brightness_status)
+        column.addWidget(_label("Changes are saved when you release the slider or use the arrow keys. "
+                                "During capture they wait for the current image; no hardware readback."))
+        self.enable_brightness = QPushButton("Enable saved brightness…")
+        self.restore_brightness = QPushButton("Restore settings from before brightness…")
+        for button in (self.enable_brightness, self.restore_brightness):
+            button.setAutoDefault(False)
+            column.addWidget(button)
         column.addWidget(_label("Configuration", "sectionHeading"))
         column.addWidget(_label("MARS URL"))
         self.url = QLineEdit(configured.mars_url if configured else "")
@@ -295,6 +322,9 @@ class TrayShell(QObject):
         self.dialog.refresh_devices.clicked.connect(self._refresh_devices)
         self.dialog.export_settings.clicked.connect(self._export)
         self.dialog.restore_settings.clicked.connect(self._restore)
+        self.dialog.enable_brightness.clicked.connect(self._enable_brightness)
+        self.dialog.restore_brightness.clicked.connect(self._restore_brightness)
+        self.dialog.brightness.valueChanged.connect(self._brightness_changed)
         self._capture_intent = None
         self.dialog.capture_action.pressed.connect(self._capture_pressed)
         self.dialog.capture_action.clicked.connect(self._capture_request)
@@ -406,6 +436,40 @@ class TrayShell(QObject):
             self.dialog.show_message(str(error))
         self.refresh()
 
+    def _enable_brightness(self):
+        try:
+            self._configuration_guard()
+            if self._confirm("Enable saved brightness", "Schema 3 is incompatible with older binaries. "
+                             "The saved configuration will be backed up before replacement; unsaved drafts are not included. "
+                             "Brightness starts at 100% and is applied only after Start. Enable it?"):
+                self.configured = self.coordinator.enable_brightness(acknowledge_legacy_incompatibility=True)
+                self.dialog.show_message("Saved brightness enabled. Capture remains stopped.", "saved")
+        except (LifecycleError, SettingsError) as error:
+            self.dialog.show_message(str(error))
+        self.refresh()
+
+    def _restore_brightness(self):
+        try:
+            self._configuration_guard()
+            if self._confirm("Restore pre-brightness settings", "Replace current settings with the exact preserved "
+                             "configuration from before brightness was enabled? Later settings changes will be lost. "
+                             "Capture will remain stopped."):
+                self.coordinator.restore_pre_brightness_settings()
+                self.configured = self.store.load()
+                self._inventory = None
+                self.dialog.load_configuration(self.configured)
+                self.dialog.show_message("Pre-brightness settings restored. Capture remains stopped.", "saved")
+        except (LifecycleError, SettingsError) as error:
+            self.dialog.show_message(str(error))
+        self.refresh()
+
+    def _brightness_changed(self, position):
+        try:
+            self.configured = self.coordinator.set_brightness(BRIGHTNESS_LEVELS[position])
+        except (LifecycleError, SettingsError) as error:
+            self.dialog.show_message(str(error))
+        self.refresh()
+
     def _save(self):
         try:
             # Coordinator remains the stopped-only authority even if a stale Qt
@@ -417,7 +481,7 @@ class TrayShell(QObject):
                 identity = self.dialog.identity.currentData()
                 if self._inventory is not None or identity is None:
                     select_device(self._inventory or (), identity)
-                settings = replace(settings, schema_version=2, output_mode="native",
+                settings = replace(settings, schema_version=max(2, settings.schema_version), output_mode="native",
                                    device_identity=identity, native_profile=NATIVE_PROFILE)
             else:
                 settings = replace(settings, output_mode="simulated", native_profile=None)
@@ -504,6 +568,26 @@ class TrayShell(QObject):
                                     and (status.worker_alive or status.state == "error"))
         self.exit_action.setEnabled(not status.exit_requested)
         can_save = idle and status.state == "stopped"
+        configured_native = self.configured is not None and self.configured.output_mode == "native"
+        brightness_enabled = configured_native and self.configured.schema_version == 3
+        self.dialog.brightness.setEnabled(bool(brightness_enabled and not status.exit_requested
+            and not status.ownership_uncertain and status.state in {"stopped", "starting", "running"}))
+        self.dialog.enable_brightness.setEnabled(bool(can_save and configured_native and not brightness_enabled))
+        self.dialog.restore_brightness.setEnabled(bool(can_save and self.store is not None
+            and self.configured is not None and self.configured.schema_version == 3))
+        value = self.configured.brightness_percent if self.configured else 100
+        if not self.dialog.brightness.isSliderDown():
+            self.dialog.brightness.blockSignals(True)
+            self.dialog.brightness.setValue(BRIGHTNESS_LEVELS.index(value))
+            self.dialog.brightness.blockSignals(False)
+        if not brightness_enabled:
+            brightness_text = "Save native USB settings, then enable saved brightness while stopped."
+        elif status.worker_alive:
+            applied = f"{status.brightness_applied}%" if status.brightness_applied is not None else "not confirmed"
+            brightness_text = f"Requested: {value}% · Host-completed: {applied} (not panel readback)."
+        else:
+            brightness_text = f"Saved: {value}% · Applies on the next Start; current panel value is unknown."
+        self.dialog.brightness_status.setText(brightness_text)
         self.dialog.save.setEnabled(can_save)
         self.dialog.url.setReadOnly(not can_save)
         for widget in (self.dialog.output_mode, self.dialog.identity, self.dialog.refresh_devices,

@@ -9,6 +9,22 @@ Track work in [the P5 ledger](../odd/tasks/native-usb-runtime.md).
 
 ## Saved brightness candidate
 
+In **Status / Settings**, save an explicit **Native USB** configuration first.
+While stopped, click **Enable saved brightness…** and accept the schema-3 warning
+only after reviewing its backup/recovery implications. The initial choice is100%.
+The slider has exactly five positions, increasing left-to-right from20% to100%.
+Releasing the thumb or using arrow keys saves only this choice immediately, even
+while stopped; it is independent of the configuration Save button and URL drafts.
+During capture, a change waits for the current image to finish. While stopped it
+waits for the next explicit Start. No zero/off position exists.
+
+**Restore settings from before brightness…** is stopped-only and confirms before
+restoring the exact pre-migration file, including its original URL/output choice.
+This discards later settings edits, retains backups and never starts capture.
+The old schema-1 export/restore controls remain available separately. Simulation
+has no brightness writes. Stopping/error/Exit disables live adjustment; known
+stopped state permits editing the saved value again.
+
 Schema-3 native settings add five brightness choices: **20%, 40%, 60%, 80%, 100%**.
 Older schema-1/2 configurations retain their previous behavior with no brightness
 commands until explicit stopped migration. See [settings recovery](usb-settings.md).
