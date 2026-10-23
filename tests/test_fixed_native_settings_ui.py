@@ -103,6 +103,14 @@ class FixedNativeSettingsTests(unittest.TestCase):
             shell.refresh()
             fixture.APP.processEvents()
             area = dialog.scroll_area
+            # Scrollbar visibility can queue another viewport resize on Windows.
+            try:
+                fixture.until(lambda: area.horizontalScrollBar().maximum() == 0)
+            except AssertionError as error:
+                error.add_note(f'body={dialog.body.size().toTuple()}, '
+                               f'minimum={dialog.body.minimumSizeHint().toTuple()}, '
+                               f'viewport={area.viewport().size().toTuple()}')
+                raise
             self.assertGreater(area.verticalScrollBar().maximum(), 0)
             self.assertEqual(area.horizontalScrollBar().maximum(), 0)
             self.assertEqual(dialog.message.text(), message)
