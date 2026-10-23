@@ -26,7 +26,12 @@ _URL_ERROR = (
 _SCHEMA_ERROR = "Settings must contain exactly schema_version, mars_url and device_identity."
 _KEYS = {"schema_version", "mars_url", "device_identity"}
 _KEYS_V2 = _KEYS | {"output_mode", "native_profile"}
-_VERSION_ERROR = "Unsupported settings schema version; supported versions are 1 and 2."
+_KEYS_V3 = _KEYS_V2 | {"brightness_percent"}
+_VERSION_ERROR = "Unsupported settings schema version; supported versions are 1, 2 and 3."
+_SCHEMA_V3_ERROR = "Schema 3 must contain exactly schema_version, mars_url, device_identity, output_mode, native_profile and brightness_percent."
+BRIGHTNESS_LEVELS = (20, 40, 60, 80, 100)
+_ACK_V3_ERROR = "Schema 3 is incompatible with older binaries; explicit acknowledgement is required."
+_BRIGHTNESS_BACKUP_ERROR = "A valid preserved pre-brightness backup is required."
 _SCHEMA_V2_ERROR = "Schema 2 must contain exactly schema_version, mars_url, device_identity, output_mode and native_profile."
 NATIVE_PROFILE = "tus35-portrait-v1"
 NATIVE_IDENTITY = "usb:1a86:5722:USB35INCHIPSV2"
@@ -91,9 +96,10 @@ class Settings:
     schema_version: int = 1
     output_mode: str = field(default="simulated", repr=False)
     native_profile: str | None = field(default=None, repr=False)
+    brightness_percent: int = field(default=100, repr=False)
 
     def __post_init__(self):
-        if type(self.schema_version) is not int or self.schema_version not in (1, 2):
+        if type(self.schema_version) is not int or self.schema_version not in (1, 2, 3):
             raise SettingsError(_VERSION_ERROR) from None
         _capture_url(self.mars_url)
         device = self.device_identity
@@ -114,6 +120,11 @@ class Settings:
         elif (type(self.native_profile) is not str or self.native_profile != NATIVE_PROFILE
               or self.device_identity != NATIVE_IDENTITY):
             raise SettingsError("Native output requires the supported profile and exact opaque identity.") from None
+
+        if type(self.brightness_percent) is not int or self.brightness_percent not in BRIGHTNESS_LEVELS:
+            raise SettingsError("Brightness must be an integer percentage: 20, 40, 60, 80 or 100.") from None
+        if self.schema_version < 3 and self.brightness_percent != 100:
+            raise SettingsError("Schemas 1 and 2 support default brightness 100 only; use explicit schema-3 migration.") from None
 
     @property
     def capture_url(self) -> str:
@@ -166,6 +177,11 @@ class SettingsStore:
         """Exact original bytes retained before incompatible migration."""
         return self.path.with_name(self.path.name + ".schema1-backup.json")
 
+    @property
+    def pre_brightness_backup_path(self) -> Path:
+        """Exact schema-1/2 recovery point retained before schema 3."""
+        return self.path.with_name(self.path.name + ".pre-brightness-backup.json")
+
     def _existing(self):
         try:
             return _document(self.path.read_bytes())
@@ -203,6 +219,12 @@ class SettingsStore:
         if version == 2:
             Settings(**existing)
             self._backup_bytes()
+        if version == 3:
+            snapshot, current = self._snapshot()
+            if current is None or current.schema_version != 3:
+                raise SettingsError("Settings changed during the operation; nothing was replaced.") from None
+            self._pre_brightness_bytes()
+            self._expect_unchanged(snapshot)
         _write(self.path, _content(checked), replace=True)
 
     def migrate_to_v2(self, settings: Settings, *, acknowledge_legacy_incompatibility=False) -> None:
@@ -214,9 +236,16 @@ class SettingsStore:
             raise SettingsError("Migration requires validated schema-2 settings.") from None
         snapshot, current = self._snapshot()
         if current is not None and current.schema_version != 1:
+            if current.schema_version == 3:
+                raise SettingsError("Settings already use schema 3; use explicit Save.") from None
             raise SettingsError("Settings already use schema 2; use explicit Save.") from None
         original = (snapshot if current is not None
                     else _content(Settings(checked.mars_url, checked.device_identity)))
+        self._preserve_schema1(original)
+        self._expect_unchanged(snapshot)
+        _write(self.path, _content(checked), replace=True)
+
+    def _preserve_schema1(self, original):
         backup = self.schema1_backup_path
         try:
             if backup.exists():
@@ -226,8 +255,54 @@ class SettingsStore:
                 _write(backup, original, replace=False)
         except OSError:
             raise SettingsStoreError("Cannot preserve schema-1 settings; previous settings were not replaced.") from None
+
+    def migrate_to_v3(self, settings: Settings, *, acknowledge_legacy_incompatibility=False) -> None:
+        """Explicit stopped-authority caller operation; never automatic on Save."""
+        if acknowledge_legacy_incompatibility is not True:
+            raise SettingsError(_ACK_V3_ERROR) from None
+        checked = _checked(settings)
+        if checked.schema_version != 3:
+            raise SettingsError("Migration requires validated schema-3 settings.") from None
+        snapshot, current = self._snapshot()
+        if current is not None and current.schema_version == 3:
+            raise SettingsError("Settings already use schema 3; use explicit Save.") from None
+        original = (snapshot if current is not None
+                    else _content(Settings(checked.mars_url, checked.device_identity)))
+        original_version = current.schema_version if current is not None else 1
+        backup = self.pre_brightness_backup_path
+        # Validate every existing recovery point before publishing any new file.
+        try:
+            if backup.exists() and self._pre_brightness_bytes() != original:
+                raise SettingsStoreError("Conflicting pre-brightness backup; previous settings were not replaced.")
+            if self.schema1_backup_path.exists():
+                legacy = self._backup_bytes()
+                if original_version == 1 and legacy != original:
+                    raise SettingsStoreError("Cannot preserve schema-1 settings; previous settings were not replaced.")
+            if not backup.exists():
+                _write(backup, original, replace=False)
+        except OSError:
+            raise SettingsStoreError("Cannot preserve pre-brightness settings; previous settings were not replaced.") from None
+        if original_version == 1:
+            self._preserve_schema1(original)
         self._expect_unchanged(snapshot)
         _write(self.path, _content(checked), replace=True)
+
+    def _pre_brightness_bytes(self) -> bytes:
+        try:
+            raw = self.pre_brightness_backup_path.read_bytes()
+            checked = Settings(**_document(raw))
+            if checked.schema_version not in (1, 2):
+                raise SettingsError("Backup is not schema 1 or 2.")
+            return raw
+        except (OSError, SettingsError):
+            raise SettingsStoreError(_BRIGHTNESS_BACKUP_ERROR) from None
+
+    def restore_pre_brightness(self) -> None:
+        """Explicitly restore original schema-1/2 bytes; retain all backups."""
+        snapshot, _ = self._snapshot()
+        backup = self._pre_brightness_bytes()
+        self._expect_unchanged(snapshot)
+        _write(self.path, backup, replace=True)
 
     def export_schema1(self, destination: Path | str) -> None:
         """Explicit old-reader export, exclusively created; never downgrade Save."""
@@ -270,10 +345,12 @@ def _document(raw):
     if type(data) is not dict or not _KEYS <= data.keys():
         raise SettingsError(_SCHEMA_ERROR) from None
     version = data["schema_version"]
-    if type(version) is not int or version not in (1, 2):
+    if type(version) is not int or version not in (1, 2, 3):
         raise SettingsError(_VERSION_ERROR) from None
-    if data.keys() != (_KEYS if version == 1 else _KEYS_V2):
-        raise SettingsError(_SCHEMA_ERROR if version == 1 else _SCHEMA_V2_ERROR) from None
+    keys, error = {1: (_KEYS, _SCHEMA_ERROR), 2: (_KEYS_V2, _SCHEMA_V2_ERROR),
+                   3: (_KEYS_V3, _SCHEMA_V3_ERROR)}[version]
+    if data.keys() != keys:
+        raise SettingsError(error) from None
     return data
 
 
@@ -281,14 +358,16 @@ def _checked(settings):
     if type(settings) is not Settings:
         raise SettingsError("Only validated Settings can be saved.") from None
     return Settings(settings.mars_url, settings.device_identity, settings.schema_version,
-                    settings.output_mode, settings.native_profile)
+                    settings.output_mode, settings.native_profile, settings.brightness_percent)
 
 
 def _content(settings):
     value = {"schema_version": settings.schema_version, "mars_url": settings.mars_url,
              "device_identity": settings.device_identity}
-    if settings.schema_version == 2:
+    if settings.schema_version >= 2:
         value.update(output_mode=settings.output_mode, native_profile=settings.native_profile)
+    if settings.schema_version == 3:
+        value["brightness_percent"] = settings.brightness_percent
     # Preserve ordinary platform text-save formatting; backup copies stay raw.
     return (json.dumps(value, ensure_ascii=True, indent=2) + "\n").replace("\n", os.linesep).encode("utf-8")
 

@@ -11,7 +11,7 @@ substitutes Simulation for an explicitly native configuration.
 Track implementation and proof in [the P4 ledger](../odd/tasks/native-usb-settings.md).
 [P3 helper qualification](usb-helper.md) is separate; the new P4 evidence is below.
 
-## Two strict formats
+## Three strict formats
 
 Schema 1 keeps exactly its existing keys and ordinary serialization:
 
@@ -41,6 +41,45 @@ a passive legacy identity is permitted. Native requires string profile
 COM is never persisted. Missing/unknown/duplicate keys, unsupported versions,
 invalid combinations/types and unsafe URLs are rejected without repairing bytes.
 Static settings validity is not hardware permission or proof of current selection.
+
+### Schema 3: persistent brightness
+
+Schema 3 contains exactly the schema-2 keys plus `brightness_percent`. Its value
+is an integer in `BRIGHTNESS_LEVELS = (20, 40, 60, 80, 100)`; booleans, floats,
+strings, zero and other values are rejected. `Settings.brightness_percent` is
+appended after the existing positional arguments and defaults to 100. Schemas 1
+and 2 load with that default and still serialize only their original keys;
+nondefault brightness requires explicit migration, never an ordinary Save.
+
+A trusted caller with stopped-state authority can explicitly request:
+
+```python
+store.migrate_to_v3(
+    Settings("https://mars.example", schema_version=3, brightness_percent=80),
+    acknowledge_legacy_incompatibility=True,
+)
+```
+
+Only literal `True` acknowledges older-reader incompatibility. Migration preserves
+exact original schema-1/2 bytes at `store.pre_brightness_backup_path`, normally
+`settings.json.pre-brightness-backup.json`. First run preserves a schema-1
+equivalent at default brightness. Invalid or conflicting recovery files reject
+before publication. Migration from schema 1 also preserves `schema1_backup_path`;
+migration from schema 2 retains an existing valid schema-1 backup, but does not
+invent one. An already published backup can remain after a later I/O failure.
+
+Schema-3 Save requires a validated pre-brightness backup and never downgrades.
+`store.restore_pre_brightness()` explicitly restores its validated schema-1/2
+bytes after checking the current snapshot. Unknown/malformed current data is
+never silently repaired by migration or recovery. Existing `restore_schema1()`
+remains available when a valid schema-1 backup exists. `export_schema1()` on
+schema 3 is an explicit loss-of-new-fields export (Simulation, default brightness),
+not a Save or in-place downgrade. Neither recovery operation deletes backups.
+
+These low-level APIs do not grant lifecycle authority, start capture, or apply
+hardware brightness. Callers must obtain migration consent and serialize stopped
+migration/recovery themselves. Compare-before-replacement detects observed edits,
+not arbitrary concurrent third-party changes after the check.
 
 ## Explicit incompatible migration
 
