@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mars-display"
-version = "0.1.4"
-description = "Hardware-independent foundation for a Windows MARS display companion"
+version = "0.2.0rc1"
+description = "Windows MARS display companion with explicit native USB and saved brightness"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 license = "GPL-3.0-only"

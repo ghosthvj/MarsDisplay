@@ -1,5 +1,18 @@
 # Windows portable build and verified delivery
 
+## Current brightness candidate — 0.2.0rc1
+
+The current source adds schema-3 persisted brightness and a five-position slider
+(20/40/60/80/100%). Native output is explicitly selected, portrait 320×480 only;
+legacy schema 1/2 behavior remains until explicit migration. See
+[the current runtime guide](../docs/usb-runtime.md#saved-brightness-candidate).
+Build a new portable ZIP and verify its source/inventory hashes before owner use;
+none of the immutable historical artifacts below gains this feature retroactively.
+Native packaged tests and Windows 11 physical acceptance are separate requirements.
+No installer, signature, automatic update, release or new driver is implied.
+
+The following sections retain historical artifact evidence and stage limitations.
+
 ## Qualified P4 contracts — no native application output
 
 [Windows run 39629193023](https://github.com/ghosthvj/MarsDisplay/actions/runs/39629193023)

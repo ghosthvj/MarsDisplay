@@ -1,4 +1,4 @@
-MarsDisplay portable prototype - Windows 11 x64
+MarsDisplay portable candidate - Windows 11 x64
 
 Extract the ENTIRE ZIP. Keep README.txt, _internal, LICENSE, notices and source.
 Prerequisite: official Microsoft Visual C++ v14 x64 runtime, current 14.51 or newer
@@ -8,12 +8,21 @@ https://aka.ms/vc14/vc_redist.x64.exe
 MarsDisplay does not download/install prerequisites or redistribute Microsoft DLLs.
 Windows 11 provides the OS UCRT/API-set components. No MarsDisplay installer exists.
 Open MarsDisplay.exe in an interactive desktop session; capture starts STOPPED.
-Output is SIMULATED ONLY; no USB screen is connected or driven by this prototype.
-The P3 native helper is not selected by the application. --usb-worker is a reserved
-owned-child route, not an operator command; do not invoke it manually. Build checks
-of that route do not send frames to USB or establish continuous hardware acceptance.
+Output is Simulation unless Native USB is explicitly configured and saved.
+Native USB supports the qualified 320x480 portrait profile only, not landscape.
+While stopped, Enable saved brightness offers explicit schema-3 migration with a
+preserved pre-brightness settings backup; older binaries cannot read schema 3.
+The slider selects only 20%, 40%, 60%, 80%, 100% (initially 100%), never zero/off.
+Release it or use arrow keys to save that percentage independently of URL drafts.
+Start applies the saved choice; live changes wait for a complete image and reuse
+the same connection. Stop/Exit sends no brightness restoration. Host-completed is
+not a measured panel value. USB failure has no automatic retry/reconnect.
+Restore settings from before brightness is an explicit stopped-only rollback;
+it restores the old URL/output too and discards later settings changes.
+--usb-worker is a reserved owned-child route, not an operator command; do not
+invoke it manually. Packaged smoke does not establish physical USB acceptance.
 Use the tray Status / Settings to configure; Start/Stop control capture, Exit closes.
-Preview opens one modeless view of the latest RGB frame accepted by simulated output.
+Preview opens one modeless view of the latest RGB frame accepted by host output.
 It updates while visible without another capture/browser or writing images to disk.
 Stop retains the last frame; read the lifecycle/live/stale labels, not just the image.
 Close/Escape hides only the preview; tray Exit still waits for owned-resource cleanup.

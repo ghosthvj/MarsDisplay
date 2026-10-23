@@ -11,8 +11,8 @@ Track work in [the P5 ledger](../odd/tasks/native-usb-runtime.md).
 
 In **Status / Settings**, save an explicit **Native USB** configuration first.
 While stopped, click **Enable saved brightness…** and accept the schema-3 warning
-only after reviewing its backup/recovery implications. The initial choice is100%.
-The slider has exactly five positions, increasing left-to-right from20% to100%.
+only after reviewing its backup/recovery implications. The initial choice is 100%.
+The slider has exactly five positions, increasing left-to-right from 20% to 100%.
 Releasing the thumb or using arrow keys saves only this choice immediately, even
 while stopped; it is independent of the configuration Save button and URL drafts.
 During capture, a change waits for the current image to finish. While stopped it

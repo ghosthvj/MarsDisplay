@@ -1,5 +1,52 @@
 # MarsDisplay
 
+## 0.2.0rc1: persistent USB brightness candidate
+
+MarsDisplay is a Windows 11 x64 tray companion that renders MARS with bundled
+Chromium. The current candidate supports Simulation and explicitly selected native
+USB output for the qualified 320×480 portrait profile. Native landscape is not
+supported; the accepted progressive image repaint is unchanged.
+
+### Brightness
+
+1. Extract the entire portable ZIP, launch `MarsDisplay.exe`, and keep the
+   previous working folder as a fallback. Capture always starts stopped.
+2. In **Status / Settings**, save the MARS URL and explicit **Native USB** device.
+3. While stopped, choose **Enable saved brightness…**. Review the schema-3
+   compatibility warning: a backup preserves the previous settings for recovery.
+4. Move the slider to **20%, 40%, 60%, 80% or 100%**. Releasing it or using arrow keys
+   saves the percentage; **Start** applies it. Live changes wait for the current
+   image and reuse the same connection. There is no zero/off setting.
+5. **Stop** ends capture; tray **Exit** waits for owned cleanup. Neither restores
+   an unknown prior brightness. The next Start uses the saved percentage.
+
+The slider changes only brightness, never unsaved URL/device drafts. Host completion
+is not panel readback. On uncertain USB failure there is no automatic resend or
+reconnect: resolve the cause and use Start explicitly. Legacy settings are not
+silently migrated; use **Restore settings from before brightness…** while stopped
+if returning to the prior configuration/binary (later settings edits are lost).
+
+**Candidate status:** source checks and independent verification passed. A new Windows
+artifact and owner acceptance are required; historical download links below are
+not brightness-enabled builds. The earlier isolated Linux brightness observation
+is not proof of this executable's Windows behavior. This remains a full portable
+folder, not a standalone EXE or installer; official VC++ v14 x64 runtime 14.51+
+is an external prerequisite. Do not disable Windows security protections.
+
+See [runtime and brightness controls](docs/usb-runtime.md),
+[settings and recovery](docs/usb-settings.md), and
+[Windows packaging](packaging/README.md). Run source checks with Python 3.13:
+
+```sh
+QT_QPA_PLATFORM=offscreen PLAYWRIGHT_BROWSERS_PATH=0 PYTHONPATH=src:tests .venv/bin/python -B -m unittest discover -s tests -v
+```
+
+<details>
+<summary>Historical prototype documentation and immutable artifact evidence</summary>
+
+The statements below describe earlier prototype stages, not the current candidate.
+
+
 MarsDisplay is a GPL v3 Windows 11 x64 tray companion that renders MARS locally
 with bundled Chromium. Output is **simulated only**: this prototype does not
 drive a physical USB screen.
@@ -545,3 +592,5 @@ connected screen. There is no installer, service, autostart, or update mechanism
 
 GPL-3.0-only; see [LICENSE](LICENSE). This foundation contains no copied driver
 code. Future integrations must retain their own license and provenance notices.
+
+</details>
