@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 from .lifecycle import Coordinator, LifecycleError
 from .presentation import window_stylesheet
 from .preview import FramePreviewDialog
+from .status_label import StatusLabel
 from .settings import (Settings, SettingsError, SettingsStore, SettingsStoreError,
                        NATIVE_IDENTITY, NATIVE_PROFILE, BRIGHTNESS_LEVELS)
 from .devices import (enumerate_devices, select_device, DeviceInventoryError,
@@ -146,7 +147,7 @@ class SettingsDialog(QDialog):
         self.runtime_card.setObjectName("lifecycleCard")
         self.capture_row = QHBoxLayout(self.runtime_card)
         self.capture_row.setContentsMargins(20, 16, 20, 16)
-        self.runtime = _label("stopped", "runtimeValue")
+        self.runtime = StatusLabel("stopped", "runtimeValue")
         runtime_text = QVBoxLayout()
         runtime_text.addWidget(_label("Capture lifecycle", "muted"))
         runtime_text.addWidget(self.runtime)
@@ -159,7 +160,7 @@ class SettingsDialog(QDialog):
         self.error_stop_action.hide()
         self.capture_row.addWidget(self.error_stop_action)
         column.addWidget(self.runtime_card)
-        self.source = _label("stopped", "sourceBadge")
+        self.source = StatusLabel("stopped", "sourceBadge")
         self.output = _label("Simulated — simulated-closed (no USB output)")
         self.metadata = _label()
         self.frames = _label("0", "frames")
@@ -514,8 +515,8 @@ class TrayShell(QObject):
                 self.preview.hide()
             elif self.preview.isVisible():
                 self.preview.update_snapshot(status)
-        self.dialog.runtime.setText("recovering (retrying)" if status.state == "retrying" else status.state)
-        self.dialog.source.setText(status.source_state)
+        self.dialog.runtime.set_state(status.state)
+        self.dialog.source.set_state(status.source_state)
         native = status.output_mode == "native"
         self.dialog.output.setText(
             f"Native USB — {status.output_state} (host completion, not panel acknowledgement)" if native

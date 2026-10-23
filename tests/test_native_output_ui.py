@@ -213,7 +213,7 @@ class NativeOutputUiTests(unittest.TestCase):
         fixture.until(lambda: controller.snapshot().frames_sent == 1)
         self.shell.exit_action.trigger()
         self.session.allow_close.set()
-        fixture.until(lambda: self.shell.dialog.runtime.text() == 'error')
+        fixture.until(lambda: self.shell.dialog.runtime.text() == 'Error')
         status = controller.snapshot()
         self.assertTrue(status.ownership_uncertain)
         self.assertFalse(status.exit_ready)

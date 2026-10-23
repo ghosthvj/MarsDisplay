@@ -263,7 +263,7 @@ class AppTests(unittest.TestCase):
                                 self.assertTrue(owned)
                                 self.assertTrue(all(not browser.is_connected() for browser in owned))
                                 self.shell.refresh()
-                                self.assertEqual(self.shell.dialog.source.text(), "stopped")
+                                self.assertEqual(self.shell.dialog.source.text(), "Stopped")
                                 self.assertEqual(self.store.path.read_bytes(), original)
                                 self.assertEqual(self.shell.coordinator.snapshot().frames_sent, stopped.frames_sent)
                                 self.shell.start_action.trigger()
@@ -292,7 +292,7 @@ class AppTests(unittest.TestCase):
         with patch.object(BrowserSession, "open", side_effect=RuntimeError("private-url-token")):
             self.shell = build_shell(APP, self.store)
             self.shell.start_action.trigger()
-            until(lambda: self.shell.dialog.runtime.text() == "recovering (retrying)")
+            until(lambda: self.shell.dialog.runtime.text() == "Recovering (retrying)")
             self.assertEqual(self.shell.dialog.message.text(), "Capture or output failed; retrying.")
             self.assertEqual(self.shell.coordinator.snapshot().frames_sent, 0)
             self.shell.stop_action.trigger()

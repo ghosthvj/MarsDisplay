@@ -7,6 +7,14 @@ performance or interactive Windows-tray acceptance; those boundaries remain belo
 The immutable ZIP contains earlier pending wording, superseded by this record.
 Track work in [the P5 ledger](../odd/tasks/native-usb-runtime.md).
 
+## Status presentation (current source)
+
+Lifecycle and MARS source labels use initial capitals without changing backend
+states. Running has a lightning icon; Stopped a stop square; Ready a check;
+Error a warning; Empty an outline circle. Starting, Stopping, Loading and
+Recovering (retrying) use an animated vector wheel only while visible. Icons
+follow the session theme. This source change is not in the immutable rc2 ZIP.
+
 ## Saved brightness candidate
 
 In **Status / Settings**, save an explicit **Native USB** configuration first.

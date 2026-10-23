@@ -20,7 +20,7 @@ class ErrorStopUiTests(unittest.TestCase):
         self.output.fail_open = True
         shell.show_settings()
         shell.dialog.capture_action.click()
-        fixture.until(lambda: shell.dialog.runtime.text() == 'error')
+        fixture.until(lambda: shell.dialog.runtime.text() == 'Error')
         button = shell.dialog.error_stop_action
         self.assertEqual(button.text(), 'Stop capture')
         self.assertTrue(button.isVisible())
@@ -50,7 +50,7 @@ class ErrorStopUiTests(unittest.TestCase):
         self.session.allow_open.set()
         self.session.allow_close.set()
         shell.dialog.capture_action.click()
-        fixture.until(lambda: shell.dialog.runtime.text() == 'error')
+        fixture.until(lambda: shell.dialog.runtime.text() == 'Error')
         button = shell.dialog.error_stop_action
         self.assertFalse(button.isHidden())
         self.assertTrue(button.isEnabled())
@@ -77,7 +77,7 @@ class ErrorStopUiTests(unittest.TestCase):
         self.assertEqual(self.output.events, [])
         self.output.fail_open = True
         shell.dialog.capture_action.click()
-        fixture.until(lambda: shell.dialog.runtime.text() == 'error')
+        fixture.until(lambda: shell.dialog.runtime.text() == 'Error')
         before = shell.coordinator.snapshot()
         self.assertFalse(shell.dialog.brightness.isEnabled())
         self.assertEqual(digest(), original)
@@ -104,7 +104,7 @@ class ErrorStopUiTests(unittest.TestCase):
         raw = self.store.path.read_bytes()
         with patch.object(self.output, 'close', side_effect=UsbError('close', ownership_uncertain=True)):
             shell.dialog.capture_action.click()
-            fixture.until(lambda: shell.dialog.runtime.text() == 'error')
+            fixture.until(lambda: shell.dialog.runtime.text() == 'Error')
         button = shell.dialog.error_stop_action
         self.assertTrue(button.isEnabled())
         button.click()
