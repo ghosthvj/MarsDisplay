@@ -11,8 +11,8 @@ S5 — User: `tambien creo que los botones Preview y Logs se pueden mover a la b
 S6 — User: `El campo de configuracion de la URL de MARS está correcto.` / `El desplegable de los dispositivos USB y el boton Refresh USB identities creo que pueden ir en la misma linea ajustando su ancho.` / `Creo que ya no necesitamos los botones de exportar y restaurar el schema-1.` / `Tampoco necesitamos la explicacion del Refresh.` / `La idea es hacer la ventana de configuracion de un alto fijo para que no sea necesario hacer scroll` / `si, confirmo que se configure Native USB`. Save/Start remain explicit; Simulation/export/recovery remain internal capabilities. No automatic migration, device selection or Start.
 
 ## Tasks
-- T1 [S3] route: inline verified work-unit staging; status: in_progress; commit: pending. Commit capitalized status/vector icons with matching tests/docs; preserve unrelated changes.
-- T2 [S2,S4,S5] route: inline verified work-unit staging; status: pending; commit: pending. Commit Logs, compact centered brightness and footer observers with their tests/docs.
+- T1 [S3] route: inline verified work-unit staging; status: done; commit: `e18001efbfb210d342bf278eb50aca154b70211f` (257 authored lines); bounded staged snapshot45tests5.994sPASS. Commit capitalized status/vector icons with matching tests/docs; preserve unrelated changes.
+- T2 [S2,S4,S5] route: inline verified work-unit staging; status: in_progress; commit: pending. Commit Logs, compact centered brightness and footer observers with their tests/docs.
 - T3 [S6] route: inline verified work-unit staging; status: pending; commit: pending. Commit native-only fixed form, including the observed screen-fit correction and regression tests.
 - T4 [S1] route: inline candidate metadata; status: pending; commit: pending. Set rc3 version and update portable instructions without changing dependencies/workflow/packaging recipe.
 - T5 [S1] route: existing Windows workflow, exact source binding; status: pending; commit: pending. Nonforce push candidate, dispatch once, retain run ID, await source/native/build/smoke result.

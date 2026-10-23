@@ -157,6 +157,36 @@ class TrayTests(unittest.TestCase):
         self.assertEqual(shell.coordinator.snapshot().frames_sent, 0)
         self.assertFalse(self.session.opened.is_set())
 
+    def test_footer_groups_logs_and_preview_apart_from_save(self):
+        shell = self.make()
+        dialog = shell.dialog
+        original = self.store.path.read_bytes()
+        before = shell.coordinator.snapshot()
+        for button in (dialog.logs_action, dialog.preview_action, dialog.save):
+            self.assertTrue(dialog.footer.isAncestorOf(button))
+            self.assertFalse(dialog.scroll_area.isAncestorOf(button))
+        shell.show_settings()
+        for width in (480, 900):
+            dialog.resize(width, 480)
+            APP.processEvents()
+            logs, preview, save = (button.geometry() for button in
+                                  (dialog.logs_action, dialog.preview_action, dialog.save))
+            self.assertGreater(preview.left(), logs.right())
+            self.assertGreater(save.left() - preview.right(), preview.left() - logs.right())
+            for button in (dialog.logs_action, dialog.preview_action, dialog.save):
+                self.assertTrue(button.isVisible())
+                self.assertTrue(dialog.footer.rect().contains(button.geometry()))
+            self.assertLessEqual(dialog.footer.geometry().bottom(), dialog.height())
+            dialog.resize(width, 400)
+            APP.processEvents()
+            self.assertEqual(dialog.logs_action.geometry(), logs)
+            self.assertEqual(dialog.preview_action.geometry(), preview)
+            self.assertEqual(dialog.save.geometry(), save)
+        self.assertEqual(shell.coordinator.snapshot(), before)
+        self.assertEqual(self.store.path.read_bytes(), original)
+        self.assertFalse(self.session.opened.is_set())
+
+
     def test_reference_layout_keeps_native_window_plain_text_and_small_window_footer(self):
         shell = self.make()
         dialog = shell.dialog

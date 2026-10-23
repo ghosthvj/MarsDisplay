@@ -15,6 +15,20 @@ Error a warning; Empty an outline circle. Starting, Stopping, Loading and
 Recovering (retrying) use an animated vector wheel only while visible. Icons
 follow the session theme. This source change is not in the immutable rc2 ZIP.
 
+## Compact brightness and observer windows (current source)
+
+Logs and Preview are grouped in the persistent footer, 8px apart with 20px before
+Save. Logs opens a modeless window with the unchanged live native timing report,
+scrolling and Close; neither observer starts capture or accesses USB. Both follow
+the session theme and are hidden/disabled during Exit.
+
+The five-level brightness slider and percentages are centered at 320px. The brief
+brightness status and save-explanation paragraph are omitted. Compact Enable
+Brightness appears only for configured native settings still needing activation;
+its stopped-only confirmation and preserved backup remain mandatory. The
+pre-brightness Restore control is hidden, without removing its recovery binding
+or adding an advanced menu. This source UI is not in the immutable rc2 ZIP.
+
 ## Saved brightness candidate
 
 In **Status / Settings**, save an explicit **Native USB** configuration first.

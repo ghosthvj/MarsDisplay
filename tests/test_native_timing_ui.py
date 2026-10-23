@@ -1,9 +1,9 @@
-"""Read-only timing presentation in the existing scrollable status window."""
+"""Read-only native timing in a modeless Logs window; no extra capture."""
 from dataclasses import replace
 import unittest
 from unittest.mock import patch
 from PySide6.QtCore import QEvent, Qt
-from PySide6.QtGui import QKeyEvent
+from PySide6.QtGui import QKeyEvent, QPalette
 from mars_display import lifecycle
 import test_tray as fixture
 
@@ -12,6 +12,51 @@ class TimingUITests(unittest.TestCase):
     setUp = fixture.TrayTests.setUp
     tearDown = fixture.TrayTests.tearDown
     make = fixture.TrayTests.make
+
+    def test_logs_button_opens_reusable_observer_window_like_preview(self):
+        shell = self.make()
+        dialog = shell.dialog
+        original = self.store.path.read_bytes()
+        before = shell.coordinator.snapshot()
+        shell.show_settings()
+        self.assertEqual(dialog.logs_action.text(), 'Logs')
+        self.assertEqual(dialog.logs_action.parentWidget(), dialog.preview_action.parentWidget())
+        self.assertFalse(dialog.logs_action.autoDefault())
+        self.assertFalse(dialog.logs_window.isVisible())
+        dialog.logs_action.click()
+        popup = dialog.logs_window
+        self.assertEqual(popup.windowTitle(), 'MarsDisplay — Logs')
+        self.assertTrue(popup.isWindow())
+        self.assertTrue(popup.isVisible())
+        self.assertFalse(popup.isModal())
+        self.assertTrue(popup.empty.isVisible())
+        self.assertIn('No native timing', popup.empty.text())
+        self.assertFalse(dialog.scroll_area.isAncestorOf(dialog.native_timing))
+        popup.ensurePolished()
+        light = popup.palette().color(QPalette.ColorRole.Window).name()
+        dialog.theme_switch.click()
+        fixture.APP.processEvents()
+        self.assertNotEqual(popup.palette().color(QPalette.ColorRole.Window).name(), light)
+        popup.close_action.click()
+        self.assertFalse(popup.isVisible())
+        dialog.logs_action.click()
+        self.assertIs(dialog.logs_window, popup)
+        self.assertTrue(popup.isVisible())
+        fixture.APP.sendEvent(popup, QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Escape,
+                                             Qt.KeyboardModifier.NoModifier))
+        self.assertFalse(popup.isVisible())
+        dialog.logs_action.click()
+        with patch.object(shell.coordinator, 'snapshot', return_value=replace(
+                before, exit_requested=True)):
+            shell.refresh()
+            self.assertFalse(popup.isVisible())
+            self.assertFalse(dialog.logs_action.isEnabled())
+            shell.show_logs()
+            self.assertFalse(popup.isVisible())
+        self.assertEqual(shell.coordinator.snapshot(), before)
+        self.assertEqual(self.store.path.read_bytes(), original)
+        self.assertFalse(self.session.opened.is_set())
+        self.assertEqual(fixture.APP.quit_requests, 0)
 
     def test_numeric_labels_scroll_footer_keyboard_and_no_extra_capture(self):
         shell = self.make()
@@ -24,6 +69,9 @@ class TimingUITests(unittest.TestCase):
         with patch.object(shell.coordinator, 'snapshot', return_value=replace(
                 before, output_mode='native', native_timing=report)):
             shell.show_settings()
+            dialog.logs_action.click()
+            popup = dialog.logs_window
+            popup.resize(600, 300)
             dialog.resize(600, 480)
             fixture.APP.processEvents()
             self.assertEqual(dialog.native_timing.text(),
@@ -58,7 +106,11 @@ class TimingUITests(unittest.TestCase):
                     self.assertIn(f'{title} (ms): count 2; last 125.000; min 62.500; '
                                   'max 187.500; mean 125.000', dialog.native_timing.text())
             shell.refresh()
-            self.assertTrue(dialog.scroll_area.isAncestorOf(dialog.native_timing))
+            self.assertFalse(dialog.scroll_area.isAncestorOf(dialog.native_timing))
+            self.assertTrue(popup.scroll_area.isAncestorOf(dialog.native_timing))
+            self.assertFalse(popup.empty.isVisible())
+            self.assertGreater(popup.scroll_area.verticalScrollBar().maximum(), 0)
+            self.assertTrue(popup.close_action.isVisible())
             self.assertFalse(dialog.scroll_area.isAncestorOf(dialog.save))
             self.assertTrue(dialog.save.isVisible())
             self.assertLessEqual(dialog.footer.geometry().bottom(), dialog.height())
@@ -71,6 +123,7 @@ class TimingUITests(unittest.TestCase):
             fixture.APP.sendEvent(dialog, QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Escape,
                                                    Qt.KeyboardModifier.NoModifier))
             self.assertFalse(dialog.isVisible())
+            popup.close()
         shell.refresh()
         self.assertTrue(dialog.native_timing.isHidden())
         self.assertEqual(dialog.native_timing.text(), '')

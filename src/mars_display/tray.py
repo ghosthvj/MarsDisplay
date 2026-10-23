@@ -105,6 +105,37 @@ def _tone(label: QLabel, value: str):
         label.update()
 
 
+class NativeTimingDialog(QDialog):
+    """Modeless view of existing timing text, with no capture or device ownership."""
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setWindowTitle("MarsDisplay — Logs")
+        self.setObjectName("logsWindow")
+        self.setWindowIcon(parent.windowIcon())
+        self.resize(650, min(600, max(300, self.screen().availableGeometry().height() - 64)))
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(18, 18, 18, 18)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        body = QWidget()
+        body.setObjectName("body")
+        content = QVBoxLayout(body)
+        self.empty = _label("No native timing is available. Start native USB capture to collect samples.")
+        content.addWidget(self.empty)
+        self.timing = _label()
+        self.timing.hide()
+        content.addWidget(self.timing)
+        content.addStretch()
+        self.scroll_area.setWidget(body)
+        layout.addWidget(self.scroll_area, 1)
+        self.close_action = QPushButton("Close")
+        self.close_action.setAutoDefault(False)
+        self.close_action.clicked.connect(self.hide)
+        layout.addWidget(self.close_action, 0, Qt.AlignmentFlag.AlignRight)
+
+
 class SettingsDialog(QDialog):
     """Native window with a scrollable status body and an always-visible footer."""
 
@@ -181,14 +212,19 @@ class SettingsDialog(QDialog):
             line.setFixedHeight(1)
             details.addWidget(line, index * 2 + 1, 0, 1, 2)
         column.addLayout(details)
-        self.native_timing = _label()
-        self.native_timing.hide()
-        column.addWidget(self.native_timing)
+        self.logs_window = NativeTimingDialog(self)
+        self.native_timing = self.logs_window.timing
         self.preview_action = QPushButton("Preview")
         self.preview_action.setAutoDefault(False)
         self.preview_action.setAccessibleName("Preview output frame")
-        column.addWidget(self.preview_action, 0, Qt.AlignmentFlag.AlignRight)
+        self.logs_action = QPushButton("Logs")
+        self.logs_action.setAutoDefault(False)
+        self.logs_action.setAccessibleName("Show native timing logs")
         column.addWidget(_label("Native USB brightness", "sectionHeading"))
+        brightness_control = QWidget()
+        brightness_control.setFixedWidth(320)
+        brightness_layout = QVBoxLayout(brightness_control)
+        brightness_layout.setContentsMargins(0, 0, 0, 0)
         self.brightness = QSlider(Qt.Orientation.Horizontal)
         self.brightness.setAccessibleName("Brightness percentage")
         self.brightness.setRange(0, len(BRIGHTNESS_LEVELS) - 1)
@@ -197,7 +233,7 @@ class SettingsDialog(QDialog):
         self.brightness.setTickPosition(QSlider.TickPosition.TicksBelow)
         self.brightness.setTracking(False)
         self.brightness.setValue(BRIGHTNESS_LEVELS.index(configured.brightness_percent if configured else 100))
-        column.addWidget(self.brightness)
+        brightness_layout.addWidget(self.brightness)
         levels = QHBoxLayout()
         for percent in BRIGHTNESS_LEVELS:
             label = _label(f"{percent}%")
@@ -205,16 +241,15 @@ class SettingsDialog(QDialog):
             levels.addWidget(label)
             if percent != BRIGHTNESS_LEVELS[-1]:
                 levels.addStretch(1)
-        column.addLayout(levels)
-        self.brightness_status = _label()
-        column.addWidget(self.brightness_status)
-        column.addWidget(_label("Changes are saved when you release the slider or use the arrow keys. "
-                                "During capture they wait for the current image; no hardware readback."))
-        self.enable_brightness = QPushButton("Enable saved brightness…")
-        self.restore_brightness = QPushButton("Restore settings from before brightness…")
-        for button in (self.enable_brightness, self.restore_brightness):
-            button.setAutoDefault(False)
-            column.addWidget(button)
+        brightness_layout.addLayout(levels)
+        column.addWidget(brightness_control, 0, Qt.AlignmentFlag.AlignHCenter)
+        self.enable_brightness = QPushButton("Enable Brightness")
+        self.enable_brightness.setAutoDefault(False)
+        column.addWidget(self.enable_brightness, 0, Qt.AlignmentFlag.AlignLeft)
+        # Retain the guarded recovery binding without exposing another UI control.
+        self.restore_brightness = QPushButton("Restore settings from before brightness…", self)
+        self.restore_brightness.setAutoDefault(False)
+        self.restore_brightness.hide()
         column.addWidget(_label("Configuration", "sectionHeading"))
         column.addWidget(_label("MARS URL"))
         self.url = QLineEdit(configured.mars_url if configured else "")
@@ -262,7 +297,13 @@ class SettingsDialog(QDialog):
         self.hint = _label("Settings can be saved only while capture is stopped.", "hint")
         footer_row.addWidget(self.hint, 1)
         self.save = QPushButton("Save")
-        footer_row.addWidget(self.save)
+        actions = QHBoxLayout()
+        actions.setSpacing(8)
+        actions.addWidget(self.logs_action)
+        actions.addWidget(self.preview_action)
+        actions.addSpacing(12)
+        actions.addWidget(self.save)
+        footer_row.addLayout(actions)
         outer.addWidget(self.footer)
         self.set_dark_mode(False)
 
@@ -314,6 +355,7 @@ class TrayShell(QObject):
         self.dialog = SettingsDialog(configured)
         self.preview = None
         self.dialog.preview_action.clicked.connect(self.show_preview)
+        self.dialog.logs_action.clicked.connect(self.show_logs)
         self.menu = QMenu()
         self.settings_action = self.menu.addAction("Status / Settings")
         self.start_action = self.menu.addAction("Start")
@@ -361,6 +403,15 @@ class TrayShell(QObject):
         self.preview.update_snapshot(status)
         self.preview.raise_()
         self.preview.activateWindow()
+
+    def show_logs(self):
+        if self.coordinator.snapshot().exit_requested:
+            return
+        self.refresh()
+        self.dialog.logs_window.show()
+        self.dialog.logs_window.raise_()
+        self.dialog.logs_window.activateWindow()
+
 
     def _activate(self, reason):
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
@@ -510,6 +561,9 @@ class TrayShell(QObject):
     def refresh(self):
         status = self.coordinator.snapshot()
         self.dialog.preview_action.setEnabled(not status.exit_requested)
+        self.dialog.logs_action.setEnabled(not status.exit_requested)
+        if status.exit_requested:
+            self.dialog.logs_window.hide()
         if self.preview is not None:
             if status.exit_requested:
                 self.preview.hide()
@@ -560,6 +614,7 @@ class TrayShell(QObject):
             timing_lines.append("Host exchange includes helper work; do not add exchange and helper stages as separate costs.")
         self.dialog.native_timing.setText("\n".join(timing_lines))
         self.dialog.native_timing.setVisible(report is not None)
+        self.dialog.logs_window.empty.setVisible(report is None)
         _tone(self.dialog.source, "success" if status.source_state == "ready" else
               "error" if status.source_state == "error" else
               "warning" if status.source_state == "loading" else "muted")
@@ -578,6 +633,7 @@ class TrayShell(QObject):
         brightness_enabled = configured_native and self.configured.schema_version == 3
         self.dialog.brightness.setEnabled(bool(brightness_enabled and not status.exit_requested
             and not status.ownership_uncertain and status.state in {"stopped", "starting", "running"}))
+        self.dialog.enable_brightness.setVisible(bool(configured_native and not brightness_enabled))
         self.dialog.enable_brightness.setEnabled(bool(can_save and configured_native and not brightness_enabled))
         self.dialog.restore_brightness.setEnabled(bool(can_save and self.store is not None
             and self.configured is not None and self.configured.schema_version == 3))
@@ -586,14 +642,6 @@ class TrayShell(QObject):
             self.dialog.brightness.blockSignals(True)
             self.dialog.brightness.setValue(BRIGHTNESS_LEVELS.index(value))
             self.dialog.brightness.blockSignals(False)
-        if not brightness_enabled:
-            brightness_text = "Save native USB settings, then enable saved brightness while stopped."
-        elif status.worker_alive:
-            applied = f"{status.brightness_applied}%" if status.brightness_applied is not None else "not confirmed"
-            brightness_text = f"Requested: {value}% · Host-completed: {applied} (not panel readback)."
-        else:
-            brightness_text = f"Saved: {value}% · Applies on the next Start; current panel value is unknown."
-        self.dialog.brightness_status.setText(brightness_text)
         self.dialog.save.setEnabled(can_save)
         self.dialog.url.setReadOnly(not can_save)
         for widget in (self.dialog.output_mode, self.dialog.identity, self.dialog.refresh_devices,
