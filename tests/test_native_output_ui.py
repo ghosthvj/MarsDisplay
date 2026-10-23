@@ -20,7 +20,6 @@ class NativeOutputUiTests(unittest.TestCase):
 
     def draft(self):
         dialog = self.shell.dialog
-        dialog.output_mode.setCurrentIndex(1)
         with patch('mars_display.tray.enumerate_devices', return_value=(device(),)):
             dialog.refresh_devices.click()
         dialog.identity.setCurrentIndex(1)
@@ -44,7 +43,6 @@ class NativeOutputUiTests(unittest.TestCase):
         raw = self.store.path.read_bytes()
         before = shell.coordinator.snapshot()
         dialog = shell.dialog
-        dialog.output_mode.setCurrentIndex(1)
         with patch('mars_display.tray.enumerate_devices', return_value=(device(),)) as inventory:
             dialog.refresh_devices.click()
             inventory.assert_called_once()
@@ -57,12 +55,11 @@ class NativeOutputUiTests(unittest.TestCase):
         QTest.keyClick(dialog.identity, Qt.Key.Key_Down)
         self.assertEqual(dialog.identity.currentData(), NATIVE_IDENTITY)
         fixture.APP.processEvents()
-        for widget in (dialog.output_mode, dialog.identity, dialog.refresh_devices,
-                       dialog.export_settings, dialog.restore_settings):
-            self.assertTrue(dialog.scroll_area.isAncestorOf(widget))
+        for widget in (dialog.identity, dialog.refresh_devices):
+            self.assertTrue(dialog.body.isAncestorOf(widget))
         self.assertTrue(dialog.save.isVisible())
         self.assertLessEqual(dialog.footer.geometry().bottom(), dialog.height())
-        self.assertGreater(dialog.scroll_area.verticalScrollBar().maximum(), 0)
+        self.assertEqual(dialog.minimumHeight(), dialog.maximumHeight())
         self.assertEqual(self.store.path.read_bytes(), raw)
         self.assertEqual(shell.coordinator.snapshot(), before)
 
@@ -96,7 +93,7 @@ class NativeOutputUiTests(unittest.TestCase):
         self.assertEqual(self.store.path.read_bytes(), raw)
         self.assertFalse(self.store.schema1_backup_path.exists())
         self.assertEqual(shell.coordinator.snapshot().frames_sent, 0)
-        for widget in (shell.dialog.output_mode, shell.dialog.identity,
+        for widget in (shell.dialog.identity,
                        shell.dialog.refresh_devices, shell.dialog.export_settings,
                        shell.dialog.restore_settings):
             self.assertFalse(widget.isEnabled())
@@ -129,10 +126,12 @@ class NativeOutputUiTests(unittest.TestCase):
         shell.dialog.restore_settings.click()
         self.assertEqual(self.store.path.read_bytes(), raw)
         self.assertEqual(shell.configured, original)
-        self.assertEqual(shell.dialog.output_mode.currentData(), 'simulated')
+        self.assertIsNone(shell.dialog.identity.currentData())
         shell.dialog.url.setText('https://restored.example')
         shell.dialog.save.click()
-        self.assertEqual(self.store.load(), replace(original, mars_url='https://restored.example'))
+        self.assertEqual(self.store.load(), original)
+        self.assertEqual(shell.dialog.message.text(),
+                         'Select an explicit stable USB identity; no device was selected.')
         self.assertEqual(shell.coordinator.snapshot().frames_sent, 0)
 
     def test_export_real_file_modal_rechecks_start(self):
@@ -163,9 +162,8 @@ class NativeOutputUiTests(unittest.TestCase):
         self.answer(QMessageBox.StandardButton.Yes)
         with patch('mars_display.lifecycle.enumerate_devices', return_value=(device(),)):
             shell.dialog.save.click()
-        # Switch explicitly to Simulation so the legacy fixture can start.
-        shell.dialog.output_mode.setCurrentIndex(0)
-        shell.dialog.save.click()
+        # Simulation remains a backend/test API, not a configuration-window choice.
+        shell.coordinator.save_settings(replace(self.store.load(), output_mode='simulated', native_profile=None))
         raw = self.store.path.read_bytes()
         backup = self.store.schema1_backup_path.read_bytes()
         self.answer(QMessageBox.StandardButton.Yes, shell.coordinator.start)
@@ -179,7 +177,6 @@ class NativeOutputUiTests(unittest.TestCase):
         from mars_display.devices import DeviceInventoryError
         shell = self.make()
         raw = self.store.path.read_bytes()
-        shell.dialog.output_mode.setCurrentIndex(1)
         with patch('mars_display.tray.enumerate_devices', return_value=(device(), device('COM8'))):
             shell.dialog.refresh_devices.click()
         shell.dialog.identity.setCurrentIndex(1)
@@ -224,7 +221,7 @@ class NativeOutputUiTests(unittest.TestCase):
             self.assertFalse(guard.acquire())
         finally:
             guard.release()
-        for widget in (self.shell.dialog.save, self.shell.dialog.output_mode,
+        for widget in (self.shell.dialog.save, self.shell.dialog.identity,
                        self.shell.dialog.refresh_devices, self.shell.dialog.export_settings,
                        self.shell.dialog.restore_settings):
             self.assertFalse(widget.isEnabled())

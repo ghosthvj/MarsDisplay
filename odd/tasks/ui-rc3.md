@@ -12,8 +12,8 @@ S6 — User: `El campo de configuracion de la URL de MARS está correcto.` / `El
 
 ## Tasks
 - T1 [S3] route: inline verified work-unit staging; status: done; commit: `e18001efbfb210d342bf278eb50aca154b70211f` (257 authored lines); bounded staged snapshot45tests5.994sPASS. Commit capitalized status/vector icons with matching tests/docs; preserve unrelated changes.
-- T2 [S2,S4,S5] route: inline verified work-unit staging; status: in_progress; commit: pending. Commit Logs, compact centered brightness and footer observers with their tests/docs.
-- T3 [S6] route: inline verified work-unit staging; status: pending; commit: pending. Commit native-only fixed form, including the observed screen-fit correction and regression tests.
+- T2 [S2,S4,S5] route: inline verified work-unit staging; status: done; commit: `9f9be6270851ba087cc36300ea974e1d45ffa888` (286 authored lines); bounded staged snapshot53tests4.515sPASS. Commit Logs, compact centered brightness and footer observers with their tests/docs.
+- T3 [S6] route: inline verified work-unit staging; status: in_progress; commit: pending. Commit native-only fixed form, including the observed screen-fit correction and regression tests.
 - T4 [S1] route: inline candidate metadata; status: pending; commit: pending. Set rc3 version and update portable instructions without changing dependencies/workflow/packaging recipe.
 - T5 [S1] route: existing Windows workflow, exact source binding; status: pending; commit: pending. Nonforce push candidate, dispatch once, retain run ID, await source/native/build/smoke result.
 - T6 [S1-S6] route: parent artifact checks plus independent artifact-only verifier for delivery risk item 5; status: pending; commit: pending. Verify exact new ZIP/source/hash/native payload; publish download evidence and deliver for owner testing, not final acceptance.

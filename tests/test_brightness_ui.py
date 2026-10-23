@@ -45,7 +45,7 @@ class BrightnessUiTests(unittest.TestCase):
         fixture.APP.processEvents()
         slider = shell.dialog.brightness
         self.assertLessEqual(slider.width(), 320)
-        self.assertLess(slider.width(), shell.dialog.scroll_area.viewport().width() / 2)
+        self.assertLess(slider.width(), shell.dialog.body.width() / 2)
         container = slider.parentWidget()
         self.assertLessEqual(abs(container.geometry().center().x()
                                  - container.parentWidget().rect().center().x()), 1)
@@ -176,7 +176,7 @@ class BrightnessUiTests(unittest.TestCase):
         self.assertFalse(shell.dialog.brightness.isEnabled())
         self.assertEqual(shell.configured.schema_version, 2)
 
-    def test_slider_rejection_restores_saved_value_and_small_window_remains_scrollable(self):
+    def test_slider_rejection_restores_saved_value_and_fixed_window_remains_complete(self):
         shell = self.make()
         self.enable()
         raw = self.store.path.read_bytes()
@@ -190,10 +190,10 @@ class BrightnessUiTests(unittest.TestCase):
         shell.dialog.resize(600, 480)
         shell.dialog.set_dark_mode(True)
         fixture.APP.processEvents()
-        self.assertTrue(shell.dialog.scroll_area.isAncestorOf(shell.dialog.brightness))
+        self.assertTrue(shell.dialog.body.isAncestorOf(shell.dialog.brightness))
         self.assertTrue(shell.dialog.save.isVisible())
         self.assertLessEqual(shell.dialog.footer.geometry().bottom(), shell.dialog.height())
-        self.assertGreater(shell.dialog.scroll_area.verticalScrollBar().maximum(), 0)
+        self.assertEqual(shell.dialog.minimumHeight(), shell.dialog.maximumHeight())
 
 
 if __name__ == '__main__':

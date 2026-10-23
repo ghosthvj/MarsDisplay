@@ -137,26 +137,25 @@ class NativeTimingDialog(QDialog):
 
 
 class SettingsDialog(QDialog):
-    """Native window with a scrollable status body and an always-visible footer."""
+    """Fixed-height native configuration form with a persistent action footer."""
 
     def __init__(self, configured: Settings | None):
         super().__init__()
         self.setWindowTitle("MarsDisplay — Status / Settings")
         self.setWindowIcon(_icon())
         self.setObjectName("statusWindow")
-        self.setMinimumWidth(480)
-        self.resize(650, min(870, max(400, self.screen().availableGeometry().height() - 48)))
+        self.setMinimumWidth(650)
+        height = min(760, self.screen().availableGeometry().height() - 48)
+        self.resize(650, height)
+        self.setFixedHeight(height)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        body = QWidget()
-        body.setObjectName("body")
-        column = QVBoxLayout(body)
-        column.setContentsMargins(30, 24, 30, 24)
-        column.setSpacing(14)
+        self.body = QWidget()
+        self.body.setObjectName("body")
+        column = QVBoxLayout(self.body)
+        column.setContentsMargins(24, 10, 24, 10)
+        column.setSpacing(4)
         toolbar = QHBoxLayout()
         logo = _label()
         logo.setPixmap(self.windowIcon().pixmap(24, 24))
@@ -177,7 +176,7 @@ class SettingsDialog(QDialog):
         self.runtime_card = QFrame()
         self.runtime_card.setObjectName("lifecycleCard")
         self.capture_row = QHBoxLayout(self.runtime_card)
-        self.capture_row.setContentsMargins(20, 16, 20, 16)
+        self.capture_row.setContentsMargins(16, 8, 16, 8)
         self.runtime = StatusLabel("stopped", "runtimeValue")
         runtime_text = QVBoxLayout()
         runtime_text.addWidget(_label("Capture lifecycle", "muted"))
@@ -199,7 +198,7 @@ class SettingsDialog(QDialog):
         details.setColumnStretch(0, 2)
         details.setColumnStretch(1, 3)
         details.setHorizontalSpacing(20)
-        details.setVerticalSpacing(12)
+        details.setVerticalSpacing(4)
         for index, (title, widget) in enumerate((
             ("MARS source state", self.source), ("Output", self.output),
             ("Source metadata", self.metadata), ("Host-accepted frames (lifetime)", self.frames),
@@ -250,50 +249,51 @@ class SettingsDialog(QDialog):
         self.restore_brightness = QPushButton("Restore settings from before brightness…", self)
         self.restore_brightness.setAutoDefault(False)
         self.restore_brightness.hide()
-        column.addWidget(_label("Configuration", "sectionHeading"))
+        configuration_heading = QHBoxLayout()
+        configuration_heading.addWidget(_label("Configuration", "sectionHeading"))
+        configuration_heading.addStretch()
+        configuration_heading.addWidget(_label(f"Native USB · {NATIVE_PROFILE} · 320 × 480 portrait", "muted"))
+        column.addLayout(configuration_heading)
         column.addWidget(_label("MARS URL"))
         self.url = QLineEdit(configured.mars_url if configured else "")
         self.url.setAccessibleName("MARS URL")
         column.addWidget(self.url)
         device_card = QFrame()
         device_card.setObjectName("deviceCard")
-        device_layout = QVBoxLayout(device_card)
-        device_layout.setContentsMargins(18, 14, 18, 14)
+        device_layout = QHBoxLayout(device_card)
+        device_layout.setContentsMargins(12, 8, 12, 8)
         device_layout.addWidget(_label("Saved device identity · Read-only", "muted"))
         self.device = _label(configured.device_identity if configured and configured.device_identity
                              else "Not selected (hardware identification pending)")
-        device_layout.addWidget(self.device)
+        device_layout.addWidget(self.device, 1)
         column.addWidget(device_card)
-        column.addWidget(_label("Output mode (draft until Save)"))
-        self.output_mode = QComboBox()
-        self.output_mode.setAccessibleName("Output mode")
-        self.output_mode.addItem("Simulation", "simulated")
-        self.output_mode.addItem("Native USB", "native")
-        column.addWidget(self.output_mode)
-        column.addWidget(_label(f"Supported native profile: {NATIVE_PROFILE} · 320 × 480 portrait"))
         self.identity = QComboBox()
         self.identity.setAccessibleName("Opaque USB identity")
-        column.addWidget(self.identity)
+        self.identity.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.identity.setMinimumContentsLength(18)
         self.refresh_devices = QPushButton("Refresh USB identities")
-        self.export_settings = QPushButton("Export schema-1 settings…")
-        self.restore_settings = QPushButton("Restore preserved schema-1 backup…")
-        for button in (self.refresh_devices, self.export_settings, self.restore_settings):
+        self.refresh_devices.setAutoDefault(False)
+        usb_row = QHBoxLayout()
+        usb_row.addWidget(self.identity, 1)
+        usb_row.addWidget(self.refresh_devices)
+        column.addLayout(usb_row)
+        # Keep explicit recovery/export functions, but omit their controls from the form.
+        self.export_settings = QPushButton("Export schema-1 settings…", self)
+        self.restore_settings = QPushButton("Restore preserved schema-1 backup…", self)
+        for button in (self.export_settings, self.restore_settings):
             button.setAutoDefault(False)
-            column.addWidget(button)
-        column.addWidget(_label("Refresh is passive; it does not open a port. Save checks native availability again. "
-                                "Drafts never change active output. Export does not change saved settings."))
+            button.hide()
         self.load_configuration(configured)
         self.message = _label()
         self.message_kind = ""
         self.message.hide()
         column.addWidget(self.message)
         column.addStretch()
-        self.scroll_area.setWidget(body)
-        outer.addWidget(self.scroll_area, 1)
+        outer.addWidget(self.body, 1)
         self.footer = QFrame()
         self.footer.setObjectName("footer")
         footer_row = QHBoxLayout(self.footer)
-        footer_row.setContentsMargins(24, 16, 24, 16)
+        footer_row.setContentsMargins(24, 10, 24, 10)
         self.hint = _label("Settings can be saved only while capture is stopped.", "hint")
         footer_row.addWidget(self.hint, 1)
         self.save = QPushButton("Save")
@@ -312,7 +312,6 @@ class SettingsDialog(QDialog):
         self.device.setText(configured.device_identity if configured and configured.device_identity
                             else "Not selected (hardware identification pending)")
         native = configured is not None and configured.output_mode == "native"
-        self.output_mode.setCurrentIndex(1 if native else 0)
         self.identity.clear()
         self.identity.addItem("Select an explicit USB identity", None)
         # Only an explicit schema-2 native selection may initialize this draft.
@@ -411,7 +410,6 @@ class TrayShell(QObject):
         self.dialog.logs_window.show()
         self.dialog.logs_window.raise_()
         self.dialog.logs_window.activateWindow()
-
 
     def _activate(self, reason):
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
@@ -534,18 +532,15 @@ class TrayShell(QObject):
             self._configuration_guard()
             settings = (replace(self.configured, mars_url=self.dialog.url.text())
                         if self.configured is not None else Settings(self.dialog.url.text()))
-            if self.dialog.output_mode.currentData() == "native":
-                identity = self.dialog.identity.currentData()
-                if self._inventory is not None or identity is None:
-                    select_device(self._inventory or (), identity)
-                settings = replace(settings, schema_version=max(2, settings.schema_version), output_mode="native",
-                                   device_identity=identity, native_profile=NATIVE_PROFILE)
-            else:
-                settings = replace(settings, output_mode="simulated", native_profile=None)
+            identity = self.dialog.identity.currentData()
+            if self._inventory is not None or identity is None:
+                select_device(self._inventory or (), identity)
+            settings = replace(settings, schema_version=max(2, settings.schema_version), output_mode="native",
+                               device_identity=identity, native_profile=NATIVE_PROFILE)
             if settings.schema_version == 2 and (self.configured is None or self.configured.schema_version == 1):
                 if not self._confirm("Migrate to schema 2", "Schema 2 is incompatible with older binaries. "
                                      "The original schema-1 settings will be preserved as a backup before replacement. "
-                                     "Use explicit export or restore for older binaries. Migrate and save?"):
+                                     "The backup is retained for recovery. Migrate and save?"):
                     return
                 self.coordinator.migrate_settings(settings, acknowledge_legacy_incompatibility=True)
             else:
@@ -644,7 +639,7 @@ class TrayShell(QObject):
             self.dialog.brightness.blockSignals(False)
         self.dialog.save.setEnabled(can_save)
         self.dialog.url.setReadOnly(not can_save)
-        for widget in (self.dialog.output_mode, self.dialog.identity, self.dialog.refresh_devices,
+        for widget in (self.dialog.identity, self.dialog.refresh_devices,
                        self.dialog.export_settings, self.dialog.restore_settings):
             widget.setEnabled(can_save)
         self.dialog.restore_settings.setEnabled(can_save and self.store is not None)

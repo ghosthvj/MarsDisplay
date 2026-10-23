@@ -164,7 +164,7 @@ class TrayTests(unittest.TestCase):
         before = shell.coordinator.snapshot()
         for button in (dialog.logs_action, dialog.preview_action, dialog.save):
             self.assertTrue(dialog.footer.isAncestorOf(button))
-            self.assertFalse(dialog.scroll_area.isAncestorOf(button))
+            self.assertFalse(dialog.body.isAncestorOf(button))
         shell.show_settings()
         for width in (480, 900):
             dialog.resize(width, 480)
@@ -186,15 +186,14 @@ class TrayTests(unittest.TestCase):
         self.assertEqual(self.store.path.read_bytes(), original)
         self.assertFalse(self.session.opened.is_set())
 
-
     def test_reference_layout_keeps_native_window_plain_text_and_small_window_footer(self):
         shell = self.make()
         dialog = shell.dialog
         self.assertFalse(dialog.windowFlags() & Qt.WindowType.FramelessWindowHint)
         self.assertFalse(dialog.windowIcon().isNull())
-        self.assertTrue(dialog.scroll_area.widgetResizable())
+        self.assertEqual(dialog.minimumHeight(), dialog.maximumHeight())
         self.assertTrue(dialog.footer.isAncestorOf(dialog.save))
-        self.assertFalse(dialog.scroll_area.isAncestorOf(dialog.save))
+        self.assertFalse(dialog.body.isAncestorOf(dialog.save))
         self.assertEqual(dialog.window_heading.text(), "Status / Settings")
         for label in (dialog.runtime, dialog.source, dialog.output, dialog.metadata,
                       dialog.frames, dialog.device, dialog.message):
@@ -206,7 +205,7 @@ class TrayTests(unittest.TestCase):
         self.assertGreaterEqual(dialog.output.width(), 200)
         self.assertGreaterEqual(dialog.metadata.width(), 200)
         self.assertLessEqual(dialog.footer.geometry().bottom(), dialog.height())
-        self.assertGreater(dialog.scroll_area.verticalScrollBar().maximum(), 0)
+        self.assertEqual(dialog.minimumHeight(), dialog.maximumHeight())
         with patch.object(shell.coordinator, "snapshot", return_value=replace(
                 shell.coordinator.snapshot(), state="retrying", worker_alive=True)):
             shell.refresh()
@@ -285,7 +284,7 @@ class TrayTests(unittest.TestCase):
         self.assertEqual(shell.coordinator.snapshot().frames_sent, retained)
         self.assertEqual(self.store.path.read_bytes(), original)
 
-    def test_schema2_simulated_url_edit_preserves_version_and_fields(self):
+    def test_schema2_simulated_url_edit_requires_explicit_native_selection(self):
         self.store.save(Settings('https://mars.example','passive-id'))
         original=Settings('https://mars.example','passive-id',2,'simulated',None)
         self.store.migrate_to_v2(original,acknowledge_legacy_incompatibility=True)
@@ -293,9 +292,19 @@ class TrayTests(unittest.TestCase):
         shell=self.make(configured=False)
         shell.dialog.url.setText('https://changed.example')
         shell.dialog.save.click()
-        self.assertEqual(self.store.load(),Settings('https://changed.example','passive-id',2,'simulated',None))
+        self.assertEqual(self.store.load(), original)
         self.assertEqual(self.store.schema1_backup_path.read_bytes(),backup)
-        self.assertEqual(shell.dialog.message.text(),'Settings saved. Capture remains stopped.')
+        self.assertEqual(shell.dialog.message.text(),
+                         'Select an explicit stable USB identity; no device was selected.')
+        from test_output_configuration import device
+        with patch('mars_display.tray.enumerate_devices', return_value=(device(),)):
+            shell.dialog.refresh_devices.click()
+        shell.dialog.identity.setCurrentIndex(1)
+        with patch('mars_display.lifecycle.enumerate_devices', return_value=(device(),)):
+            shell.dialog.save.click()
+        self.assertEqual(self.store.load().output_mode, 'native')
+        self.assertEqual(self.store.load().mars_url, 'https://changed.example')
+        self.assertEqual(self.store.schema1_backup_path.read_bytes(), backup)
         self.assertFalse(self.session.opened.is_set())
         self.assertEqual(shell.coordinator.snapshot().frames_sent,0)
 
@@ -326,8 +335,8 @@ class TrayTests(unittest.TestCase):
         shell = self.make()
         original = self.store.path.read_bytes()
         self.assertFalse(shell.dialog.url.isReadOnly())
-        shell.dialog.save.click()
-        self.assertEqual(shell.dialog.message.text(), "Settings saved. Capture remains stopped.")
+        # Exercise saved-feedback lifetime independently of native migration.
+        shell.dialog.show_message("Settings saved. Capture remains stopped.", "saved")
         self.running()
         self.assertTrue(shell.dialog.url.isReadOnly())
         self.assertEqual(shell.dialog.hint.text(),
@@ -433,8 +442,9 @@ class TrayTests(unittest.TestCase):
         self.assertEqual(self.store.path.read_bytes(), original)
         shell.dialog.url.setText("https://other.example")
         shell.dialog.save.click()
-        self.assertEqual(self.store.load(), Settings("https://other.example", "opaque-device"))
-        original = self.store.path.read_bytes()
+        self.assertEqual(shell.dialog.message.text(),
+                         'Select an explicit stable USB identity; no device was selected.')
+        self.assertEqual(self.store.path.read_bytes(), original)
         self.running()
         self.assertFalse(shell.dialog.save.isEnabled())
         shell.dialog.url.setText("https://third.example")

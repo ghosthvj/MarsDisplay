@@ -153,11 +153,16 @@ fallback to another signature; ordinary simulated retry policy remains unchanged
 P4 application composition used its existing Simulation factory, not USB; P5's
 explicit context composition is documented in the runtime guide.
 
-The URL editor preserves loaded schema/output/profile/identity fields via
-validated replacement. P5 adds an explicit mode/identity draft, passive Refresh,
-default-No migration warning and minimal export/restore controls through these same
-Coordinator APIs. Ordinary schema-1 URL Save remains schema 1. No legacy identity
-alone opts in to native mode, and Save does not start capture.
+The current configuration UI saves Native USB only: the mode selector is removed,
+USB identity and passive Refresh share one row, and legacy export/restore controls
+are hidden while their functions remain implemented. Native schema-2/3 URL edits
+preserve loaded version/profile/identity/brightness via validated replacement.
+A legacy Simulation configuration needs explicit USB selection and Save; schema-1
+migration still requires default-No confirmation and preserves its backup. Opening
+the window, a legacy identity alone, or Refresh never opts in. Save never starts
+capture. Backend APIs still support ordinary schema-1 Save and Simulation; this
+UI change neither changes their format nor silently upgrades stored settings.
+See [the current form and historical package boundary](usb-runtime.md#native-configuration-form-current-source).
 
 The existing default settings path stays `%LOCALAPPDATA%\MarsDisplay\settings.json`.
 Errors contain fixed actionable text, not supplied URLs, identities or paths.

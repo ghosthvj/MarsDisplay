@@ -7,44 +7,56 @@ performance or interactive Windows-tray acceptance; those boundaries remain belo
 The immutable ZIP contains earlier pending wording, superseded by this record.
 Track work in [the P5 ledger](../odd/tasks/native-usb-runtime.md).
 
+## Native configuration form (current source)
+
+The configuration window has a fixed height selected on creation: up to 760
+logical pixels, capped to the available desktop height minus 48 pixels for window
+chrome (minimum width 650). There is no main scroll area. MARS URL is unchanged. The USB selector and **Refresh USB
+identities** share one row; the Output mode selector, schema-1 export/restore
+buttons, and Refresh explanation are omitted. Logs/Preview and Save stay in the
+footer. Error messages remain visible in the form.
+
+This interface saves **Native USB only**, still requiring explicit device selection,
+Save, and Start. Existing Simulation settings are not converted just by opening the
+window; Simulation and schema-1 export/recovery remain backend/test capabilities.
+Neither a saved legacy identity nor Refresh silently opts into native output.
+These source changes have not been compiled into a new Windows executable.
+
 ## Status presentation (current source)
 
-Lifecycle and MARS source labels use initial capitals without changing backend
-states. Running has a lightning icon; Stopped a stop square; Ready a check;
-Error a warning; Empty an outline circle. Starting, Stopping, Loading and
-Recovering (retrying) use an animated vector wheel only while visible. Icons
-follow the session theme. This source change is not in the immutable rc2 ZIP.
-
-## Compact brightness and observer windows (current source)
-
-Logs and Preview are grouped in the persistent footer, 8px apart with 20px before
-Save. Logs opens a modeless window with the unchanged live native timing report,
-scrolling and Close; neither observer starts capture or accesses USB. Both follow
-the session theme and are hidden/disabled during Exit.
-
-The five-level brightness slider and percentages are centered at 320px. The brief
-brightness status and save-explanation paragraph are omitted. Compact Enable
-Brightness appears only for configured native settings still needing activation;
-its stopped-only confirmation and preserved backup remain mandatory. The
-pre-brightness Restore control is hidden, without removing its recovery binding
-or adding an advanced menu. This source UI is not in the immutable rc2 ZIP.
+The lifecycle and MARS source badges use capitalized labels with leading icons:
+**Running** (lightning), **Stopped** (stop square), **Ready** (check), **Error**
+(warning), and **Empty** (outline circle). **Starting**, **Stopping**, **Loading**,
+and **Recovering (retrying)** use an animated loading wheel. Icons follow the
+existing light/dark theme and animate only while visible. Backend state strings,
+capture controls, diagnostics, and settings are unchanged. These presentation
+changes and the separate Logs window are not in the delivered 0.2.0rc2 ZIP;
+compilation of the next executable is deferred while UI adjustments continue.
 
 ## Saved brightness candidate
 
 In **Status / Settings**, save an explicit **Native USB** configuration first.
-While stopped, click **Enable saved brightness…** and accept the schema-3 warning
-only after reviewing its backup/recovery implications. The initial choice is 100%.
-The slider has exactly five positions, increasing left-to-right from 20% to 100%.
+While stopped, click **Enable Brightness** and accept the schema-3 warning only
+after reviewing its backup/recovery implications. This compact button appears
+only for a saved native configuration that still needs brightness activation;
+it disappears once enabled. The initial choice is 100%.
+The slider and percentage labels are centered together at a compact 320-logical-pixel width with
+exactly five positions, increasing left-to-right from 20% to 100%. The inline
+saved/requested status and save-explanation paragraph are omitted from this
+section. This current-source layout is not in the delivered 0.2.0rc2 ZIP.
 Releasing the thumb or using arrow keys saves only this choice immediately, even
 while stopped; it is independent of the configuration Save button and URL drafts.
 During capture, a change waits for the current image to finish. While stopped it
 waits for the next explicit Start. No zero/off position exists.
 
-**Restore settings from before brightness…** is stopped-only and confirms before
-restoring the exact pre-migration file, including its original URL/output choice.
-This discards later settings edits, retains backups and never starts capture.
-The old schema-1 export/restore controls remain available separately. Simulation
-has no brightness writes. Stopping/error/Exit disables live adjustment; known
+The **Restore settings from before brightness…** control is hidden in the current
+source; no advanced-options menu replaces it. The recovery function and its
+stopped-only confirmation remain implemented: they restore the exact pre-migration
+file, including its original URL/output choice. Recovery discards later settings
+edits, retains backups and never starts capture. It is not exposed as a user action
+in this layout.
+The schema-1 export/restore functions are also retained internally but their
+controls are hidden. Simulation has no brightness writes. Stopping/error/Exit disables live adjustment; known
 stopped state permits editing the saved value again.
 
 Schema-3 native settings add five brightness choices: **20%, 40%, 60%, 80%, 100%**.
@@ -110,7 +122,17 @@ snapshot mode, independent of draft settings and source live/stale observations.
 
 ## Native numeric timing (diagnostic candidate)
 
-Status / Settings shows **Native timing** in its scrollable body. Diagnostic source
+In the current source, **Logs** and **Preview** are grouped in the persistent
+bottom bar, with a larger gap before **Save**. They remain visible beneath the
+fixed-height settings form. **Logs** opens **Native timing** in a separate modeless
+window instead of the Status / Settings body. It updates live
+with the same current/last-Start samples and caveats; scrolling keeps **Close**
+available. Closing or reopening Logs never starts/stops capture or accesses USB.
+The window follows the session theme and is hidden/disabled during Exit. Before
+native samples exist it shows an empty-state explanation. This source change is
+not included in the previously delivered 0.2.0rc2 ZIP.
+
+The original inline diagnostic source
 `d79eb805a943ddc4f0ee08a108a885e3edc23833` passed separate Windows and artifact
 qualification; it is not the immutable P5 ZIP. Use the
 [verified diagnostic package and measurement steps](usb-hardware-qualification.md#verified-numeric-diagnostic-package).
@@ -177,7 +199,7 @@ not additional costs; the total write measurement remains available.
 Only fully validated successful sends contribute. Optional earlier transport detail
 without `groups` leaves these rows unavailable, not measured zero. Stop/error retain
 all successful aggregates; admitted Start resets them and Simulation removes the
-report. The existing scrollable status body keeps Save in its reachable footer.
+report. The current fixed-height status form keeps Save in its reachable footer.
 Device bytes, serial options, scheduling, cancellation and deadlines are unchanged.
 This richer IPC pair needs independent exact-source Windows/artifact qualification;
 none of the earlier immutable diagnostic packages acquires these rows retroactively.
@@ -235,8 +257,8 @@ reported as still capturing. Existing simulated cleanup/Stop/Exit behavior remai
 ## Configure output while stopped
 
 1. Stop capture and wait for actual cleanup acknowledgement.
-2. Choose **Simulation** or **Native USB** under Configuration. Native supports only
-   `tus35-portrait-v1` (320 × 480 portrait).
+2. Enter the MARS URL. The current configuration interface saves **Native USB**
+   only, using `tus35-portrait-v1` (320 × 480 portrait).
 3. For a new native selection, click **Refresh USB identities** and explicitly
    choose the supported opaque identity. Refresh never selects the first device,
    opens a port or proves continuing availability. There is no periodic polling.
@@ -245,20 +267,23 @@ reported as still capturing. Existing simulated cleanup/Stop/Exit behavior remai
    and requires explicit **Yes**. Save rechecks current unique device admission.
 5. Start explicitly. Drafts, Refresh and Save never start or resume capture.
 
-A schema-1 URL-only Save stays schema 1, including with a legacy identity.
-Schema-2 URL edits preserve the output/profile/identity fields. Switching to
-Simulation keeps schema 2 and its passive identity; it is not a downgrade.
-Saved native identity is shown without enumeration. Refresh always requires a
+A legacy Simulation configuration must explicitly select a USB identity before
+Save in this interface; no URL-only migration occurs silently. Existing native
+schema-2/3 URL edits retain their version, identity, profile and brightness.
+Simulation and ordinary schema-1 Save remain supported by the backend APIs, not
+by this native-only form. Saved native identity is shown without enumeration. Refresh always requires a
 new explicit choice; missing/duplicate devices are not guessed or substituted.
 
-**Export schema-1 settings…** creates a new old-readable file without changing
-current settings or overwriting an existing destination. **Restore preserved
-schema-1 backup…** asks for default-No confirmation, restores original bytes through
-the Coordinator, and reloads the form in Simulation. Unknown data or invalid backup
-errors remain visible; neither action silently repairs or erases configuration.
-All configuration controls are in the keyboard-accessible scrollable body; Save
-remains in the visible footer. Queued actions and modal confirmations still pass
-through the Coordinator's stopped/no-worker/no-exit checks after the dialog returns.
+The hidden schema-1 export/recovery bindings retain their original behavior:
+export creates a new old-readable file without replacing current settings or an
+existing destination; default-No recovery restores original bytes through the
+Coordinator. Restoring Simulation clears the form's native-device selection and
+does not auto-convert or start it. Unknown data or invalid backup errors remain
+visible; neither operation silently repairs or erases configuration. There is no
+new advanced menu exposing these functions. Configuration is keyboard-accessible
+in the fixed-height form, with Save in the footer. Queued actions and modal
+confirmations still pass through the Coordinator's stopped/no-worker/no-exit checks
+after the dialog returns.
 
 The [P4 configuration format and rollback contracts](usb-settings.md) are preserved.
 No real USB tests ran on the agent host; tests use controlled peers/children/fake
