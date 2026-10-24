@@ -21,8 +21,8 @@ Start applies the saved choice; live changes wait for a complete image and reuse
 the same connection. Stop/Exit sends no brightness restoration. Host-completed is
 not a measured panel value. USB failure has no automatic retry/reconnect.
 Brightness and schema-1 recovery/export functions remain implemented internally,
-but their buttons are hidden in rc3. No advanced menu was added. Keep the previous
-rc2 folder as fallback; existing schema-3 settings need no new migration for rc3.
+but their buttons remain hidden. No advanced menu was added. Keep the previous
+working folder as fallback; existing schema-3 settings need no new migration.
 --usb-worker is a reserved owned-child route, not an operator command; do not
 invoke it manually. Packaged smoke does not establish physical USB acceptance.
 Use the tray Status / Settings to configure; Start/Stop control capture, Exit closes.
@@ -31,7 +31,9 @@ retry) and Stop capture (same action as tray Stop). Stop enables editing only wh
 cleanup is known; it cannot bypass uncertain cleanup or Exit ownership.
 The fixed-height form uses vertical overflow scrolling only when content cannot
 fit; Logs, Preview and Save stay fixed in the footer. USB selection and Refresh
-share a row. Capitalized states use icons; transitions show a loading wheel.
+share a row with 12px separation. The selector and its open list follow the current
+light/dark theme. The redundant internal profile legend is omitted from the form;
+the actual USB profile is unchanged. States use icons; transitions show a loading wheel.
 The centered compact brightness slider keeps all five percentages without extra
 status/explanation text. Logs and Preview are grouped in the footer, apart from Save.
 Logs opens the same live native timing report in an independent modeless window;

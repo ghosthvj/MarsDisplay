@@ -13,8 +13,12 @@ The configuration window has a fixed height selected on creation: up to 760
 logical pixels, capped to the available desktop height minus 48 pixels for window
 chrome (minimum width 650). The body scrolls vertically only when its content
 cannot fit; no scrollbar is shown when there is enough room. MARS URL is unchanged.
-The USB selector and **Refresh USB identities** share one row; the Output mode
-selector, schema-1 export/restore buttons, and Refresh explanation are omitted.
+The USB selector and **Refresh USB identities** share one row with 12 logical
+pixels between them. The selector and its open list follow the light/dark theme,
+including contrasting text and selection colors. The Output mode selector,
+schema-1 export/restore buttons, and Refresh explanation are omitted. The redundant
+profile/resolution legend is also omitted from the heading; the internal profile
+and portrait-only output constraint remain unchanged.
 Logs/Preview and Save stay in a fixed footer outside the scroll area. Error text
 is retained in full and can be reached by scrolling on constrained desktops.
 
@@ -22,7 +26,8 @@ This interface saves **Native USB only**, still requiring explicit device select
 Save, and Start. Existing Simulation settings are not converted just by opening the
 window; Simulation and schema-1 export/recovery remain backend/test capabilities.
 Neither a saved legacy identity nor Refresh silently opts into native output.
-These changes are introduced in 0.2.0rc3; see the README for Windows artifact
+The main form changes were introduced in 0.2.0rc3; selector theme/spacing polish
+and profile-legend removal follow in 0.2.0rc4. See the README for Windows artifact
 qualification and download evidence.
 
 ## Status presentation (current source)

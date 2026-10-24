@@ -1,5 +1,17 @@
 # Windows portable build and verified delivery
 
+## UI follow-up candidate — 0.2.0rc4
+
+Prepared source includes themed USB selector/list contrast, 12px separation from
+Refresh, and removal of the visible internal profile legend. Backend profile,
+selection/migration/start guards, saved brightness, dependencies and packaging
+recipe are unchanged. Preserve the font-corrected offscreen test environment.
+
+Exact-source Windows build and new ZIP verification are pending; rc3 proof and
+its download below do not qualify rc4. This is a test candidate, not a final
+release. Keep the complete previous working folder and extract the new portable
+ZIP separately; existing schema-3 settings need no migration.
+
 ## UI candidate — 0.2.0rc3
 
 The candidate includes independent Logs, capitalized icon states, compact centered

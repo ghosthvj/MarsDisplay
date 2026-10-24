@@ -51,6 +51,21 @@ def window_stylesheet(dark: bool) -> str:
             selection-background-color: %(accent)s;
             selection-color: %(background)s;
         }
+        QComboBox {
+            background: %(field)s;
+            color: %(foreground)s;
+            border: 1px solid %(border)s;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        QComboBox:disabled { color: %(muted)s; background: %(disabled)s; }
+        QComboBox QAbstractItemView {
+            background: %(field)s;
+            color: %(foreground)s;
+            border: 1px solid %(border)s;
+            selection-background-color: %(accent)s;
+            selection-color: %(field)s;
+        }
         QLineEdit:focus { border: 1px solid %(accent)s; }
         QLineEdit[readOnly="true"] { background: %(panel)s; }
         QScrollArea { border: none; background: transparent; }

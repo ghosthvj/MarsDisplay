@@ -1,5 +1,17 @@
 # MarsDisplay
 
+## 0.2.0rc4: USB selector polish candidate
+
+The pending candidate fixes light/dark contrast for the USB selector and its open
+list, separates Refresh by 12 logical pixels, and removes the redundant profile
+legend from the configuration heading. The internal USB profile, explicit
+selection/Save/Start, settings and brightness are unchanged.
+
+Windows build and new archive verification are pending; no rc4 download is
+endorsed yet. The rc3 artifact below is historical and does not include these
+follow-up changes. Keep the previous working folder; existing schema-3 settings
+need no new migration. Extract the whole new ZIP into a separate folder.
+
 ## 0.2.0rc3: compact native configuration candidate
 
 The new candidate combines the requested UI changes:

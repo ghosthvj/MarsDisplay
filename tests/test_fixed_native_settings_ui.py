@@ -4,7 +4,7 @@ from unittest.mock import patch
 import unittest
 
 from PySide6.QtCore import QPoint, QRect
-from PySide6.QtGui import QFontInfo, QScreen
+from PySide6.QtGui import QFontInfo, QPalette, QScreen
 from PySide6.QtWidgets import QComboBox, QLabel, QMessageBox
 
 from mars_display.settings import NATIVE_IDENTITY, NATIVE_PROFILE
@@ -58,8 +58,64 @@ class FixedNativeSettingsTests(unittest.TestCase):
             selector = shell.dialog.identity.geometry()
             refresh = shell.dialog.refresh_devices.geometry()
             self.assertLessEqual(abs(selector.center().y() - refresh.center().y()), 1)
-            self.assertLess(selector.right(), refresh.left())
+            self.assertEqual(refresh.left() - selector.right() - 1, 12)
             self.assertLess(refresh.right(), shell.dialog.identity.parentWidget().width())
+
+    def test_usb_selector_and_popup_keep_contrast_when_theme_changes(self):
+        shell = self.make()
+        dialog = shell.dialog
+        shell.show_settings()
+        raw = self.store.path.read_bytes()
+        before = shell.coordinator.snapshot()
+        with patch('mars_display.tray.enumerate_devices', return_value=(device(),)):
+            dialog.refresh_devices.click()
+        for dark, field, foreground, accent in (
+                (True, '#202b31', '#eaf3f7', '#70d3e0'),
+                (False, '#ffffff', '#163344', '#14798b')):
+            dialog.set_dark_mode(dark)
+            fixture.APP.processEvents()
+            self.assertEqual(dialog.identity.grab().toImage().pixelColor(
+                4, dialog.identity.height() // 2).name(), field)
+            self.assertEqual(dialog.identity.palette().color(QPalette.ColorRole.Text).name(), foreground)
+            dialog.identity.showPopup()
+            try:
+                fixture.APP.processEvents()
+                view = dialog.identity.view()
+                for role, expected in ((QPalette.ColorRole.Base, field),
+                                       (QPalette.ColorRole.Text, foreground),
+                                       (QPalette.ColorRole.Highlight, accent),
+                                       (QPalette.ColorRole.HighlightedText, field)):
+                    self.assertEqual(view.palette().color(role).name(), expected)
+                row = view.visualRect(view.model().index(1, 0)).intersected(view.viewport().rect())
+                self.assertFalse(row.isEmpty())
+                self.assertEqual(view.viewport().grab().toImage().pixelColor(
+                    row.right() - 4, row.center().y()).name(), field)
+            finally:
+                dialog.identity.hidePopup()
+        self.assertIsNone(dialog.identity.currentData())
+        self.assertEqual(self.store.path.read_bytes(), raw)
+        self.assertEqual(shell.coordinator.snapshot(), before)
+        self.assertFalse(self.session.opened.is_set())
+
+    def test_configuration_omits_profile_legend_without_changing_saved_profile(self):
+        configured = native()
+        self.store.migrate_to_v2(configured, acknowledge_legacy_incompatibility=True)
+        raw = self.store.path.read_bytes()
+        backup = self.store.schema1_backup_path.read_bytes()
+        shell = self.make(configured=False)
+        before = shell.coordinator.snapshot()
+        shell.show_settings()
+        labels = [label.text() for label in shell.dialog.body.findChildren(QLabel) if label.isVisible()]
+        self.assertIn('Configuration', labels)
+        self.assertFalse(any(text.startswith('Native USB ·') for text in labels))
+        self.assertTrue(shell.dialog.url.isVisible())
+        self.assertTrue(shell.dialog.identity.isVisible())
+        self.assertEqual(shell.dialog.identity.currentData(), configured.device_identity)
+        self.assertEqual(self.store.load().native_profile, NATIVE_PROFILE)
+        self.assertEqual(self.store.path.read_bytes(), raw)
+        self.assertEqual(self.store.schema1_backup_path.read_bytes(), backup)
+        self.assertEqual(shell.coordinator.snapshot(), before)
+        self.assertFalse(self.session.opened.is_set())
 
     def test_legacy_buttons_and_refresh_explanation_are_hidden_not_removed(self):
         shell = self.make()
