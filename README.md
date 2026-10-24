@@ -17,8 +17,29 @@ The new candidate combines the requested UI changes:
 Existing rc2 schema-3 settings and brightness carry over without another migration.
 Extract the full new portable ZIP into a separate folder after exiting rc2; retain
 that folder as fallback. No dependencies, USB transport or packaging recipe changed.
-Windows artifact qualification and the new download are pending; the rc2 link below
-is historical and does not include these UI changes. See [current controls](docs/usb-runtime.md).
+**[Download 0.2.0rc3 for Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/40042896444/artifacts/12540281670)**
+from [verified run 40042896444](https://github.com/ghosthvj/MarsDisplay/actions/runs/40042896444).
+Available until **2026-10-31 00:06 UTC**; GitHub sign-in may be required. Extract
+the Actions download, then the entire `MarsDisplay-0.2.0rc3-Windows-x64.zip`
+(**205,795,065 bytes**). Inner ZIP SHA256:
+
+```text
+012206d539bc8988bf655f0a4d59371d43975517035046be9a63f991c72a0c8b
+```
+
+**Verified:** 376 Windows tests with zero skips, native build and isolated packaged
+smoke. Parent and independent checks matched all 1,280 payload hashes, 384 source
+hashes and 69 AMD64 binaries to source `0a19dd32db14e0d9e0e40f3dc543ce2fb538869d`.
+Offscreen layout checks also passed with valid system fonts and zero horizontal
+overflow. This is a test candidate, not owner acceptance of rc3 or a final release;
+packaged worker smoke sends no OPEN/device request. Windows 11 x64 still requires
+the official Microsoft Visual C++ v14 x64 runtime **14.51 or newer**.
+
+These delivery notes supersede pending-qualification wording bundled in the
+immutable source archive; they do not rebuild the candidate. See
+[verification details](packaging/README.md#ui-candidate--020rc3) and
+[current controls](docs/usb-runtime.md). The rc2 download below is the previously
+accepted fallback, not a package containing the new UI.
 
 ## Previously delivered 0.2.0rc2: brightness and configuration Stop
 
@@ -51,7 +72,7 @@ reconnect: resolve the cause and use Start explicitly. Legacy settings are not
 silently migrated; use **Restore settings from before brightness…** while stopped
 if returning to the prior configuration/binary (later settings edits are lost).
 
-### Download the Windows candidate
+### Historical rc2 download
 
 [Download MarsDisplay 0.2.0rc2 Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/40023603045/artifacts/12531318437)
 from [verified Windows run 40023603045](https://github.com/ghosthvj/MarsDisplay/actions/runs/40023603045).

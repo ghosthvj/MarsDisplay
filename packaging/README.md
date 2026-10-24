@@ -2,14 +2,47 @@
 
 ## UI candidate — 0.2.0rc3
 
-Source is prepared with independent Logs, capitalized icon states, compact centered
-brightness, footer observers and a fixed-height native-only configuration form.
-The existing Windows workflow and dependency/native-material requirements are
-unchanged. A new build must bind its ZIP, hashes, bundled source and native smoke
-to the exact rc3 source commit; rc2 evidence is not substituted for that check.
-Windows qualification and artifact download are pending. This is a test candidate,
-not a final release, installer or new driver. Existing schema-3 settings need no
-new migration; keep the complete previous rc2 folder as fallback.
+The candidate includes independent Logs, capitalized icon states, compact centered
+brightness, footer observers and native-only configuration. Vertical overflow is
+available only when needed, with the action footer fixed outside the scroll area.
+The portable build recipe, dependencies and native-material profile are unchanged.
+CI now has an isolated diagnostic-only mode and explicitly loads installed Windows
+fonts for offscreen tests; native build/smoke still clear the Qt environment.
+
+[Windows run 40042896444](https://github.com/ghosthvj/MarsDisplay/actions/runs/40042896444)
+passed **376 tests in 94.556 seconds, zero skips**, native build, isolated packaged
+smoke, qualification and upload for source
+`0a19dd32db14e0d9e0e40f3dc543ce2fb538869d`.
+[Download rc3](https://github.com/ghosthvj/MarsDisplay/actions/runs/40042896444/artifacts/12540281670)
+before **2026-10-31 00:06 UTC** (exact expiry: `2026-10-31T00:06:33Z`).
+Inner ZIP: **205,795,065 bytes**, SHA256
+`012206d539bc8988bf655f0a4d59371d43975517035046be9a63f991c72a0c8b`.
+
+Parent and independent streaming checks verified **1,281 safe unique members**,
+**1,280 payload hashes** and **384 source hashes**. All 380 tracked sources match
+the pinned Git candidate (266 exact, 114 legitimate checkout CRLF), plus four SDK
+records. Raw legal/native material stays byte-exact; forced-LF JSON stays LF.
+All **69 binaries are AMD64/PE32+**, with EXE GUI subsystem **2**. The existing
+**27 native components, six supplemental components and 209 material hashes**
+remain bound to the shipped bytes. The four Stop regressions, four Windows-native
+tests, font guard and fallback-layout checks passed. Worker bootstrap smoke still
+means **no OPEN or device request**, not a panel acknowledgement or hardware test.
+
+Three earlier source-test failures produced no executable. Diagnostic evidence
+identified missing fonts in Windows offscreen tests; the corrected exact-source
+[layout run 40042708007](https://github.com/ghosthvj/MarsDisplay/actions/runs/40042708007)
+passed eight tests with Segoe UI resolved and zero horizontal overflow. The
+parent's first archive checker also rejected an ordinary third-party README's
+legitimate CRLF conversion; correcting that overly broad rule and independently
+checking the archive both passed. No package bytes were changed for those checks.
+
+This is a test candidate, not physical owner acceptance of rc3, legal certification,
+a final release, installer or new driver. Exit the previous instance, extract the
+whole portable ZIP into a new folder, and keep the accepted rc2 folder as fallback.
+Existing schema-3 settings need no new migration. Windows 11 x64 still requires the
+official Microsoft Visual C++ v14 x64 runtime 14.51+. These passive delivery notes
+supersede bundled source documentation's earlier pending wording without rebuilding
+the immutable candidate.
 
 ## Corrected candidate — 0.2.0rc2
 
