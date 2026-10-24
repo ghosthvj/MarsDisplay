@@ -2,15 +2,33 @@
 
 ## 0.2.0rc4: USB selector polish candidate
 
-The pending candidate fixes light/dark contrast for the USB selector and its open
+The candidate fixes light/dark contrast for the USB selector and its open
 list, separates Refresh by 12 logical pixels, and removes the redundant profile
 legend from the configuration heading. The internal USB profile, explicit
 selection/Save/Start, settings and brightness are unchanged.
 
-Windows build and new archive verification are pending; no rc4 download is
-endorsed yet. The rc3 artifact below is historical and does not include these
-follow-up changes. Keep the previous working folder; existing schema-3 settings
-need no new migration. Extract the whole new ZIP into a separate folder.
+**[Download 0.2.0rc4 for Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/40096247259/artifacts/12560971970)**
+from [verified run 40096247259](https://github.com/ghosthvj/MarsDisplay/actions/runs/40096247259).
+Available until **2026-10-31 13:03 UTC**; GitHub sign-in may be required. Extract
+the Actions download, then the whole `MarsDisplay-0.2.0rc4-Windows-x64.zip`
+(**205,798,234 bytes**) into a new folder. Inner ZIP SHA256:
+
+```text
+ab85da542fa40e53098f4d692a2a785d1b4ea48400250d608a883efcd673e58d
+```
+
+**Verified:** 378 Windows tests with zero skips, native build and packaged smoke;
+parent and independent checks verified 1,280 payload hashes, 384 source hashes
+and 69 AMD64 binaries against `c059526fd55eccdac1d4646a08ab4449a9e68845`.
+This remains a test candidate, not physical owner acceptance or a final release.
+Packaged worker smoke makes no OPEN/device request.
+
+Exit the previous instance and keep its complete folder as fallback. Existing
+schema-3 settings and brightness need no migration. Windows 11 x64 still requires
+the official Microsoft Visual C++ v14 x64 runtime 14.51 or newer. These delivery
+notes supersede pending wording in the immutable bundled source; no rebuild is
+implied. See [verification details](packaging/README.md#ui-follow-up-candidate--020rc4).
+The rc3 artifact below is historical and does not contain these follow-up changes.
 
 ## 0.2.0rc3: compact native configuration candidate
 

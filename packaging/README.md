@@ -2,15 +2,41 @@
 
 ## UI follow-up candidate — 0.2.0rc4
 
-Prepared source includes themed USB selector/list contrast, 12px separation from
+The verified candidate includes themed USB selector/list contrast, 12px separation from
 Refresh, and removal of the visible internal profile legend. Backend profile,
 selection/migration/start guards, saved brightness, dependencies and packaging
 recipe are unchanged. Preserve the font-corrected offscreen test environment.
 
-Exact-source Windows build and new ZIP verification are pending; rc3 proof and
-its download below do not qualify rc4. This is a test candidate, not a final
-release. Keep the complete previous working folder and extract the new portable
-ZIP separately; existing schema-3 settings need no migration.
+[Windows run 40096247259](https://github.com/ghosthvj/MarsDisplay/actions/runs/40096247259)
+passed **378 tests in 71.282 seconds, zero skips**, native build, isolated packaged
+smoke, qualification and upload for source
+`c059526fd55eccdac1d4646a08ab4449a9e68845`.
+[Download rc4](https://github.com/ghosthvj/MarsDisplay/actions/runs/40096247259/artifacts/12560971970)
+before **2026-10-31 13:03 UTC** (exact expiry: `2026-10-31T13:03:24Z`).
+Inner ZIP: **205,798,234 bytes**, SHA256
+`ab85da542fa40e53098f4d692a2a785d1b4ea48400250d608a883efcd673e58d`.
+
+Parent and independent checks streamed this new archive, without reusing rc3 proof:
+**1,281 safe unique members**, **1,280 payload hashes**, **384 source hashes**.
+All 380 tracked source files match the pinned candidate (266 exact, 114 permitted
+CRLF-only), plus four SDK records. Raw legal/native bytes and forced-LF JSON remain
+exact. All eight packaged changed files were covered; the parent's narrower
+seven-file change list excludes the runtime guide, which is still covered by the
+complete source hash comparison and independent check.
+
+All **69 binaries are AMD64/PE32+**, EXE GUI subsystem **2**. The unchanged profile
+of **27 native components, six supplemental components and 209 material hashes**
+is bound to shipped bytes. Windows regressions cover legend removal with saved
+profile retained, dark/light selector and popup contrast, and 12px spacing.
+Packaged bootstrap smoke passed with **no OPEN or device request**; it does not
+establish panel behaviour, physical acceptance or legal certification.
+
+Exit the previous instance, extract the complete portable ZIP into a new folder,
+and retain the previous working folder as fallback. Existing schema-3 settings
+and brightness need no migration; official Microsoft Visual C++ v14 x64 14.51+
+remains required on Windows 11 x64. This is a test candidate, not a final release,
+installer or new driver. These passive notes supersede pending wording in the
+immutable bundled source without rebuilding the candidate.
 
 ## UI candidate — 0.2.0rc3
 
