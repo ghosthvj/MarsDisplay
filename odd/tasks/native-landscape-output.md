@@ -6,9 +6,9 @@ Keep software verification distinct from fixed-image hardware evidence and any f
 S1 — "MARS ya está listo, ahora debemos hacer que MasrDisplay acepte las tarjetas horizontales"
 
 ## Tasks
-- T1 [S1] Implement geometry-aware native output, compatibility tests and active documentation | route: parent inline | status: done | commit: pending.
-- T2 [S1] Verify portrait preservation, alternating orientations and failure behavior | route: parent checks plus independent gentle-ai-verify | Risk: item 6 (offline tests cannot establish physical continuous landscape output) | status: done | commit: pending.
-- T3 [S1] Record verified scope and commit the cohesive implementation | route: parent inline | status: in_progress | commit: pending.
+- T1 [S1] Implement geometry-aware native output, compatibility tests and active documentation | route: parent inline | status: done | commit: `fd201b69d65f1f4deed851343c066a0ceb4ceda2`.
+- T2 [S1] Verify portrait preservation, alternating orientations and failure behavior | route: parent checks plus independent gentle-ai-verify | Risk: item 6 (offline tests cannot establish physical continuous landscape output) | status: done | commit: `fd201b69d65f1f4deed851343c066a0ceb4ceda2`.
+- T3 [S1] Record verified scope and commit the cohesive implementation | route: parent inline | status: done | commit: `fd201b69d65f1f4deed851343c066a0ceb4ceda2`.
 
 ## Log
 L1 — Original request: "MARS ya está listo, ahora debemos hacer que MasrDisplay acepte las tarjetas horizontales".
@@ -26,3 +26,5 @@ L9 — Native ASSESS failed on pre-existing undeclared untracked scope; reported
 
 L10 — T2complete: independent verifier mvn4ajql-1k-c593 reported S1softwarePASS, no blockers/advisories;6focused+136regression tests passed, plus independent fullRGB-ramp conversion/baseline portrait/landscape grouped-timing probe. Added its full-payload ramp regression; parent finalspotcheck7testsPASS/1.839s, gitdiff whitespacecheckPASS. No production code changed after the390-test suite or independent review; only this extra test was added. Child used external/tmp isolation contrary to requested project-local placement; parent has not accessed/deleted it. Returned report retained at build/native-landscape/independent.md.
 L11 — T3started: prepare one cohesive local source commit. Verification is software-only:4Windows-only tests were skipped locally; no new Windows executable, physical continuous capture or orientation-switching acceptance is claimed. No current functional checks failed; initial RED and fixture correction remain in receipts. RDDdisabled, nativeassessmentunavailable, independentverificationpassed. No push/PR/deployment/device writes.
+
+L12 — All three software tasks complete. Implementation commitfd201b69d65f1f4deed851343c066a0ceb4ceda2 contains19files/371authoredlines. Review slice boundary is89ff2207b2ae54a63d5e44909bf26af7c3c6c510→fd201b69d65f1f4deed851343c066a0ceb4ceda2, not the inherited branch history sinceorigin/main. Any future public delivery must isolate this slice; no accumulated historical branch publication is authorized. Only original unrelated dirt remains after the source commit. This bookkeeping closure records completion without changing the verified source. New Windows artifact and physical continuous/orientation-switching tests require a separate delivery/qualification step; existing rc4 remains the accepted fallback.
