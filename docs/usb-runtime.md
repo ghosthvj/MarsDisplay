@@ -50,6 +50,32 @@ unknown/duplicate keys and non-boolean values are invalid. Main schemas1–3 and
 recovery files are unchanged, and rc5 ignores this sidecar. No Windows-login task,
 registry entry or service is installed. This option is not in the rc5 ZIP.
 
+## Start with Windows (unreleased source)
+
+**Start MarsDisplay when I sign in to Windows** controls per-user login registration,
+not capture. It defaults off, requires the packaged Windows EXE, and can be changed
+without a saved MARS configuration or while capture runs. Both startup preferences
+remain independent. Exit blocks changes. Opening the application or its settings
+only reads registration; it does not register, repair, or move it silently.
+
+The application uses HKCU `Software\Microsoft\Windows\CurrentVersion\Run`, value
+`MarsDisplay`, with a quoted absolute EXE path. HKCU `Software\MarsDisplay`, value
+`StartupCommand`, records the exact owned command. No administrator access or HKLM
+changes are required. Foreign/malformed entries are never adopted or overwritten.
+Disabling removes only a matching owned Run value, leaving harmless ownership
+metadata and other applications/settings intact. Detected changes are rejected;
+these are checked operations, not an atomic transaction against external editors.
+
+After opening a relocated copy, **Update startup path** explicitly replaces the old
+owned registration. It removes that entry first, so an interrupted/failed update
+may leave startup off. Errors are shown, actual state is re-read, and no hidden
+rollback/retry occurs. Commands over Windows' 260 UTF-16-unit limit are refused.
+Windows Settings > Apps > Startup or policy may disable/delay a registered app;
+MarsDisplay does not override those controls or promise an immediate start.
+This is interactive sign-in startup, not pre-login boot. MARS must still be available
+for capture; native capture errors retain the existing manual-restart behavior.
+The accepted rc6 ZIP is unchanged and does not contain this new option.
+
 ## Native configuration form (current source)
 
 The configuration window has a fixed height selected on creation: up to 760

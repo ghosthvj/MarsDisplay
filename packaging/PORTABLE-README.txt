@@ -15,6 +15,13 @@ Start/Stop/Exit affect only the current session, never the saved switch.
 Toggling the option does not start capture now or register Windows-login startup.
 Native failures never trigger an automatic restart.
 The separate settings.json.startup.json preference requires no settings migration.
+A separate "Start MarsDisplay when I sign in to Windows" option registers this EXE
+for your Windows account only, without admin rights; it defaults OFF. Turning it
+off removes only the verified MarsDisplay Run entry, not another application's.
+After moving/updating the portable folder, open the new copy and use "Update
+startup path" when offered. A failed path update may leave registration OFF;
+reopen Settings to inspect it. Windows Startup settings/policies may override or
+delay launch. This does not change capture settings or the current capture session.
 Configuration saves Native USB only, after explicit USB selection and Save.
 Existing Simulation records are not converted merely by opening the application;
 legacy schema migration still requires explicit confirmation and a preserved backup.

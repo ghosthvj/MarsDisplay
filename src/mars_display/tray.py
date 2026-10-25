@@ -15,6 +15,7 @@ from .presentation import window_stylesheet
 from .preview import FramePreviewDialog
 from .status_label import StatusLabel
 from .startup_preferences import StartupPreferenceStore
+from .windows_startup import create_windows_startup
 from .settings import (Settings, SettingsError, SettingsStore, SettingsStoreError,
                        NATIVE_IDENTITY, NATIVE_PROFILE, BRIGHTNESS_LEVELS)
 from .devices import (enumerate_devices, select_device, DeviceInventoryError,
@@ -194,6 +195,14 @@ class SettingsDialog(QDialog):
         self.start_on_launch = QCheckBox("Start capture when MarsDisplay opens")
         column.addWidget(self.start_on_launch)
         column.addWidget(_label("Saved immediately for the next launch; save your configuration first.", "muted"))
+        self.start_with_windows = QCheckBox("Start MarsDisplay when I sign in to Windows")
+        column.addWidget(self.start_with_windows)
+        self.windows_startup_hint = _label("", "muted")
+        column.addWidget(self.windows_startup_hint)
+        self.update_startup_path = QPushButton("Update startup path")
+        self.update_startup_path.setAutoDefault(False)
+        self.update_startup_path.hide()
+        column.addWidget(self.update_startup_path, 0, Qt.AlignmentFlag.AlignLeft)
         self.source = StatusLabel("stopped", "sourceBadge")
         self.output = _label("Simulated — simulated-closed (no USB output)")
         self.metadata = _label()
@@ -372,6 +381,16 @@ class TrayShell(QObject):
         self.dialog = SettingsDialog(configured)
         self.dialog.start_on_launch.setChecked(self._startup_enabled)
         self.dialog.start_on_launch.toggled.connect(self._save_startup_preference)
+        self._windows_startup = None
+        self._windows_startup_state = None
+        self._windows_startup_error = ""
+        try:
+            self._windows_startup = create_windows_startup()
+        except SettingsError as error:
+            self._windows_startup_error = str(error)
+        self._load_windows_startup()
+        self.dialog.start_with_windows.toggled.connect(self._save_windows_startup)
+        self.dialog.update_startup_path.clicked.connect(lambda: self._save_windows_startup(True))
         self.preview = None
         self.dialog.preview_action.clicked.connect(self.show_preview)
         self.dialog.logs_action.clicked.connect(self.show_logs)
@@ -439,7 +458,45 @@ class TrayShell(QObject):
             self.dialog.show_message("Startup preference saved. Applies the next time MarsDisplay opens.")
         self.refresh()
 
+    def _load_windows_startup(self):
+        self._windows_startup_state = None
+        hint = self._windows_startup_error or "Available in the packaged Windows application."
+        if self._windows_startup is not None:
+            try:
+                self._windows_startup_state = self._windows_startup.load()
+                hint = ("Startup points to another folder. Update the path to use this copy."
+                        if self._windows_startup_state.needs_update else
+                        "Only your Windows account. Windows startup settings may override or delay it.")
+            except SettingsError as error:
+                hint = str(error)
+        self.dialog.start_with_windows.blockSignals(True)
+        self.dialog.start_with_windows.setChecked(bool(self._windows_startup_state
+            and self._windows_startup_state.enabled))
+        self.dialog.start_with_windows.blockSignals(False)
+        self.dialog.windows_startup_hint.setText(hint)
+        self.dialog.update_startup_path.setVisible(bool(self._windows_startup_state
+            and self._windows_startup_state.needs_update))
+
+    def _save_windows_startup(self, enabled):
+        if self.coordinator.snapshot().exit_requested:
+            self.dialog.start_with_windows.blockSignals(True)
+            self.dialog.start_with_windows.setChecked(bool(self._windows_startup_state
+                and self._windows_startup_state.enabled))
+            self.dialog.start_with_windows.blockSignals(False)
+            return
+        try:
+            if self._windows_startup is None:
+                raise SettingsError("Available in the packaged Windows application.")
+            self._windows_startup.save(enabled)
+        except SettingsError as error:
+            self.dialog.show_message(str(error))
+        else:
+            self.dialog.show_message("Windows startup registration saved for your account.", "saved")
+        self._load_windows_startup()
+        self.refresh()
+
     def show_settings(self):
+        self._load_windows_startup()
         self.refresh()
         self.dialog.show()
         self.dialog.raise_()
@@ -679,6 +736,10 @@ class TrayShell(QObject):
         self.exit_action.setEnabled(not status.exit_requested)
         self.dialog.start_on_launch.setEnabled(self._startup_store is not None
             and self.configured is not None and not status.exit_requested)
+        self.dialog.start_with_windows.setEnabled(self._windows_startup_state is not None
+            and not status.exit_requested)
+        self.dialog.update_startup_path.setEnabled(self._windows_startup_state is not None
+            and not status.exit_requested)
         can_save = idle and status.state == "stopped"
         configured_native = self.configured is not None and self.configured.output_mode == "native"
         brightness_enabled = configured_native and self.configured.schema_version == 3

@@ -1,5 +1,20 @@
 # MarsDisplay
 
+## Unreleased source: start with Windows
+
+**Start MarsDisplay when I sign in to Windows** is a separate, default-off control
+for the packaged Windows application. It registers only the current user's login,
+without administrator rights, a service, or a scheduled task. Capture still follows
+the independent **Start capture when MarsDisplay opens** preference.
+
+Changes apply immediately to registration, not the current capture session.
+Turning it off removes only MarsDisplay's verified owned startup entry. If you move
+or replace the portable folder, open the new copy and choose **Update startup path**
+when offered. A failed update may leave startup off; the UI reads back the actual
+registry state instead of silently retrying. Keep the portable folder intact.
+Windows Settings > Apps > Startup and system policies can override or delay launch.
+This option is not included in the previously delivered rc6 ZIP.
+
 ## 0.2.0rc6 candidate: persistent capture on launch
 
 In **Status / Settings**, enable **Start capture when MarsDisplay opens** after
