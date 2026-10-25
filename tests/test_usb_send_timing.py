@@ -20,6 +20,9 @@ class TimingTests(unittest.TestCase):
     start = session.WorkerTests.start
     request = session.WorkerTests.request
 
+    # Wire-format assertions must not depend on runner speed. Real socket
+    # deadlines are covered separately by IPCTests and the transport tests.
+    @patch.object(time, 'monotonic', new=lambda: 100.0)
     def test_fixed_wire_and_legacy_bytes(self):
         body = struct.pack('!B5d', 0, 1, 2, 3, 4, 5)
         detail = ipc.WorkerTiming(1, 2, 3, 4, 5)
