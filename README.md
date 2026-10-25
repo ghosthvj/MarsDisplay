@@ -2,6 +2,32 @@
 
 ## 0.2.0rc7 candidate: start with Windows
 
+**[Download 0.2.0rc7 for Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/40198689601/artifacts/12600896457)**
+from [verified run 40198689601](https://github.com/ghosthvj/MarsDisplay/actions/runs/40198689601).
+Available until **2026-11-01T13:44:25Z**; GitHub sign-in may be required.
+
+**Verified:** 415 Windows tests, zero skips; native build and isolated
+packaged smoke. Parent and independent checks verified the actual archive and
+its source binding to `ae63c2637f1f6440872f1cc2144c83212fb52bd1`. Worker smoke opened no USB device.
+The inner `MarsDisplay-0.2.0rc7-Windows-x64.zip` is **205,827,894 bytes**. SHA256:
+
+```text
+ac013a1d92347c82447b9df2caf684d54d06f84b39e318f5c6e229ba87b2f0d0
+```
+
+Exit the old instance, extract the Actions download and then the **entire inner
+ZIP into a new folder**. Keep [accepted rc6](https://github.com/ghosthvj/MarsDisplay/actions/runs/40154061614/artifacts/12584335869)
+as fallback. Existing configuration, brightness and capture-on-launch preference
+carry over. Enable **Start MarsDisplay when I sign in to Windows** for login
+startup. Enable **Start capture when MarsDisplay opens** as well if you want
+capture to begin automatically after login. This starts at interactive sign-in,
+not before login; Windows may delay or override startup.
+**Real Windows sign-in/registry and physical USB acceptance of rc7 remain pending.**
+This is a test candidate, not a final release; no rc6 artifact was replaced.
+Qualification tooling initially failed on temporary storage, an OpenSSL record
+lookup and README line endings. Corrected checks passed against the same ZIP;
+no rebuild or artifact modification was needed.
+
 **Start MarsDisplay when I sign in to Windows** is a separate, default-off control
 for the packaged Windows application. It registers only the current user's login,
 without administrator rights, a service, or a scheduled task. Capture still follows
