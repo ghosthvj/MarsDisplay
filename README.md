@@ -776,6 +776,15 @@ No model-specific driver has been copied. Real protocol selection and physical
 USB testing require identified hardware; simulation must never be shown as a
 connected screen. There is no installer, service, autostart, or update mechanism.
 
+## Local development records
+
+`odd/` contains local coordination notes, not application source. Keep it and
+private preview outputs (`.herdr-web-ui/`, `.ovis/`) untracked; `.gitignore`
+prevents accidental staging. Maintain durable contracts and qualification evidence
+in `docs/`, including the [remaining hardware gates](docs/usb-hardware-qualification.md#remaining-hardware-qualification).
+Historical commit links and released source remain intact; this policy does not
+rewrite history or remove local evidence.
+
 ## License
 
 GPL-3.0-only; see [LICENSE](LICENSE). This foundation contains no copied driver

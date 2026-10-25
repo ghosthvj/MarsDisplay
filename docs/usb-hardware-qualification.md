@@ -64,7 +64,8 @@ Next scenarios are planned separately: controlled unplug/replug and explicit
 restart, COM reassignment/duplicate rejection when available, in-flight Stop,
 Exit and owned-resource lifetime, and measured latency/capacity. No production
 budgets or landscape implementation are authorized by a successful first run.
-See [the P6 task ledger](../odd/tasks/native-usb-hardware.md) for acceptance boundaries.
+See [remaining hardware qualification](#remaining-hardware-qualification) for
+acceptance boundaries and follow-ups retained from the local coordination records.
 
 ## Follow-up: one controlled disconnect
 
@@ -360,3 +361,30 @@ a publisher/reputation warning is separate from checksum verification.
 Report unavailable detail as unavailable, never zero. No private URLs, packet
 histories or exports are needed. These successful-only measurements do not authorize
 orientation omission, chunk/baud/CTS changes, retries or deadline tuning.
+
+## Remaining hardware qualification
+
+Removing local task ledgers from version control does not close their hardware
+gates. The source, artifact hashes, observations and failure boundaries above
+remain the maintained qualification record; raw working receipts stay local.
+
+- **P6 timing/capacity remains open:** complete the finer measurements and justify
+  production budgets, or explicitly defer that qualification. Successful maximum
+  durations alone do not establish safe deadlines, panel FPS or rendering ACKs.
+- **Scope already observed:** initial portrait output/Stop, disconnect/reconnect
+  with explicit restart, in-flight Stop, Exit/cold startup and physical port
+  relocation were accepted for the recorded single-screen setup. Physical COM
+  reassignment and duplicate-screen rejection remain unverified scenarios.
+- **Later accepted owner scenarios:** rc5 displayed both portrait and landscape;
+  rc6 resumed MARS capture on application launch; rc7 started after Windows sign-in
+  and updated the display after a restart. These later observations supersede
+  candidate-delivery statements awaiting those particular checks, not the wider
+  performance, relocation or hardware qualification gates.
+- **Do not infer additional acceptance:** long-duration soak, exhaustive orientation
+  transitions, non-admin/relocated Windows startup and performance guarantees are
+  not established by those observations or by a successful release workflow.
+
+Keep the [Linux measurement boundaries](linux-usb-measurement-results.md),
+[landscape protocol evidence](usb-landscape-qualification.md) and
+[isolated grouping results](usb-grouping-delivery.md) separate. No timing,
+protocol, registry or runtime setting changes are part of repository cleanup.

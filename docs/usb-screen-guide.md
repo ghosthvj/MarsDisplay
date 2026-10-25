@@ -17,9 +17,9 @@ and does not drive this screen.** Use this guide
 for the known-good diagnostic; see the [integration proposal](usb-integration-plan.md)
 for future application work. P0–P2 are complete, recorded in the
 [accepted Python bridge ledger](https://github.com/ghosthvj/MarsDisplay/blob/6bff97befee7b1e72f7afbcef3ab482a89011ea2/odd/tasks/native-python-usb-probe.md).
-The authorized **P3 bounded helper is qualified**, tracked in the
-[helper ledger](../odd/tasks/native-usb-helper.md) with
-[native/source evidence and limits](usb-helper.md#verified-evidence-and-limits).
+The authorized **P3 bounded helper is qualified**; its
+[native/source evidence and limits](usb-helper.md#verified-evidence-and-limits)
+record the observed checks.
 [P4 API-only configuration](usb-settings.md#verified-p4-evidence-and-limits) is also
 qualified; it does not enable native Start or add a selector. Application wiring,
 selection UI and continuous hardware qualification (P5–P6) remain unauthorized.

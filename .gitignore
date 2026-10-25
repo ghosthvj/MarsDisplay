@@ -4,3 +4,8 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+
+# Local coordination and private preview evidence, not application source.
+/odd/
+/.herdr-web-ui/
+/.ovis/

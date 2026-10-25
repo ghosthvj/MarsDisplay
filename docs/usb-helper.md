@@ -219,8 +219,8 @@ The first native run stopped before compilation on a test that assumed send-buff
 size guaranteed a blocked socket. The test-only correction establishes bounded
 backpressure; production deadlines did not change. The initial artifact reader also
 needed an owner-authorized per-file Git correction for Windows checkout conversion;
-all final assertions passed. These failures and the verifier's pre-probe isolation
-clarification remain recorded in [the P3 ledger](../odd/tasks/native-usb-helper.md).
+all final assertions passed. These corrected checks did not alter the qualified
+archive or authorize physical USB execution; detailed working receipts remain local.
 
 The qualified ZIP is immutable. Its historical pending documentation is superseded
 by this evidence, not rewritten in place. P0–P2 diagnostics remain separate and

@@ -6,7 +6,7 @@ explicit stopped opt-in and Simulation remains the default. The owner authorized
 P6 with `continuamos con P6`. Physical qualification is now pending owner evidence,
 not completed by CI. See [P5 evidence](usb-runtime.md#verified-p5-evidence),
 [the P6 procedure](usb-hardware-qualification.md) and
-[the P6 ledger](../odd/tasks/native-usb-hardware.md).
+[remaining hardware qualification](usb-hardware-qualification.md#remaining-hardware-qualification).
 
 ## Historical proposal and stage context
 
@@ -25,7 +25,7 @@ observations alone do not qualify continuous output or production timing.
 Those completed stages are recorded in the
 [accepted Python bridge ledger](https://github.com/ghosthvj/MarsDisplay/blob/6bff97befee7b1e72f7afbcef3ab482a89011ea2/odd/tasks/native-python-usb-probe.md).
 The owner authorized `adelante con P3`; that bounded helper stage is now complete
-in the [helper ledger](../odd/tasks/native-usb-helper.md). The subsequently authorized
+in the [helper qualification record](usb-helper.md#verified-evidence-and-limits). The subsequently authorized
 [P4 contracts](usb-settings.md) are also complete as API-only work;
 P5–P6 remain proposals and application USB output is not authorized.
 
@@ -166,7 +166,7 @@ Unknown cleanup fails closed, never reports success or releases ownership.
 `Contratos/API en P4; selector en P5 — recomendado`. Complete and qualified at
 `91e20904cb5f729c520a6fd6799e69087a0cccc6` after source/Windows/artifact/old-reader
 recovery and independent verification. See [the P4 contracts](usb-settings.md) and
-[task ledger](../odd/tasks/native-usb-settings.md). No native Start or selector is enabled.
+[qualification evidence](usb-settings.md#verified-p4-evidence-and-limits). No native Start or selector is enabled.
 
 **Dependency:** P3; settle schema/migration/rollback design before coding.
 Propose schema 2 with strict explicit output mode, native profile and selected

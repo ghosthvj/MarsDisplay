@@ -5,7 +5,7 @@ Native lifecycle, explicit stopped selection, migration/recovery and host-previe
 behavior passed local, Windows and independent checks. This is not physical-screen,
 performance or interactive Windows-tray acceptance; those boundaries remain below.
 The immutable ZIP contains earlier pending wording, superseded by this record.
-Track work in [the P5 ledger](../odd/tasks/native-usb-runtime.md).
+See [verified P5 evidence](#verified-p5-evidence) for source, artifact and test bindings.
 
 ## Automatic orientation (current source)
 

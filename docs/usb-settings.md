@@ -13,7 +13,8 @@ The independent [Windows sign-in option](usb-runtime.md#start-with-windows-rc7)
 uses owned HKCU registry values, not the main settings JSON or capture sidecar.
 It does not migrate or rewrite these settings and backups.
 
-Track implementation and proof in [the P4 ledger](../odd/tasks/native-usb-settings.md).
+See [verified P4 evidence and limits](#verified-p4-evidence-and-limits) for the
+implementation's source, artifact and qualification bindings.
 [P3 helper qualification](usb-helper.md) is separate; the new P4 evidence is below.
 
 ## Three strict formats

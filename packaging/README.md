@@ -186,8 +186,7 @@ checksum. Immutable packaged pending notes are superseded by this observed evide
 not changed inside the ZIP. P0–P3 artifacts remain separate and unchanged; GUI/DPI
 owner-acceptance limitations below are not requalified. No installer/release, native
 application output, P5/P6 or continuous hardware claim; mechanical bindings are
-not legal certification. See [P4 contracts/evidence](../docs/usb-settings.md) and
-[the P4 ledger](../odd/tasks/native-usb-settings.md).
+not legal certification. See [P4 contracts/evidence](../docs/usb-settings.md#verified-p4-evidence-and-limits).
 
 ## Qualified P5 source-guide inclusion
 
@@ -240,8 +239,8 @@ pending wording inside the immutable source/README is superseded by this evidenc
 not patched into the ZIP. Continuous hardware/FPS/reconnect/landscape/application
 acceptance remain unqualified. P4 contracts are qualified separately above; P5/P6
 remain outside that evidence. Mechanical bindings are not legal certification.
-See [the P3 ledger](../odd/tasks/native-usb-helper.md) and
-[helper evidence](../docs/usb-helper.md#verified-evidence-and-limits).
+See [helper evidence](../docs/usb-helper.md#verified-evidence-and-limits) for
+source, artifact, corrected-check and acceptance boundaries.
 
 ## Verified output-preview portable — 0.1.4
 
