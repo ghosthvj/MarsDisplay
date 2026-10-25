@@ -1,6 +1,6 @@
 # Windows portable build and verified delivery
 
-## Unreleased landscape source
+## Landscape candidate — 0.2.0rc5 (build pending)
 
 Current source adds automatic native 320×480 / 480×320 output, retaining existing
 settings and brightness. No new Windows artifact has been built or qualified for

@@ -1,12 +1,13 @@
 # MarsDisplay
 
-## Unreleased source: automatic native landscape
+## 0.2.0rc5: automatic native landscape (build pending)
 
 Native output now follows MARS: portrait **320×480** or landscape **480×320**,
 including orientation changes between frames. Choose the orientation in MARS;
 no second selector or settings migration is needed in MarsDisplay.
-The existing Windows ZIPs below remain portrait-only. This source change does
-not replace them or establish continuous physical/Windows landscape qualification.
+The new Windows candidate is being prepared; no rc5 download is qualified yet.
+The existing Windows ZIPs below remain portrait-only. Source support does not
+establish continuous physical landscape or orientation-switching qualification.
 See [native geometry and evidence limits](docs/usb-runtime.md#automatic-orientation-current-source).
 
 ## 0.2.0rc4: USB selector polish candidate
