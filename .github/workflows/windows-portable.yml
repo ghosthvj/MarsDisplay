@@ -9,8 +9,6 @@ on:
       layout_diagnostics:
         type: boolean
         default: false
-  push:
-    branches: [feat/simulated-companion, feat/native-usb-helper]
   workflow_dispatch:
     inputs:
       release_tag:

@@ -92,7 +92,8 @@ class ReleaseWorkflowTests(unittest.TestCase):
     def test_existing_portable_routes_and_qualification_are_retained(self):
         text = (ROOT / '.github/workflows/windows-portable.yml').read_text()
         self.assertIn('  workflow_call:\n', text)
-        self.assertIn('  push:\n    branches: [feat/simulated-companion, feat/native-usb-helper]', text)
+        self.assertNotIn('  push:', text)
+        self.assertIn('  workflow_dispatch:\n', text)
         self.assertIn("      layout_diagnostics:\n        description: 'Capture isolated UI layout diagnostics without packaging'\n        type: boolean\n        default: false", text)
         self.assertIn('r.wasSuccessful() and not r.skipped', text)
         self.assertIn('python packaging/build_portable.py', text)

@@ -1,18 +1,6 @@
 name: Isolated USB grouping experiment
 on:
   workflow_dispatch:
-  push:
-    branches: [feat/native-usb-hardware]
-    paths:
-      - '.github/workflows/windows-usb-grouping.yml'
-      - 'src/mars_display/usb_grouping_*.py'
-      - 'packaging/build_grouping_experiment.py'
-      - 'packaging/grouping_*.py'
-      - 'packaging/MarsDisplayGroupingExperiment.spec'
-      - 'packaging/GROUPING-README.txt'
-      - 'tests/test_grouping_*.py'
-      - 'tests/test_usb_grouping_*.py'
-      - 'docs/usb-grouping-*.md'
 permissions:
   contents: read
 jobs:

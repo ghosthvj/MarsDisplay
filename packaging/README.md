@@ -776,10 +776,13 @@ success permits the existing ZIP/checksum upload, with missing files treated as
 error. No secrets, production backend, screenshot service, tag or release is
 configured.
 
-Triggers are restricted to push on existing `feat/simulated-companion` and manual
-dispatch. GitHub requires the workflow on the default branch for manual dispatch;
-a first **explicitly authorized** feature-branch push can bootstrap registration
-without unapproved main changes. The first authorized run
+The workflow supports manual dispatch and reusable `workflow_call` builds from
+[the release workflow](../docs/releases.md). Obsolete feature-branch push triggers
+have been retired; no branch/tag push starts this build. Manual inputs and all
+qualification gates remain unchanged. GitHub requires the workflow on the default
+branch for manual dispatch.
+
+Historical bootstrap evidence below predates this trigger cleanup. The first authorized run
 [39024652172](https://github.com/ghosthvj/MarsDisplay/actions/runs/39024652172)
 installed the Windows SDK/browser but failed a source integration wait before
 compilation. The test now scopes cleanup to each orientation and uses a bounded

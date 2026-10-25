@@ -289,7 +289,7 @@ class BuildTests(unittest.TestCase):
         for fragment in ('entrypoint.py', 'console=False', 'upx=False', 'COLLECT(', 'mars_display.devices', 'PyQt6', 'PySide6.QtWebEngine'):
             self.assertIn(fragment, spec)
         workflow = Path('.github/workflows/windows-portable.yml').read_text()
-        for fragment in ('windows-2025', 'timeout-minutes: 30', 'retention-days: 7', 'persist-credentials: false', 'contents: read', 'feat/simulated-companion', 'workflow_dispatch:', 'architecture: x64', "python-version: '3.13.16'", 'feat/native-usb-helper', 'and not r.skipped', 'if-no-files-found: error', '3d3c42e5aac5ba805825da76410c181273ba90b1', '5fda3b95a4ea91299a34e894583c3862153e4b97', 'cf430e030ddbb5b0abf93d22962f4752f3646cd9'):
+        for fragment in ('windows-2025', 'timeout-minutes: 30', 'retention-days: 7', 'persist-credentials: false', 'contents: read', 'workflow_call:', 'workflow_dispatch:', 'architecture: x64', "python-version: '3.13.16'", 'and not r.skipped', 'if-no-files-found: error', '3d3c42e5aac5ba805825da76410c181273ba90b1', '5fda3b95a4ea91299a34e894583c3862153e4b97', 'cf430e030ddbb5b0abf93d22962f4752f3646cd9'):
             self.assertIn(fragment, workflow)
         self.assertIn("if: ${{ failure() && steps.native_build.outcome == 'failure' }}", workflow)
         self.assertIn('name: MarsDisplay-UNQUALIFIED-native-diagnostics', workflow)
