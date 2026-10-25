@@ -38,6 +38,9 @@ Schema 2 explicitly adds both output fields, including for Simulation:
 `output_mode` is exactly `simulated` or `native`. Simulation requires null profile;
 a passive legacy identity is permitted. Native requires string profile
 `tus35-portrait-v1` and exact opaque identity `usb:1a86:5722:USB35INCHIPSV2`.
+The profile name is retained as a legacy compatibility identifier: current native
+output selects portrait 320×480 or landscape 480×320 from each captured MARS frame.
+There is no new orientation field, profile value, migration or passive file rewrite.
 COM is never persisted. Missing/unknown/duplicate keys, unsupported versions,
 invalid combinations/types and unsafe URLs are rejected without repairing bytes.
 Static settings validity is not hardware permission or proof of current selection.

@@ -1,5 +1,12 @@
 # Windows portable build and verified delivery
 
+## Unreleased landscape source
+
+Current source adds automatic native 320×480 / 480×320 output, retaining existing
+settings and brightness. No new Windows artifact has been built or qualified for
+this change. The immutable rc4 and earlier ZIPs below remain portrait-only; their
+checksums and qualification records do not cover landscape integration.
+
 ## UI follow-up candidate — 0.2.0rc4
 
 The verified candidate includes themed USB selector/list contrast, 12px separation from
@@ -109,7 +116,7 @@ The following rc1 evidence is historical, not substituted for the corrected bina
 
 ## Verified brightness candidate — 0.2.0rc1
 
-The current source adds schema-3 persisted brightness and a five-position slider
+The rc1 source added schema-3 persisted brightness and a five-position slider
 (20/40/60/80/100%). Native output is explicitly selected, portrait 320×480 only;
 legacy schema 1/2 behavior remains until explicit migration. See
 [the current runtime guide](../docs/usb-runtime.md#saved-brightness-candidate).

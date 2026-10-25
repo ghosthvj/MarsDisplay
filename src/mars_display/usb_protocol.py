@@ -1,4 +1,4 @@
-"""Pure encoding for the proven 320x480 portrait USB display profile."""
+"""Pure RevA encoding for native portrait and landscape frames."""
 
 from .frames import RGBFrame, _validate_frame
 
@@ -24,7 +24,29 @@ def encode_portrait(frame: RGBFrame) -> tuple[bytes, ...]:
     if (frame.width, frame.height) != (320, 480):
         raise ValueError("portrait encoding requires 320x480 geometry")
 
-    payload = bytearray(320 * 480 * 2)
+    return _encode_packets(frame,
+        bytes.fromhex("00 00 00 00 00 79 64 01 40 01 E0 00 00 00 00 00"),
+        bytes.fromhex("00 00 04 FD DF C5"), 2560)
+
+
+def encode_native(frame: RGBFrame) -> tuple[bytes, ...]:
+    """Select the proven orientation/header/chunking from validated geometry.
+
+    Landscape is 480x320, row-major RGB565LE: no rotation or resampling.
+    The explicit portrait API retains its original portrait-only contract.
+    """
+    if not isinstance(frame, RGBFrame):
+        raise TypeError("frame must be an RGBFrame")
+    _validate_frame(frame)
+    if frame.width == 320:
+        return encode_portrait(frame)
+    return _encode_packets(frame,
+        bytes.fromhex("00 00 00 00 00 79 66 01 E0 01 40 00 00 00 00 00"),
+        bytes.fromhex("00 00 07 7D 3F C5"), 3840)
+
+
+def _encode_packets(frame, orientation, header, chunk_size):
+    payload = bytearray(frame.width * frame.height * 2)
     for source in range(0, len(frame.rgb), 3):
         red, green, blue = frame.rgb[source:source + 3]
         word = ((red >> 3) << 11) | ((green >> 2) << 5) | (blue >> 3)
@@ -33,8 +55,7 @@ def encode_portrait(frame: RGBFrame) -> tuple[bytes, ...]:
         payload[target + 1] = word >> 8
 
     return (
-        bytes.fromhex("00 00 00 00 00 79 64 01 40 01 E0 00 00 00 00 00"),
-        bytes.fromhex("00 00 04 FD DF C5"),
-        *(bytes(payload[start:start + 2560])
-          for start in range(0, len(payload), 2560)),
+        orientation, header,
+        *(bytes(payload[start:start + chunk_size])
+          for start in range(0, len(payload), chunk_size)),
     )

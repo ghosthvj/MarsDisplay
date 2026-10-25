@@ -1,4 +1,15 @@
-# Pure portrait packet encoding
+# Pure native packet encoding
+
+`mars_display.usb_protocol.encode_native(frame)` selects portrait 320x480 or
+landscape 480x320 from validated geometry, without I/O or caller mutation. The
+native worker uses it for each frame; consecutive frames may change orientation.
+
+Landscape emits `00 00 00 00 00 79 66 01 E0 01 40 00 00 00 00 00`, then
+`00 00 07 7D 3F C5`, then 80 RGB565LE chunks of 3840 bytes: **82 packets/307222 bytes**.
+Pixels remain row-major, with no rotation or resampling. See the limited
+[fixed-image hardware qualification](usb-landscape-qualification.md).
+
+## Explicit portrait API (unchanged)
 
 `mars_display.usb_protocol.encode_portrait(frame: RGBFrame) -> tuple[bytes, ...]`
 encodes the proven **320x480 portrait profile** without I/O or caller mutation.
@@ -33,8 +44,9 @@ Validation runs before encoding and leaves the caller unchanged:
 | `ValueError` | `captured_at must be finite and non-negative` |
 | `ValueError` | `portrait encoding requires 320x480 geometry` |
 
-The existing shared frame validator runs before the portrait-only check.
-`RGBFrame` and `SimulatedTransport` still accept valid 480x320 landscape frames.
+Both encoders apply the shared frame validator. Only `encode_portrait` adds the
+last, portrait-only error; `encode_native`, `RGBFrame` and `SimulatedTransport`
+accept either supported geometry. Other dimensions remain invalid.
 
 ## Evidence and boundary
 

@@ -157,7 +157,9 @@ class TransportTests(unittest.TestCase):
     def test_invalid_frame_has_no_new_port_or_ipc_effects(self):
         obj, children, _ = self.make();obj.open()
         port=children[0].port
-        with self.assertRaises(ValueError):obj.send(RGBFrame(480,320,FRAME.rgb,0))
+        invalid = RGBFrame(480,320,FRAME.rgb,0)
+        object.__setattr__(invalid, 'height', 319)
+        with self.assertRaises(ValueError):obj.send(invalid)
         self.assertEqual((port.opens,port.closes,port.writes),(1,0,[]))
         self.assertTrue(obj.owned);obj.send(FRAME)
         self.assertEqual(len(port.writes),122)

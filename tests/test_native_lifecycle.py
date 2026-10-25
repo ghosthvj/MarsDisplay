@@ -177,9 +177,11 @@ class NativeLifecycleTests(unittest.TestCase):
         self.assertEqual((state.frames_sent,state.retries,output.sends,len(contexts)),(0,0,1,1))
         self.assertIsNone(state.latest_frame);self.assertNotIn('private',state.error)
 
-    def test_real_transport_landscape_rejects_without_pixel_writes_or_retry(self):
+    def test_real_transport_invalid_geometry_rejects_without_pixel_writes_or_retry(self):
         children=[];objects=[]
-        source=Source(sample=SourceSample('ready',RGBFrame(480,320,bytes(460800),0)))
+        invalid = RGBFrame(480,320,bytes(460800),0)
+        object.__setattr__(invalid, 'height', 319)
+        source=Source(sample=SourceSample('ready',invalid))
         self.sources.append(source)
         def factory(context):
             output,created,_=transport_fixture.TransportTests.make(self,cancel=context.cancel)
@@ -188,7 +190,7 @@ class NativeLifecycleTests(unittest.TestCase):
         self.controllers.append(controller);controller.start();self.assertTrue(controller.wait_stopped(2))
         state=controller.snapshot()
         self.assertEqual(state.failure_kind,'native-rejected')
-        self.assertEqual(state.error,'Native output rejected the frame before submission; only validated 320x480 portrait is supported.')
+        self.assertEqual(state.error,'Native output rejected the frame before submission; only validated 320x480 portrait or 480x320 landscape is supported.')
         self.assertEqual((state.frames_sent,state.retries), (0,0));self.assertIsNone(state.latest_frame)
         self.assertFalse(state.delivery_uncertain);self.assertFalse(state.ownership_uncertain)
         self.assertEqual(len(children[0]),1);self.assertEqual(children[0][0].port.writes,[])

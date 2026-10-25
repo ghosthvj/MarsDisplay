@@ -446,7 +446,7 @@ class Coordinator:
                        if uncertain else "Brightness failed; no automatic retry. Use Start explicitly.")
         elif stage == "send" and isinstance(error, (ValueError, TypeError)):
             kind = "native-rejected"
-            message = "Native output rejected the frame before submission; only validated 320x480 portrait is supported."
+            message = "Native output rejected the frame before submission; only validated 320x480 portrait or 480x320 landscape is supported."
         else:
             uncertain = (error.delivery_uncertain if isinstance(error, UsbError)
                          else stage == "send" and not isinstance(error, (ValueError, TypeError)))

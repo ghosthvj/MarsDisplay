@@ -1,5 +1,14 @@
 # MarsDisplay
 
+## Unreleased source: automatic native landscape
+
+Native output now follows MARS: portrait **320×480** or landscape **480×320**,
+including orientation changes between frames. Choose the orientation in MARS;
+no second selector or settings migration is needed in MarsDisplay.
+The existing Windows ZIPs below remain portrait-only. This source change does
+not replace them or establish continuous physical/Windows landscape qualification.
+See [native geometry and evidence limits](docs/usb-runtime.md#automatic-orientation-current-source).
+
 ## 0.2.0rc4: USB selector polish candidate
 
 The candidate fixes light/dark contrast for the USB selector and its open
@@ -79,9 +88,10 @@ It never clears uncertain cleanup or bypasses Exit. The verified rc2 Windows
 artifact below includes this fix and keeps existing schema-3 settings unchanged.
 
 MarsDisplay is a Windows 11 x64 tray companion that renders MARS with bundled
-Chromium. The current candidate supports Simulation and explicitly selected native
-USB output for the qualified 320×480 portrait profile. Native landscape is not
-supported; the accepted progressive image repaint is unchanged.
+Chromium. The published brightness candidate supports Simulation and explicitly
+selected native USB output for the qualified 320×480 portrait profile only.
+Landscape support belongs to the unreleased source described above; the accepted
+progressive image repaint is unchanged.
 
 ### Brightness
 

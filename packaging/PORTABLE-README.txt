@@ -11,7 +11,9 @@ Open MarsDisplay.exe in an interactive desktop session; capture starts STOPPED.
 Configuration saves Native USB only, after explicit USB selection and Save.
 Existing Simulation records are not converted merely by opening the application;
 legacy schema migration still requires explicit confirmation and a preserved backup.
-Native USB supports the qualified 320x480 portrait profile only, not landscape.
+Native USB follows MARS orientation: 320x480 portrait or 480x320 landscape.
+No second orientation setting or migration is needed. Existing rc4 ZIPs remain
+portrait-only; source support alone is not continuous physical/Windows qualification.
 While stopped, Enable Brightness appears only when needed and offers explicit
 schema-3 migration with a
 preserved pre-brightness settings backup; older binaries cannot read schema 3.

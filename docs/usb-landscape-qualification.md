@@ -69,7 +69,8 @@ The application suite/build was not rerun because production code did not change
 
 ## Next boundary
 
-Production support still requires separately scoped changes to the native
-encoder, IPC geometry validation and configuration, with portrait preservation
-checks and a Windows candidate. This qualification does not authorize those
-changes or further unattended hardware runs.
+This report records the earlier fixed-image qualification, not application support.
+The later [native runtime integration](usb-runtime.md#automatic-orientation-current-source)
+adds geometry-aware encoding and IPC admission without changing saved settings.
+It still needs its own Windows candidate and physical continuous/switching checks;
+this fixed-image evidence does not authorize further unattended hardware runs.

@@ -7,6 +7,24 @@ performance or interactive Windows-tray acceptance; those boundaries remain belo
 The immutable ZIP contains earlier pending wording, superseded by this record.
 Track work in [the P5 ledger](../odd/tasks/native-usb-runtime.md).
 
+## Automatic orientation (current source)
+
+Native output follows the dimensions captured from MARS: **320×480 portrait** or
+**480×320 landscape**. Select orientation in MARS; changes take effect on the next
+stable captured frame without restarting the USB session. There is no rotation,
+resampling, second orientation setting or saved-settings migration. The legacy
+`tus35-portrait-v1` identifier remains for schema-2/3 compatibility.
+
+Portrait packets remain byte-identical. Landscape uses the separately qualified
+[fixed-image protocol](usb-landscape-qualification.md): 80×3840-byte pixel chunks
+instead of 120×2560, still 307222 total bytes. Identity checks, serial ownership,
+brightness, deadlines and no-retry failure behavior are unchanged. Preview retains
+only the latest host-accepted frame, including its actual dimensions.
+
+Software tests use fake ports. The previous fixed image was physically accepted
+with USB at the top; continuous output, orientation switching and a new Windows
+artifact have not been physically qualified. Existing rc4 ZIPs are unchanged.
+
 ## Native configuration form (current source)
 
 The configuration window has a fixed height selected on creation: up to 760
@@ -18,7 +36,7 @@ pixels between them. The selector and its open list follow the light/dark theme,
 including contrasting text and selection colors. The Output mode selector,
 schema-1 export/restore buttons, and Refresh explanation are omitted. The redundant
 profile/resolution legend is also omitted from the heading; the internal profile
-and portrait-only output constraint remain unchanged.
+identifier remains unchanged; current native output supports both orientations.
 Logs/Preview and Save stay in a fixed footer outside the scroll area. Error text
 is retained in full and can be reached by scrolling on constrained desktops.
 
@@ -115,10 +133,10 @@ identity/COM checks; a former COM reassigned to another device is not a target.
 The counter and retained latest-frame object/pixels advance only after `send()`
 returns confirmed host success. A failed, rejected or uncertain send retains the
 previous accepted frame and count. No native rotation/cropping is attempted.
-Native output accepts only validated 320x480 portrait; Simulation still accepts
-both shared geometries. A send rejected before submission reports:
+Native output and Simulation accept only validated 320x480 portrait or 480x320
+landscape. A send rejected before submission reports:
 
-> Native output rejected the frame before submission; only validated 320x480 portrait is supported.
+> Native output rejected the frame before submission; only validated 320x480 portrait or 480x320 landscape is supported.
 
 Neither successful host writes nor an empty host queue prove panel rendering,
 health, physical pixel equivalence or FPS. A retained older Simulation frame must
@@ -266,7 +284,7 @@ reported as still capturing. Existing simulated cleanup/Stop/Exit behavior remai
 
 1. Stop capture and wait for actual cleanup acknowledgement.
 2. Enter the MARS URL. The current configuration interface saves **Native USB**
-   only, using `tus35-portrait-v1` (320 × 480 portrait).
+   only, keeping the legacy `tus35-portrait-v1` identifier for either orientation.
 3. For a new native selection, click **Refresh USB identities** and explicitly
    choose the supported opaque identity. Refresh never selects the first device,
    opens a port or proves continuing availability. There is no periodic polling.

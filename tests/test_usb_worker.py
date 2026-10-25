@@ -99,7 +99,7 @@ class WorkerTests(unittest.TestCase):
             snapshots=[(DEVICE,), (replace(DEVICE,serial_number='foreign'),)] if changed=='identity' else [(DEVICE,)]
             c,p,e,r,t=self.start(snapshots);self.assertEqual(self.request(c,ipc.OPEN,1,worker.IDENTITY.encode()),worker.OK)
             body=ipc.encode_frame(FRAME)
-            if changed=='frame':body=ipc.METADATA.pack(480,320,0)+FRAME.rgb
+            if changed=='frame':body=ipc.METADATA.pack(640,240,0)+FRAME.rgb
             expected=worker.IDENTITY_ERROR if changed=='identity' else worker.INVALID
             self.assertEqual(self.request(c,ipc.FRAME,2,body),expected)
             t.join(1);self.assertEqual(r,[1]);self.assertEqual((p.opens,p.closes,p.writes),(1,1,[]))

@@ -80,7 +80,7 @@ class TimingTests(unittest.TestCase):
                 c, p, _, results, thread = self.start(snapshots, failure)
                 self.assertEqual(self.request(c, ipc.OPEN, 1, worker.IDENTITY.encode()), worker.OK)
                 body = ipc.encode_frame(session.FRAME)
-                if failure == 'frame':body = ipc.METADATA.pack(480, 320, 0)+session.FRAME.rgb
+                if failure == 'frame':body = ipc.METADATA.pack(640, 240, 0)+session.FRAME.rgb
                 self.assertEqual(self.request(c, ipc.TIMED_FRAME, 2, body), status)
                 thread.join(1)
                 self.assertEqual((results, p.opens, p.closes, len(p.writes)), ([1], 1, 1, count))
@@ -97,7 +97,9 @@ class TimingTests(unittest.TestCase):
         with self.assertRaises(AttributeError):obj.last_send_timing = None
         obj.open()
         self.assertIs(obj.last_send_timing, detail)
-        with self.assertRaises(ValueError):obj.send(transport.RGBFrame(480, 320, session.FRAME.rgb, 0))
+        invalid = transport.RGBFrame(480, 320, session.FRAME.rgb, 0)
+        object.__setattr__(invalid, 'height', 319)
+        with self.assertRaises(ValueError):obj.send(invalid)
         self.assertEqual(len(children[0].port.writes), 122)
         self.assertIs(obj.last_send_timing, detail)
         obj.close()

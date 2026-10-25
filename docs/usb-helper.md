@@ -36,10 +36,11 @@ Each message starts with the 16-byte network-order struct `!4sBBHII`:
 | GROUPED_REPLY | 9 | Exactly 65 bytes, `!B8d`: OK (0), five original durations, then orientation/header/pixels |
 | BRIGHTNESS | 10 | Exactly one percentage byte: 20, 40, 60, 80 or 100; existing REPLY status |
 
-Frames support only 320x480 portrait, 460800 tightly packed RGB bytes, and a finite
-nonnegative capture time. This does not narrow shared RGBFrame/Simulation support
-for landscape. The unchanged portrait encoder emits orientation, header and
-120x2560-byte RGB565LE payload chunks: 122 writes and 307222 bytes per frame.
+Frames support 320x480 portrait or 480x320 landscape, 460800 tightly packed RGB
+bytes, and a finite nonnegative capture time. IPC version, size and metadata layout
+are unchanged. Each frame selects its orientation/header: portrait uses 120x2560-byte
+RGB565LE chunks (122 writes); landscape uses 80x3840 (82 writes). Both send 307222
+bytes. Fixed-profile diagnostic experiments retain their explicit portrait encoder.
 Partial/truncated/unsupported messages are terminal, not a resynchronization mode.
 An idle admitted worker may await the first message byte; once one arrives, the
 whole header/body has five seconds. Parent calls always provide their operation's
@@ -71,8 +72,9 @@ return only the existing non-OK status and never publish partial detail.
 
 These three durations are subsets of the unchanged total write-loop measurement,
 not additive costs. Only the diagnostic clock is consulted at group boundaries;
-122 writes/307222 bytes, order, 2560-byte pixel chunks, serial options and deadline
-checks are unchanged. No per-packet history or new device commands are introduced.
+the grouping measures orientation, header and all pixels for either chunk count.
+Portrait bytes/chunks, serial options and deadline checks are unchanged. No
+per-packet history or extra device-command kind is introduced.
 
 ### Discrete brightness (unqualified candidate)
 

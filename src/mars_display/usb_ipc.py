@@ -206,8 +206,6 @@ def encode_frame(frame):
     if not isinstance(frame, RGBFrame):
         raise TypeError('frame must be an RGBFrame')
     _validate_frame(frame)
-    if (frame.width, frame.height) != (320, 480):
-        raise ValueError('Native USB requires 320x480 portrait')
     return METADATA.pack(frame.width, frame.height, frame.captured_at) + frame.rgb
 
 
@@ -215,7 +213,4 @@ def decode_frame(body):
     if not isinstance(body, bytes) or len(body) != FRAME_BYTES:
         raise ValueError('Invalid USB frame length')
     width, height, captured = METADATA.unpack_from(body)
-    frame = RGBFrame(width, height, body[METADATA.size:], captured)
-    if (width, height) != (320, 480):
-        raise ValueError('Native USB requires 320x480 portrait')
-    return frame
+    return RGBFrame(width, height, body[METADATA.size:], captured)

@@ -105,15 +105,17 @@ class IPCTests(unittest.TestCase):
                     ipc.receive_packet(peer, deadline)
                 self.assertEqual((peer.sent, peer.reads), (b'', []))
 
-    def test_frame_codec_keeps_metadata_and_rejects_landscape(self):
+    def test_frame_codec_keeps_metadata_and_rejects_invalid_geometry(self):
         frame=RGBFrame(320,480,b'\x00'*460800,123.5)
         body=ipc.encode_frame(frame)
         self.assertEqual(body[:12],struct.pack('!HHd',320,480,123.5))
         self.assertEqual(len(body),460812)
         self.assertEqual(ipc.decode_frame(body),frame)
-        with self.assertRaises(ValueError):ipc.encode_frame(RGBFrame(480,320,frame.rgb,0))
+        invalid = RGBFrame(480,320,frame.rgb,0)
+        object.__setattr__(invalid, 'width', 640)
+        with self.assertRaises(ValueError):ipc.encode_frame(invalid)
         for body in (body[:-1],struct.pack('!HHd',320,480,float('nan'))+frame.rgb,
-                     struct.pack('!HHd',480,320,0)+frame.rgb):
+                     struct.pack('!HHd',640,240,0)+frame.rgb):
             with self.subTest(length=len(body)), self.assertRaises(ValueError):ipc.decode_frame(body)
 
 
