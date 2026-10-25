@@ -21,9 +21,11 @@ instead of 120×2560, still 307222 total bytes. Identity checks, serial ownershi
 brightness, deadlines and no-retry failure behavior are unchanged. Preview retains
 only the latest host-accepted frame, including its actual dimensions.
 
-Software tests use fake ports. The previous fixed image was physically accepted
-with USB at the top; continuous output, orientation switching and a new Windows
-artifact have not been physically qualified. Existing rc4 ZIPs are unchanged.
+Software tests use fake ports. The [rc5 Windows candidate](../README.md) passed
+385 Windows tests and independent archive verification; its worker smoke opens no
+device. The previous fixed image was physically accepted with USB at the top.
+Continuous physical output and orientation switching still need owner acceptance.
+Existing rc4 ZIPs are unchanged.
 
 ## Native configuration form (current source)
 

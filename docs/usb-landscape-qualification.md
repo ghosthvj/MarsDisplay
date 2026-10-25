@@ -72,5 +72,6 @@ The application suite/build was not rerun because production code did not change
 This report records the earlier fixed-image qualification, not application support.
 The later [native runtime integration](usb-runtime.md#automatic-orientation-current-source)
 adds geometry-aware encoding and IPC admission without changing saved settings.
-It still needs its own Windows candidate and physical continuous/switching checks;
-this fixed-image evidence does not authorize further unattended hardware runs.
+The [rc5 Windows candidate](../README.md) now has separate software/artifact
+qualification; physical continuous/switching checks remain outstanding. This
+fixed-image evidence does not authorize further unattended hardware runs.

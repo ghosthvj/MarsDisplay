@@ -1,11 +1,29 @@
 # Windows portable build and verified delivery
 
-## Landscape candidate — 0.2.0rc5 (build pending)
+## Verified landscape candidate — 0.2.0rc5
 
-Current source adds automatic native 320×480 / 480×320 output, retaining existing
-settings and brightness. No new Windows artifact has been built or qualified for
-this change. The immutable rc4 and earlier ZIPs below remain portrait-only; their
-checksums and qualification records do not cover landscape integration.
+[Windows run 40149440698](https://github.com/ghosthvj/MarsDisplay/actions/runs/40149440698)
+passed **385 tests in 98.505 seconds, zero skips**, native build and isolated packaged
+smoke at source `8321ad9741f51f99e889985d55d4571ddc1ab145`.
+[Download rc5](https://github.com/ghosthvj/MarsDisplay/actions/runs/40149440698/artifacts/12581997747)
+before **2026-11-01 01:12 UTC** (exact expiry: `2026-11-01T01:12:52Z`).
+Inner ZIP: **205,804,119 bytes**, SHA256
+`12493e65f026b0e2095c67208e5da990ea16c69fa5f416f627406df92e6d41d7`.
+
+Parent and independent streaming checks verified **1,282 safe unique members**,
+**1,281 payload hashes**, **385 source hashes** (381 tracked plus four SDK records),
+**69 AMD64/PE32+ binaries**, GUI subsystem 2 for MarsDisplay, 27 native and six
+supplemental components, and 209 native-material hashes. Sixteen changed packaged
+paths include the native protocol/IPC/worker/lifecycle, regression tests and docs.
+Dependencies, workflow and build recipe remain unchanged. The real windowed worker
+smoke explicitly made **no OPEN or device request**.
+
+This distinct candidate supports automatic native 320×480 / 480×320 output while
+retaining settings and brightness. Exit the previous instance and extract both
+archive layers completely into a new folder; keep rc4 intact as fallback. No new
+settings migration is needed. Continuous landscape, physical orientation switching
+and interactive Windows owner acceptance are still unqualified. The immutable rc4
+and earlier ZIPs below remain portrait-only and retain their original checksums.
 
 ## UI follow-up candidate — 0.2.0rc4
 

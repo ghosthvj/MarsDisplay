@@ -1,13 +1,30 @@
 # MarsDisplay
 
-## 0.2.0rc5: automatic native landscape (build pending)
+## 0.2.0rc5: automatic native landscape candidate
 
-Native output now follows MARS: portrait **320×480** or landscape **480×320**,
-including orientation changes between frames. Choose the orientation in MARS;
-no second selector or settings migration is needed in MarsDisplay.
-The new Windows candidate is being prepared; no rc5 download is qualified yet.
-The existing Windows ZIPs below remain portrait-only. Source support does not
-establish continuous physical landscape or orientation-switching qualification.
+**[Download 0.2.0rc5 for Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/40149440698/artifacts/12581997747)**
+from [verified run 40149440698](https://github.com/ghosthvj/MarsDisplay/actions/runs/40149440698).
+Available until **2026-11-01 01:12 UTC**; GitHub sign-in may be required.
+
+Native output follows MARS: portrait **320×480** or landscape **480×320**,
+including orientation changes between frames. Choose orientation in MARS;
+no second selector or new settings migration is needed in MarsDisplay.
+
+**Verified:** 385 Windows tests, zero skips; native build and isolated packaged
+smoke. Parent and independent archive checks bound all payload/source hashes to
+`8321ad9741f51f99e889985d55d4571ddc1ab145`. Worker smoke opened no USB device.
+The inner `MarsDisplay-0.2.0rc5-Windows-x64.zip` is **205,804,119 bytes**. SHA256:
+
+```text
+12493e65f026b0e2095c67208e5da990ea16c69fa5f416f627406df92e6d41d7
+```
+
+Exit the previous instance, extract the Actions download and then the entire
+inner portable ZIP into a **new folder**. Keep rc4 as fallback. Existing saved
+settings and brightness carry over. Start capture explicitly, then check horizontal
+cards and changes back to portrait using MARS's external-display settings.
+**Physical continuous output and orientation-switching acceptance remain pending.**
+This is a test candidate, not a final release; rc4 below is unchanged.
 See [native geometry and evidence limits](docs/usb-runtime.md#automatic-orientation-current-source).
 
 ## 0.2.0rc4: USB selector polish candidate
