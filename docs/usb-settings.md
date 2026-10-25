@@ -9,7 +9,7 @@ The application defaults to stopped and Simulation. Current source can queue one
 normal Start after admission only through the separate, default-off
 [launch preference](usb-runtime.md#optional-capture-on-launch-rc6).
 It never substitutes Simulation for an explicitly native configuration.
-The independent [Windows sign-in option](usb-runtime.md#start-with-windows-unreleased-source)
+The independent [Windows sign-in option](usb-runtime.md#start-with-windows-rc7)
 uses owned HKCU registry values, not the main settings JSON or capture sidecar.
 It does not migrate or rewrite these settings and backups.
 

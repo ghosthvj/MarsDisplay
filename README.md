@@ -1,6 +1,6 @@
 # MarsDisplay
 
-## Unreleased source: start with Windows
+## 0.2.0rc7 candidate: start with Windows
 
 **Start MarsDisplay when I sign in to Windows** is a separate, default-off control
 for the packaged Windows application. It registers only the current user's login,

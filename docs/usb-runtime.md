@@ -50,7 +50,7 @@ unknown/duplicate keys and non-boolean values are invalid. Main schemas1–3 and
 recovery files are unchanged, and rc5 ignores this sidecar. No Windows-login task,
 registry entry or service is installed. This option is not in the rc5 ZIP.
 
-## Start with Windows (unreleased source)
+## Start with Windows (rc7)
 
 **Start MarsDisplay when I sign in to Windows** controls per-user login registration,
 not capture. It defaults off, requires the packaged Windows EXE, and can be changed
