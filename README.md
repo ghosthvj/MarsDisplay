@@ -1,5 +1,16 @@
 # MarsDisplay
 
+## 0.2.0rc6 candidate: persistent capture on launch
+
+In **Status / Settings**, enable **Start capture when MarsDisplay opens** after
+saving your configuration. It is **off by default** and saves immediately. While
+enabled, capture starts on **every application launch**, until you turn it off.
+Start, Stop and Exit never disable the saved switch: they affect only the current
+session. Toggling it never starts capture now. Failed native capture is not restarted.
+This does not register MarsDisplay to launch with Windows. Existing settings and
+rc5 compatibility are preserved through a separate optional startup preference.
+The rc5 ZIP below does **not** include this new option yet.
+
 ## 0.2.0rc5: automatic native landscape candidate
 
 **[Download 0.2.0rc5 for Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/40149440698/artifacts/12581997747)**
