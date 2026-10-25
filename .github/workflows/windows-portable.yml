@@ -1,5 +1,10 @@
 name: Windows portable prototype
 on:
+  workflow_call:
+    inputs:
+      layout_diagnostics:
+        type: boolean
+        default: false
   push:
     branches: [feat/simulated-companion, feat/native-usb-helper]
   workflow_dispatch:

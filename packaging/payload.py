@@ -166,9 +166,9 @@ def collect_source(root):
                     ('pattern.png', 'pattern.rgb565', 'pattern.rgb888', 'pattern.json',
                      'rgb888-provenance.json')]
         files.update(read_tree(root, (*fixtures, 'docs/usb-helper.md', 'docs/usb-runtime.md')))
-    workflow = '.github/workflows/windows-portable.yml'
-    if (root / workflow).exists() or (root / workflow).is_symlink():
-        files.update(read_tree(root, (workflow,)))
+    for name in ('.github/workflows/windows-portable.yml', '.github/workflows/release.yml', 'docs/releases.md'):
+        if (root / name).exists() or (root / name).is_symlink():
+            files.update(read_tree(root, (name,)))
     _validate(files)
     return files
 

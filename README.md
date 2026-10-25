@@ -1,5 +1,11 @@
 # MarsDisplay
 
+## Publishing releases
+
+Use **Actions → Publish Windows release → Run workflow** on `main` to build,
+validate and automatically publish the version in `pyproject.toml`.
+See [release instructions and failure handling](docs/releases.md).
+
 ## 0.2.0rc7 candidate: start with Windows
 
 **[Download 0.2.0rc7 for Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/40198689601/artifacts/12600896457)**
