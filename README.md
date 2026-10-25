@@ -2,8 +2,9 @@
 
 ## Publishing releases
 
-Use **Actions → Publish Windows release → Run workflow** on `main` to build,
-validate and automatically publish the version in `pyproject.toml`.
+Use **Actions → Publish Windows release → Run workflow** on `main`, enter a new
+**Tag** (for example `v0.2.0rc8`), then build, validate and publish automatically.
+The selected version applies only to the build; no version commit is made to `main`.
 See [release instructions and failure handling](docs/releases.md).
 
 ## 0.2.0rc7 candidate: start with Windows

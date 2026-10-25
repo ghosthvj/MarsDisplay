@@ -1,6 +1,11 @@
 name: Publish Windows release
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (vX.Y.Z or vX.Y.ZrcN)'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -17,11 +22,17 @@ jobs:
           persist-credentials: false
           ref: ${{ github.sha }}
       - name: Validate manual main release plan
-        run: python3 -B packaging/release.py plan
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+          GH_HOST: github.com
+        run: python3 -B packaging/release.py plan --tag "$RELEASE_TAG"
 
   build:
     needs: prepare
     uses: ./.github/workflows/windows-portable.yml
+    with:
+      release_tag: ${{ inputs.tag }}
     permissions:
       contents: read
 
@@ -46,6 +57,7 @@ jobs:
           --name MarsDisplay-Windows-x64 --dir release-assets
       - name: Validate assets and publish a new release
         env:
+          RELEASE_TAG: ${{ inputs.tag }}
           GH_TOKEN: ${{ github.token }}
           GH_HOST: github.com
-        run: python3 -B packaging/release.py publish --artifacts release-assets
+        run: python3 -B packaging/release.py publish --artifacts release-assets --tag "$RELEASE_TAG"

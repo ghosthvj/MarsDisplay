@@ -3,6 +3,9 @@ from importlib import util
 from pathlib import Path
 import tempfile
 import unittest
+import shlex
+import subprocess
+import sys
 
 ROOT = Path(__file__).parents[1]
 
@@ -28,7 +31,10 @@ class ReleaseWorkflowTests(unittest.TestCase):
 
     def test_manual_main_plan_precedes_read_only_reused_builder(self):
         text = (ROOT / '.github/workflows/release.yml').read_text()
-        self.assertEqual(text.split('\non:\n')[1].split('\npermissions:')[0], '  workflow_dispatch:\n')
+        dispatch = text.split('\non:\n')[1].split('\npermissions:')[0]
+        self.assertIn('  workflow_dispatch:\n    inputs:\n      tag:', dispatch)
+        self.assertIn('        required: true\n        type: string', dispatch)
+        self.assertNotIn('  push:', dispatch)
         self.assertIn('permissions:\n  contents: read', text)
         self.assertIn('cancel-in-progress: false', text)
         self.assertIn('python3 -B packaging/release.py plan', text)
@@ -47,6 +53,41 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertNotIn('--clobber', text)
         self.assertEqual(text.count('          persist-credentials: false'), 2)
         self.assertEqual(text.count('          ref: ${{ github.sha }}'), 2)
+
+    def test_tag_is_data_and_stamping_precedes_sdk_install(self):
+        release = (ROOT / '.github/workflows/release.yml').read_text()
+        portable = (ROOT / '.github/workflows/windows-portable.yml').read_text()
+        self.assertIn('      release_tag: ${{ inputs.tag }}', release)
+        self.assertEqual(release.count('          RELEASE_TAG: ${{ inputs.tag }}'), 2)
+        self.assertIn('plan --tag "$RELEASE_TAG"', release)
+        self.assertIn('publish --artifacts release-assets --tag "$RELEASE_TAG"', release)
+        self.assertIn('stamp --tag "$env:RELEASE_TAG"', portable)
+        self.assertLess(portable.index('stamp --tag'), portable.index("python -m pip install"))
+        self.assertEqual(portable.count('      release_tag:'), 2)
+        self.assertIn("if: ${{ inputs.release_tag != '' && !inputs.layout_diagnostics }}", portable)
+        for line in (release + portable).splitlines():
+            if 'run:' in line:
+                self.assertNotIn('${{ inputs.', line)
+        builder = (ROOT / 'packaging/build_portable.py').read_text()
+        self.assertIn('release_version.inspect(repo, revision,', builder)
+        self.assertIn("inventory['release'] = release", builder)
+
+    def test_conflicting_tag_and_diagnostics_fail_before_install(self):
+        text = (ROOT / '.github/workflows/windows-portable.yml').read_text()
+        step = text.split('      - name: Reject conflicting build options\n')[1].split('      - name:')[0]
+        self.assertIn("if: ${{ inputs.release_tag != '' && inputs.layout_diagnostics }}", step)
+        command = step.split('        run: ')[1].strip()
+        argv = shlex.split(command)
+        self.assertEqual(argv[:2], ['python', '-c'])
+        with tempfile.TemporaryDirectory() as folder:
+            sentinel = Path(folder) / 'unchanged'
+            sentinel.write_bytes(b'fixture')
+            result = subprocess.run([sys.executable, *argv[1:]], cwd=folder, capture_output=True, text=True, timeout=10)
+            self.assertEqual((result.returncode, result.stdout, result.stderr),
+                             (1, '', 'release_tag cannot be combined with layout_diagnostics.\n'))
+            self.assertEqual(list(Path(folder).iterdir()), [sentinel])
+            self.assertEqual(sentinel.read_bytes(), b'fixture')
+        self.assertLess(text.index('Reject conflicting build options'), text.index('python -m pip install'))
 
     def test_existing_portable_routes_and_qualification_are_retained(self):
         text = (ROOT / '.github/workflows/windows-portable.yml').read_text()

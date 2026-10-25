@@ -2,6 +2,10 @@ name: Windows portable prototype
 on:
   workflow_call:
     inputs:
+      release_tag:
+        description: 'Optional build-only version tag; does not publish'
+        type: string
+        default: ''
       layout_diagnostics:
         type: boolean
         default: false
@@ -9,6 +13,10 @@ on:
     branches: [feat/simulated-companion, feat/native-usb-helper]
   workflow_dispatch:
     inputs:
+      release_tag:
+        description: 'Optional build-only version tag; does not publish'
+        type: string
+        default: ''
       layout_diagnostics:
         description: 'Capture isolated UI layout diagnostics without packaging'
         type: boolean
@@ -27,6 +35,14 @@ jobs:
         with:
           python-version: '3.13.16'
           architecture: x64
+      - name: Reject conflicting build options
+        if: ${{ inputs.release_tag != '' && inputs.layout_diagnostics }}
+        run: python -c "raise SystemExit('release_tag cannot be combined with layout_diagnostics.')"
+      - name: Prepare build-only release version
+        if: ${{ inputs.release_tag != '' && !inputs.layout_diagnostics }}
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: python -B packaging/release.py stamp --tag "$env:RELEASE_TAG"
       - name: Install pinned application and build SDK
         run: python -m pip install '.[build]'
       - name: Install package-local Chromium headless shell

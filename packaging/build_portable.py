@@ -25,6 +25,7 @@ payload = _load('payload')
 smoke = _load('smoke')
 native_runtime = _load('native_runtime')
 native_material = _load('native_material')
+release_version = _load('release_version')
 
 
 def require_host():
@@ -78,6 +79,9 @@ def inspect_environment(repo, *, profile='portable'):
             'runtime_components': [{'name': 'CPython', 'version': platform.python_version(),
                                     'sources': ['https://github.com/python/cpython/tree/v' + platform.python_version()],
                                     'licenses': ['runtime/Python/LICENSE.txt']}]}
+    release = release_version.inspect(repo, revision, lambda: metadata.version('mars-display'))
+    if release is not None:
+        inventory['release'] = release
     return inventory, material
 
 
