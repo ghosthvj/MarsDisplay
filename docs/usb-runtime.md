@@ -27,6 +27,29 @@ device. The previous fixed image was physically accepted with USB at the top.
 Continuous physical output and orientation switching still need owner acceptance.
 Existing rc4 ZIPs are unchanged.
 
+## Optional capture on launch (rc6)
+
+**Start capture when MarsDisplay opens** is off by default. Save the MARS/device
+configuration first, then toggle this independent preference in Status / Settings.
+It saves immediately, including while capture is running. While enabled, it starts
+capture on every application launch until explicitly disabled. Start, Stop and Exit
+never disable the saved switch. Toggling does not start capture now or modify the
+current session's settings.
+
+After instance-lock and configuration admission, an enabled preference queues one
+ordinary Start. A manual Start, Stop or Exit cancels pending launch intent only
+for the current session; the next application launch still uses the saved switch. No
+additional startup retry loop is added; native failure still requires manual
+restart, while existing Simulation recovery is unchanged. Missing configuration,
+invalid/unreadable preferences or rejected instance admission cannot auto-start.
+Invalid preference bytes are preserved until an explicit user save.
+
+The optional `settings.json.startup.json` sibling stores only
+`{"start_capture_on_launch": true}` (or literal `false`). Missing means false;
+unknown/duplicate keys and non-boolean values are invalid. Main schemas1–3 and
+recovery files are unchanged, and rc5 ignores this sidecar. No Windows-login task,
+registry entry or service is installed. This option is not in the rc5 ZIP.
+
 ## Native configuration form (current source)
 
 The configuration window has a fixed height selected on creation: up to 760
@@ -43,7 +66,7 @@ Logs/Preview and Save stay in a fixed footer outside the scroll area. Error text
 is retained in full and can be reached by scrolling on constrained desktops.
 
 This interface saves **Native USB only**, still requiring explicit device selection,
-Save, and Start. Existing Simulation settings are not converted just by opening the
+Save, and Start (or the saved launch opt-in above). Existing Simulation settings are not converted just by opening the
 window; Simulation and schema-1 export/recovery remain backend/test capabilities.
 Neither a saved legacy identity nor Refresh silently opts into native output.
 The main form changes were introduced in 0.2.0rc3; selector theme/spacing polish

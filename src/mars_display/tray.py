@@ -5,7 +5,7 @@ from dataclasses import replace
 from PySide6.QtCore import QLockFile, QObject, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
-    QApplication, QComboBox, QDialog, QFileDialog, QFrame, QGridLayout, QHBoxLayout,
+    QApplication, QCheckBox, QComboBox, QDialog, QFileDialog, QFrame, QGridLayout, QHBoxLayout,
     QLabel, QLineEdit, QMenu, QMessageBox,
     QPushButton, QScrollArea, QSlider, QSystemTrayIcon, QVBoxLayout, QWidget,
 )
@@ -14,6 +14,7 @@ from .lifecycle import Coordinator, LifecycleError
 from .presentation import window_stylesheet
 from .preview import FramePreviewDialog
 from .status_label import StatusLabel
+from .startup_preferences import StartupPreferenceStore
 from .settings import (Settings, SettingsError, SettingsStore, SettingsStoreError,
                        NATIVE_IDENTITY, NATIVE_PROFILE, BRIGHTNESS_LEVELS)
 from .devices import (enumerate_devices, select_device, DeviceInventoryError,
@@ -190,6 +191,9 @@ class SettingsDialog(QDialog):
         self.error_stop_action.hide()
         self.capture_row.addWidget(self.error_stop_action)
         column.addWidget(self.runtime_card)
+        self.start_on_launch = QCheckBox("Start capture when MarsDisplay opens")
+        column.addWidget(self.start_on_launch)
+        column.addWidget(_label("Saved immediately for the next launch; save your configuration first.", "muted"))
         self.source = StatusLabel("stopped", "sourceBadge")
         self.output = _label("Simulated — simulated-closed (no USB output)")
         self.metadata = _label()
@@ -338,8 +342,9 @@ class TrayShell(QObject):
     """UI-thread binding using only coordinator public operations and snapshots.
 
     Prefer create_shell() for lock-before-coordinator assembly. No join, browser
-    call, output call, or implicit Start occurs here. Backend timeouts remain the
-    source adapter's responsibility. Exit keeps the lock until exit_ready.
+    call or output call occurs here. Saved opt-in queues one normal Start after
+    admission; manual actions cancel it. Backend timeouts remain the source
+    adapter's responsibility. Exit keeps the lock until exit_ready.
     """
 
     def __init__(self, app: QApplication, coordinator: Coordinator,
@@ -352,8 +357,21 @@ class TrayShell(QObject):
         self.configured = configured
         self.store = store
         self._inventory = None
+        self._startup_store = StartupPreferenceStore(store.path) if store is not None else None
+        self._startup_enabled = False
+        startup_error = None
+        try:
+            self._startup_enabled = self._startup_store.load() if self._startup_store else False
+        except SettingsError as error:
+            startup_error = str(error)
+        self._startup_pending = self._startup_enabled and configured is not None
+        self._startup_timer = QTimer(self)
+        self._startup_timer.setSingleShot(True)
+        self._startup_timer.timeout.connect(self._start_on_launch)
         app.setQuitOnLastWindowClosed(False)
         self.dialog = SettingsDialog(configured)
+        self.dialog.start_on_launch.setChecked(self._startup_enabled)
+        self.dialog.start_on_launch.toggled.connect(self._save_startup_preference)
         self.preview = None
         self.dialog.preview_action.clicked.connect(self.show_preview)
         self.dialog.logs_action.clicked.connect(self.show_logs)
@@ -387,6 +405,39 @@ class TrayShell(QObject):
         self.refresh()
         self.tray.show()
         self.timer.start()
+        if self._startup_pending:
+            self._startup_timer.start(0)
+        if startup_error:
+            self.dialog.show_message(startup_error)
+            self.show_settings()
+
+    def _cancel_startup(self):
+        self._startup_pending = False
+        self._startup_timer.stop()
+
+    def _start_on_launch(self):
+        pending = self._startup_pending
+        self._cancel_startup()
+        status = self.coordinator.snapshot()
+        if pending and status.state == "stopped" and not status.worker_alive and not status.exit_requested:
+            self._request(self.coordinator.start)
+
+    def _save_startup_preference(self, enabled):
+        try:
+            if self._startup_store is None or self.configured is None or self.coordinator.snapshot().exit_requested:
+                raise SettingsError("Save your configuration before changing the startup preference.")
+            self._startup_store.save(enabled)
+        except SettingsError as error:
+            self.dialog.start_on_launch.blockSignals(True)
+            self.dialog.start_on_launch.setChecked(self._startup_enabled)
+            self.dialog.start_on_launch.blockSignals(False)
+            self.dialog.show_message(str(error))
+        else:
+            self._startup_enabled = enabled
+            if not enabled:
+                self._cancel_startup()
+            self.dialog.show_message("Startup preference saved. Applies the next time MarsDisplay opens.")
+        self.refresh()
 
     def show_settings(self):
         self.refresh()
@@ -429,6 +480,7 @@ class TrayShell(QObject):
             action.trigger()
 
     def _request(self, operation):
+        self._cancel_startup()
         try:
             operation()
         except (LifecycleError, SettingsError) as error:
@@ -623,8 +675,10 @@ class TrayShell(QObject):
         # latch. Let its public Start operation report the actionable rejection.
         self.start_action.setEnabled(idle and status.state in {"stopped", "error"})
         self.stop_action.setEnabled(not status.exit_requested and status.state != "stopping"
-                                    and (status.worker_alive or status.state == "error"))
+                                    and (self._startup_pending or status.worker_alive or status.state == "error"))
         self.exit_action.setEnabled(not status.exit_requested)
+        self.dialog.start_on_launch.setEnabled(self._startup_store is not None
+            and self.configured is not None and not status.exit_requested)
         can_save = idle and status.state == "stopped"
         configured_native = self.configured is not None and self.configured.output_mode == "native"
         brightness_enabled = configured_native and self.configured.schema_version == 3

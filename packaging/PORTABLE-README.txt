@@ -7,7 +7,14 @@ If missing, manually download and install it from Microsoft:
 https://aka.ms/vc14/vc_redist.x64.exe
 MarsDisplay does not download/install prerequisites or redistribute Microsoft DLLs.
 Windows 11 provides the OS UCRT/API-set components. No MarsDisplay installer exists.
-Open MarsDisplay.exe in an interactive desktop session; capture starts STOPPED.
+Open MarsDisplay.exe in an interactive desktop session; capture defaults to STOPPED.
+Optional "Start capture when MarsDisplay opens" is off by default. Save your
+configuration first; the option saves immediately and starts capture on EVERY
+application launch while enabled, until you explicitly turn it off.
+Start/Stop/Exit affect only the current session, never the saved switch.
+Toggling the option does not start capture now or register Windows-login startup.
+Native failures never trigger an automatic restart.
+The separate settings.json.startup.json preference requires no settings migration.
 Configuration saves Native USB only, after explicit USB selection and Save.
 Existing Simulation records are not converted merely by opening the application;
 legacy schema migration still requires explicit confirmation and a preserved backup.

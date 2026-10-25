@@ -5,8 +5,10 @@ That qualified stage was API/contracts only: it had no mode/profile/device contr
 and rejected saved native mode before creating a capture worker or transport.
 P5 now adds explicit native composition and stopped selection/recovery controls;
 see the [current runtime/UI guide](usb-runtime.md) for usage and pending acceptance.
-The application still starts stopped and defaults to Simulation. It never
-substitutes Simulation for an explicitly native configuration.
+The application defaults to stopped and Simulation. Current source can queue one
+normal Start after admission only through the separate, default-off
+[launch preference](usb-runtime.md#optional-capture-on-launch-rc6).
+It never substitutes Simulation for an explicitly native configuration.
 
 Track implementation and proof in [the P4 ledger](../odd/tasks/native-usb-settings.md).
 [P3 helper qualification](usb-helper.md) is separate; the new P4 evidence is below.
