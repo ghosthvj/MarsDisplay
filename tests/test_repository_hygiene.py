@@ -35,9 +35,9 @@ class RepositoryHygieneTests(unittest.TestCase):
                 before[name] = path.read_bytes()
             result = subprocess.run(['git', '-c', 'core.excludesFile=' + os.devnull,
                                      'check-ignore', '--no-index', '--stdin'],
-                                    input='\n'.join(names) + '\n', cwd=root, env=env,
-                                    capture_output=True, text=True, timeout=10)
-            self.assertEqual((result.returncode, result.stdout, result.stderr),
+                                    input=('\n'.join(names) + '\n').encode(), cwd=root, env=env,
+                                    capture_output=True, timeout=10)
+            self.assertEqual((result.returncode, result.stdout.decode(), result.stderr.decode()),
                              (0, ''.join(name + '\n' for name in ignored), ''))
             self.assertEqual({name: (root / name).read_bytes() for name in names}, before)
             self.assertEqual({str(p.relative_to(root)).replace(os.sep, '/') for p in root.rglob('*')
