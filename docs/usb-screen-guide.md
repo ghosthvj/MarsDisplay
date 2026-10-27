@@ -15,8 +15,8 @@ one-frame evidence and its hardware limitations remain unchanged.
 owner-validated for one frame each. MarsDisplay 0.1.4 still uses simulated output
 and does not drive this screen.** Use this guide
 for the known-good diagnostic; see the [integration proposal](usb-integration-plan.md)
-for future application work. P0–P2 are complete, recorded in the
-[accepted Python bridge ledger](https://github.com/ghosthvj/MarsDisplay/blob/6bff97befee7b1e72f7afbcef3ab482a89011ea2/odd/tasks/native-python-usb-probe.md).
+for future application work. P0–P2 are complete; their coordination ledgers were
+local notes and are not part of this repository.
 The authorized **P3 bounded helper is qualified**; its
 [native/source evidence and limits](usb-helper.md#verified-evidence-and-limits)
 record the observed checks.
@@ -34,7 +34,8 @@ provided matching console and physical-image evidence on **2026-10-21**.
 **P0–P2 are complete.** MarsDisplay still uses Simulation.
 The C# artifact below remains preserved; do not confuse the two executables.
 
-- Source: `a26350dd74d1d03d999bbead5195dfc20d4a5344`.
+- Source: not part of this repository. The standalone probe sources were removed;
+  only the recorded artifact hashes and observed evidence below remain.
 - [Native CI and seven-day artifact](https://github.com/ghosthvj/MarsDisplay/actions/runs/39512376268):
   70 tests with zero skips, seven source/frozen command checks, startup gate and
   owned-parent-death checks. Parent and independent artifact/source/license readback passed.
@@ -145,18 +146,19 @@ WMI uses `Win32_SerialPort` in `root\cimv2`; other drivers/units remain unqualif
 
 ## Obtain and verify the frozen delivery
 
-Diagnostic **1.0.0** is not MarsDisplay **0.1.4**. Qualified source is
-[`8227c002a48084d8c463400f45cd641f62359bb4`](https://github.com/ghosthvj/MarsDisplay/tree/8227c002a48084d8c463400f45cd641f62359bb4).
+Diagnostic **1.0.0** is not MarsDisplay **0.1.4**. Its qualified sources are not
+part of this repository; only the frozen fixtures under
+`tools/windows-usb-probe/` remain, because the application and its tests use them.
 [Native CI run 39487850312](https://github.com/ghosthvj/MarsDisplay/actions/runs/39487850312)
-passed 50 native assertions and seven actual public CLI commands. Delivery/source
-hashes were checked; 166 local regressions and independent S1–S4 verification are
-recorded in the [diagnostic ledger](https://github.com/ghosthvj/MarsDisplay/blob/0b92565c10996276af5b9ad61a7c85bfc26df327/odd/tasks/native-usb-probe.md). These are
+passed 50 native assertions and seven actual public CLI commands. Delivery and
+source hashes were checked at the time; 166 local regressions and independent S1–S4
+verification were recorded in local coordination notes. These are
 historical evidence, not checks rerun for this documentation.
 
 Artifact 12294995150 expires **2026-10-27T19:57:44Z**; GitHub sign-in may be
-required. Expiry does not delete an already verified local copy. If unavailable,
-use the pinned source and Windows build instructions below, not a similarly named
-unverified executable. A new build needs its own verification and hashes.
+required. Expiry does not delete an already verified local copy. If it is no
+longer available there is no supported way to rebuild it from this repository;
+do not substitute a similarly named unverified executable.
 
 | File | Bytes | SHA256 |
 |---|---:|---|
@@ -175,26 +177,16 @@ against `SHA256SUMS`. Keep `nativeverification.json`, `source.zip`, LICENSE and
 reference files. Hashes bind content, not publisher authenticity: also check the
 workflow/source commit. Documentation updates do **not** rebuild this EXE or
 change its ZIP/hash; its bundled README and manifest retain historical pending
-wording. Closing ledger commit was `c6ba31d`.
+wording.
 
-Workspace-only verified copy (local path, not a public download):
-`build/native-usb-probe-delivery/candidate-8227c00/verified/`.
-
-For a fresh Windows checkout of the pinned source, use inbox .NET Framework 4.8
-Framework64 compiler and PowerShell 7:
-
-```powershell
-./tools/windows-usb-probe/build.ps1
-```
-
-The [build/diagnostic README](https://github.com/ghosthvj/MarsDisplay/blob/0b92565c10996276af5b9ad61a7c85bfc26df327/tools/windows-usb-probe/README.md) explains fresh
-output-directory requirements, harness, CLI checks and package contents. There is
-no download/install step in the script. Do not compile or execute this Windows
-EXE on Linux and call that native qualification.
+The diagnostic can no longer be rebuilt from this repository: its sources, harness
+and build script were removed with the branches that held them. Do not substitute
+a similarly named unverified executable, and do not compile or execute this
+Windows EXE on Linux and call that native qualification.
 
 ## Exact portrait transfer and provenance
 
-The [native implementation](https://github.com/ghosthvj/MarsDisplay/blob/8227c002a48084d8c463400f45cd641f62359bb4/tools/windows-usb-probe/Probe.cs) sends only:
+The standalone diagnostic sends only:
 
 | Part | Bytes / layout |
 |---|---|
@@ -257,8 +249,9 @@ private-key resources. Vendor success is separate from native qualification.
 | 7 / E7 | Startup/unexpected worker failure; check verified build and screen. |
 | 8 / E8 | Timeout; distinguish confirmed termination from uncertain termination. If unconfirmed, do not rerun; close probe and check Task Manager/screen. |
 
-Exact sanitized errors and outcomes are in the [command reference](https://github.com/ghosthvj/MarsDisplay/blob/0b92565c10996276af5b9ad61a7c85bfc26df327/tools/windows-usb-probe/README.md)
-and source. Do not blindly resend or try protocol variants. Enumeration immediately
+Exact sanitized errors and outcomes were documented with the standalone
+diagnostic, whose README and sources are not part of this repository. Do not
+blindly resend or try protocol variants. Enumeration immediately
 before open reduces but cannot eliminate a COM hotplug race. Report diagnostic
 version/hash, command, exit code, sanitized final message, target-device metadata
 and pattern discrepancy. Crop unrelated inventory/Bluetooth identifiers and private

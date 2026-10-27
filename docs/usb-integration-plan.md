@@ -22,16 +22,15 @@ portrait through each standalone C# and Python diagnostic. Those physical
 observations alone do not qualify continuous output or production timing.
 
 **Implementation update:** the owner has authorized `ok, vamos con P0 - P2`.
-Those completed stages are recorded in the
-[accepted Python bridge ledger](https://github.com/ghosthvj/MarsDisplay/blob/6bff97befee7b1e72f7afbcef3ab482a89011ea2/odd/tasks/native-python-usb-probe.md).
+Those completed stages were recorded in local coordination notes, which are not
+part of this repository.
 The owner authorized `adelante con P3`; that bounded helper stage is now complete
 in the [helper qualification record](usb-helper.md#verified-evidence-and-limits). The subsequently authorized
 [P4 contracts](usb-settings.md) are also complete as API-only work;
 P5–P6 remain proposals and application USB output is not authorized.
 
 **Current gate:** P0–P2 are complete, including owner physical acceptance of one
-frozen portrait image on 2026-10-21. The standalone Python P2 package at
-`a26350dd74d1d03d999bbead5195dfc20d4a5344` passed
+frozen portrait image on 2026-10-21. The standalone Python P2 package passed
 [Windows qualification](https://github.com/ghosthvj/MarsDisplay/actions/runs/39512376268):
 70 tests without skips, extracted frozen commands and owned-process lifetime checks.
 Source, licenses, native bytes and checksums passed parent and independent readback.
@@ -103,8 +102,9 @@ implementing; these are future checks, not new evidence from this documentation.
 ### P0 — Freeze evidence and scope
 
 **Dependency:** new implementation approval and a fresh verified-main baseline.
-Record source `8227c002a48084d8c463400f45cd641f62359bb4`, diagnostic hashes,
-canonical PNG/payload and the one-frame owner proof from the guide. Agree which
+Record the diagnostic hashes, the canonical PNG/payload and the one-frame owner
+proof from the guide; the probe sources themselves are not part of this
+repository. Agree which
 fixtures/docs to carry, license notices and the exact portrait-only profile.
 
 **Accept:** reproducible provenance with no owner photos/vendor resources copied;
