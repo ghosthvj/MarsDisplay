@@ -339,9 +339,12 @@ reported as still capturing. Existing simulated cleanup/Stop/Exit behavior remai
 3. For a new native selection, click **Refresh USB identities** and explicitly
    choose the supported opaque identity. Refresh never selects the first device,
    opens a port or proves continuing availability. There is no periodic polling.
-4. Click **Save**. First native opt-in requires schema 2: the warning explains
-   older-binary incompatibility and preserved schema-1 backup, defaults to **No**,
-   and requires explicit **Yes**. Save rechecks current unique device admission.
+4. Click **Save**. First native opt-in requires schema 2. With no saved settings
+   file, Save establishes schema 2 directly and preserves a schema-1 equivalent
+   without a warning, because no earlier file exists for an older binary to read.
+   Replacing an existing schema-1 file warns instead: it explains older-binary
+   incompatibility and the preserved schema-1 backup, defaults to **No**, and
+   requires explicit **Yes**. Save rechecks current unique device admission.
 5. Start explicitly. Drafts, Refresh and Save never start or resume capture.
 
 A legacy Simulation configuration must explicitly select a USB identity before
