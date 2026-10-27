@@ -23,18 +23,18 @@ def window_stylesheet(dark: bool) -> str:
         QWidget {
             color: %(foreground)s;
             font-family: "Segoe UI";
-            font-size: 13px;
+            font-size: 12px;
         }
         QLabel { background: transparent; }
         QLabel#muted, QLabel#hint { color: %(muted)s; }
-        QLabel#windowHeading { font-size: 23px; font-weight: 700; }
+        QLabel#windowHeading { font-size: 21px; font-weight: 700; }
         QLabel#sectionHeading, QLabel#frames { font-weight: 600; }
-        QLabel#runtimeValue { font-size: 19px; font-weight: 700; }
+        QLabel#runtimeValue { font-size: 17px; font-weight: 700; }
         QPushButton {
             background: %(field)s;
             border: 1px solid %(border)s;
             border-radius: 7px;
-            padding: 10px 16px;
+            padding: 8px 14px;
         }
         QPushButton:hover { border-color: %(accent)s; }
         QPushButton:focus { border: 2px solid %(accent)s; }
@@ -47,7 +47,7 @@ def window_stylesheet(dark: bool) -> str:
             background: %(field)s;
             border: 1px solid %(border)s;
             border-radius: 4px;
-            padding: 10px;
+            padding: 8px;
             selection-background-color: %(accent)s;
             selection-color: %(background)s;
         }
@@ -56,7 +56,7 @@ def window_stylesheet(dark: bool) -> str:
             color: %(foreground)s;
             border: 1px solid %(border)s;
             border-radius: 4px;
-            padding: 10px;
+            padding: 8px;
         }
         QComboBox:disabled { color: %(muted)s; background: %(disabled)s; }
         QComboBox QAbstractItemView {
@@ -87,7 +87,7 @@ def window_stylesheet(dark: bool) -> str:
         QLabel#sourceBadge {
             background: %(panel)s;
             border-radius: 4px;
-            padding: 6px 10px;
+            padding: 5px 8px;
         }
         QLabel[tone="success"] { color: %(success)s; }
         QLabel#sourceBadge[tone="success"] { background: %(success_background)s; }
