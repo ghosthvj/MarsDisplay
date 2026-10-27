@@ -1,5 +1,7 @@
 # MarsDisplay
 
+[![Built with Gentle-AI](https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/docs/assets/brand/built-with-gentle-ai.png)](https://github.com/Gentleman-Programming/gentle-ai)
+
 ## Publishing releases
 
 Use **Actions → Publish Windows release → Run workflow** on `main`, enter a new
