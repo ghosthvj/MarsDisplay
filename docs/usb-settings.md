@@ -99,6 +99,13 @@ Coordinator's stopped-only transaction admission. Save, migration, export and
 restore share Start's lock and reject active, stopping or exiting state.
 Do not use raw store methods to bypass an application or its instance lock.
 
+The caller acknowledges; the warning itself is application policy. The
+configuration window warns only when Save replaces an existing schema-1 file an
+older binary could already be reading. On first run no settings file exists, so
+Save establishes schema 2 through the same acknowledged migration and preserves a
+schema-1 equivalent without asking: there is no earlier configuration to protect
+and a fresh older binary would run its own first run.
+
 ```python
 store.migrate_to_v2(
     Settings("https://mars.example", schema_version=2),

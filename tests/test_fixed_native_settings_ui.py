@@ -7,7 +7,7 @@ from PySide6.QtCore import QPoint, QRect
 from PySide6.QtGui import QFontInfo, QPalette, QScreen
 from PySide6.QtWidgets import QComboBox, QLabel, QMessageBox
 
-from mars_display.settings import NATIVE_IDENTITY, NATIVE_PROFILE
+from mars_display.settings import NATIVE_IDENTITY, NATIVE_PROFILE, SettingsStore
 import test_native_output_ui as native_fixture
 from test_output_configuration import device, native
 import test_tray as fixture
@@ -47,6 +47,27 @@ class FixedNativeSettingsTests(unittest.TestCase):
                          ('https://mars.example', 'native', NATIVE_IDENTITY, NATIVE_PROFILE, 2))
         self.assertEqual(self.store.schema1_backup_path.read_bytes(), raw)
         self.assertEqual(shell.coordinator.snapshot(), before)
+        self.assertFalse(self.session.opened.is_set())
+
+    def test_first_run_save_establishes_schema2_without_incompatibility_warning(self):
+        shell = self.make(configured=False)
+        self.assertFalse(self.store.path.exists())
+        with patch('mars_display.tray.enumerate_devices', return_value=(device(),)):
+            shell.dialog.refresh_devices.click()
+        shell.dialog.identity.setCurrentIndex(1)
+        shell.dialog.url.setText('https://mars.example')
+        with patch('mars_display.tray.TrayShell._confirm', return_value=False) as confirm:
+            with patch('mars_display.lifecycle.enumerate_devices', return_value=(device(),)):
+                shell.dialog.save.click()
+        confirm.assert_not_called()
+        saved = self.store.load()
+        self.assertEqual((saved.mars_url, saved.output_mode, saved.device_identity,
+                          saved.native_profile, saved.schema_version),
+                         ('https://mars.example', 'native', NATIVE_IDENTITY, NATIVE_PROFILE, 2))
+        preserved = SettingsStore(self.store.schema1_backup_path).load()
+        self.assertEqual((preserved.mars_url, preserved.device_identity, preserved.schema_version),
+                         ('https://mars.example', NATIVE_IDENTITY, 1))
+        self.assertEqual(shell.dialog.message.text(), 'Settings saved. Capture remains stopped.')
         self.assertFalse(self.session.opened.is_set())
 
     def test_usb_selector_and_refresh_share_one_row(self):

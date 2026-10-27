@@ -648,7 +648,12 @@ class TrayShell(QObject):
                 select_device(self._inventory or (), identity)
             settings = replace(settings, schema_version=max(2, settings.schema_version), output_mode="native",
                                device_identity=identity, native_profile=NATIVE_PROFILE)
-            if settings.schema_version == 2 and (self.configured is None or self.configured.schema_version == 1):
+            if self.configured is None:
+                # First run: no earlier file exists, so the older-binary warning
+                # protects nothing an old reader could already be using. The
+                # store still preserves a schema-1 equivalent before schema 2.
+                self.coordinator.migrate_settings(settings, acknowledge_legacy_incompatibility=True)
+            elif settings.schema_version == 2 and self.configured.schema_version == 1:
                 if not self._confirm("Migrate to schema 2", "Schema 2 is incompatible with older binaries. "
                                      "The original schema-1 settings will be preserved as a backup before replacement. "
                                      "The backup is retained for recovery. Migrate and save?"):
