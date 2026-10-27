@@ -7,7 +7,39 @@ Use **Actions → Publish Windows release → Run workflow** on `main`, enter a 
 The selected version applies only to the build; no version commit is made to `main`.
 See [release instructions and failure handling](docs/releases.md).
 
-## 0.2.0rc7 candidate: start with Windows
+## 0.3.1: latest Windows release
+
+**[Download MarsDisplay 0.3.1 for Windows x64](https://github.com/ghosthvj/MarsDisplay/releases/tag/v0.3.1)**
+from [verified release run 40551910369](https://github.com/ghosthvj/MarsDisplay/actions/runs/40551910369).
+This is a published release, not an expiring CI artifact: the release page carries
+the ZIP and its adjacent `.sha256` permanently.
+
+**Verified:** 446 Windows tests, zero skips; native build and isolated packaged
+smoke. Tag `v0.3.1` binds to source commit
+`723a9b46f6931dc86e66b542c1b8ee2181351632`.
+The `MarsDisplay-0.3.1-Windows-x64.zip` is **205,847,612 bytes**. SHA256:
+
+```text
+cd40e9c3dd9dc33978c2cb2ca4020ff5e4f3fd8ab0ed28e5791f62951927356a
+```
+
+Exit any running instance, extract the **entire ZIP into a new folder** and start
+`MarsDisplay.exe` from that folder. Existing configuration, brightness and the
+capture-on-launch preference carry over.
+
+Changed since 0.2.0rc7:
+
+- Saving for the first time on a new machine no longer asks to "migrate to
+  schema 2". With no settings file there is nothing an older binary could already
+  be reading. Replacing a real schema-1 file still warns, and the schema-1 backup
+  is still preserved before replacement.
+- **Status / Settings** is one density step smaller, so the configuration form
+  fits the fixed-height window instead of forcing an inner scrollbar.
+
+Native USB output, saved brightness and both startup controls are unchanged; the
+startup controls are described under the rc7 section below.
+
+### Historical 0.2.0rc7 candidate
 
 **[Download 0.2.0rc7 for Windows x64](https://github.com/ghosthvj/MarsDisplay/actions/runs/40198689601/artifacts/12600896457)**
 from [verified run 40198689601](https://github.com/ghosthvj/MarsDisplay/actions/runs/40198689601).
