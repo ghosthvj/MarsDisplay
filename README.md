@@ -32,7 +32,10 @@ and you decide when capture runs. No scraping, no screen capture, no vendor app.
 - Windows x64 in an interactive desktop session with a system tray
 - The USB screen: SHCHV TUS-35 ("USB Screen"), VID `1A86` / PID `5722`, serial `USB35INCHIPSV2`
 - The vendor application closed — it holds the same serial port
-- A MARS instance reachable at a plain HTTPS URL that needs no interactive login
+- A MARS `/display` URL served over **HTTPS** that answers directly and needs no
+  interactive login. MarsDisplay never follows a redirect, so a URL that bounces to
+  another address (typically `http://` → `https://`) is reported as a failed capture
+  instead of being chased
 
 ## Quick start
 
@@ -48,7 +51,10 @@ and you decide when capture runs. No scraping, no screen capture, no vendor app.
 Everything is stored in `%LOCALAPPDATA%\MarsDisplay\settings.json`. The first save also
 keeps a schema-1 backup beside it, so an older build can always read your setup back.
 
-**MARS URL** — the HTTPS page to display. Nothing loads until you press Start.
+**MARS URL** — the final HTTPS address of the page, the one that answers with the
+dashboard itself. Nothing loads until you press Start, and the app contacts only
+the address you saved: a redirecting URL fails deliberately, because following it
+would mean reaching a path you never approved.
 
 **Screen selection** — Refresh lists available identities and you pick one. Missing,
 duplicate or unhealthy devices are refused rather than guessed, and the saved identity
