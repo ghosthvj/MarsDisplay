@@ -36,6 +36,82 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libegl1 libgl1 libopengl0 libxkbcommon0
           python -m playwright install --with-deps chromium
+      - name: Configure scoped Chromium sandbox admission
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: '0'
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+          import playwright
+
+          def configure(root, destination, restriction):
+              if restriction not in ('0', '1', 'absent'):
+                  raise RuntimeError('Unexpected AppArmor user-namespace restriction state.')
+              root = root.resolve(strict=True)
+              executables = []
+              for pattern in ('chromium-*/chrome-linux64/chrome',
+                              'chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell'):
+                  matches = list(root.glob(pattern))
+                  if len(matches) != 1:
+                      raise RuntimeError(f'Expected exactly one installed browser for {pattern}.')
+                  executable = matches[0].resolve(strict=True)
+                  if (not executable.is_relative_to(root) or not executable.is_file()
+                          or not os.access(executable, os.X_OK)
+                          or not re.fullmatch(r'/[A-Za-z0-9_./-]+', str(executable))):
+                      raise RuntimeError('Unsafe or non-executable browser attachment path.')
+                  executables.append(executable)
+              print(f'AppArmor user-namespace restriction: {restriction}')
+              for executable in executables:
+                  print(f'Installed browser: {executable}')
+              if restriction != '1':
+                  print('No AppArmor exception needed; real sandbox preflight remains mandatory.')
+                  return
+              profile = 'abi <abi/4.0>,\n'
+              for index, executable in enumerate(executables):
+                  profile += (f'profile marsdisplay-ci-{index} "{executable}" flags=(unconfined) {{\n'
+                              '  userns,\n}\n')
+              with destination.open('x', encoding='utf-8') as output:
+                  output.write(profile)
+              destination.chmod(0o600)
+              subprocess.run(['sudo', 'apparmor_parser', '--replace', str(destination)], check=True)
+
+          if __name__ == '__main__':
+              if os.geteuid() == 0 or os.environ.get('PLAYWRIGHT_BROWSERS_PATH') != '0':
+                  raise RuntimeError('Sandbox preparation requires the unprivileged runner and package-local browsers.')
+              restriction_file = Path('/proc/sys/kernel/apparmor_restrict_unprivileged_userns')
+              restriction = restriction_file.read_text().strip() if restriction_file.exists() else 'absent'
+              for name in ('kernel/unprivileged_userns_clone', 'user/max_user_namespaces'):
+                  setting = Path('/proc/sys') / name
+                  print(f'{name}: {setting.read_text().strip() if setting.exists() else "absent"}')
+              root = Path(playwright.__file__).resolve().parent / 'driver/package/.local-browsers'
+              destination = Path(os.environ['RUNNER_TEMP']).resolve(strict=True) / 'marsdisplay-ci-browsers.apparmor'
+              configure(root, destination, restriction)
+          PY
+      - name: Verify sandboxed Chromium startup
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: '0'
+        run: |
+          python - <<'PY'
+          import os
+          from playwright.sync_api import sync_playwright
+
+          if os.geteuid() == 0 or os.environ.get('PLAYWRIGHT_BROWSERS_PATH') != '0':
+              raise RuntimeError('Sandbox preflight requires the unprivileged runner and package-local browsers.')
+          with sync_playwright() as driver:
+              for name, options in (('headless-shell', {}), ('chromium', {'channel': 'chromium'})):
+                  browser = driver.chromium.launch(headless=True, chromium_sandbox=True, timeout=15000, **options)
+                  try:
+                      page = browser.new_page()
+                      page.set_content('<html><body>Linux CI sandbox preflight</body></html>')
+                      if not page.screenshot().startswith(b'\x89PNG\r\n\x1a\n'):
+                          raise RuntimeError('Sandbox preflight did not produce a PNG capture.')
+                  finally:
+                      browser.close()
+                  print(f'Sandboxed {name} startup and capture passed.')
+          PY
       - name: Source tests (offscreen, not desktop acceptance)
         env:
           QT_QPA_PLATFORM: offscreen
