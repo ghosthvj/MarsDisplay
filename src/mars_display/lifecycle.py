@@ -143,12 +143,14 @@ class Coordinator:
                  transport_factory: Callable[[], Transport] | None = None, *,
                  transport_context_factory: Callable[[StartContext], Transport] | None = None,
                  inventory_provider=None,
+                 configuration_resolver=None,
                  wait: Callable[[Event, float], bool] = _wait,
                  diagnostic_clock: Callable[[], float] = monotonic):
         if (transport_factory is None) == (transport_context_factory is None):
             raise TypeError("Provide exactly one transport factory path.")
         self._transport_context_factory = transport_context_factory
         self._inventory_provider = inventory_provider
+        self._configuration_resolver = configuration_resolver
         self._store = store
         self._source_factory = source_factory
         self._transport_factory = transport_factory
@@ -296,11 +298,14 @@ class Coordinator:
     def _configuration_selection_locked(self, settings):
         checked = _checked(settings)
         if checked.output_mode == "native":
-            # P3's exact fresh selection rule; importing/resolving never opens a port.
-            from .usb_worker import _resolve
+            # Reuse the platform worker's fresh selection rule without opening a port.
+            resolver = self._configuration_resolver
+            if resolver is None:
+                from .usb_worker import _resolve
+                resolver = _resolve
             provider = self._inventory_provider if self._inventory_provider is not None else enumerate_devices
             try:
-                _resolve(provider)
+                resolver(provider)
             except Exception:
                 raise SettingsError(
                     "Selected native screen is unavailable or ambiguous; refresh selection before saving."

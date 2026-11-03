@@ -1,0 +1,12 @@
+{
+  "record_kind": "selected fields from parent-retained GitHub API JSON, not a signature or attestation",
+  "parent_record_sha256": "e5dcf28fdc5a2ce1a1d4468fdd3a0c6e50e202400c8cdd9f7f5c741d2c72e5a7",
+  "url": "https://api.github.com/repos/AppImage/type2-runtime/actions/runs/39320578745",
+  "id": 39320578745,
+  "head_sha": "fedfad51acc2860b2916a1eef32ba4a500ff31ef",
+  "path": ".github/workflows/build.yaml",
+  "status": "completed",
+  "conclusion": "success",
+  "created_at": "2026-10-19T20:35:29Z",
+  "updated_at": "2026-10-19T20:37:23Z"
+}

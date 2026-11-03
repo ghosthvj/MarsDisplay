@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=MarsDisplay
+Comment=Experimental Linux prototype
+Exec=AppRun
+Icon=marsdisplay
+Terminal=false
+Categories=Utility;

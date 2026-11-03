@@ -1,0 +1,35 @@
+{
+  "downloads": [
+    {
+      "name": "type2-runtime-fedfad51.tar.gz",
+      "url": "https://github.com/AppImage/type2-runtime/archive/fedfad51acc2860b2916a1eef32ba4a500ff31ef.tar.gz",
+      "sha256": "e27ea3c837e9c660e1a9a2993b673ae93bbb53077330efba8654031e302d4e8e",
+      "basis": "Retained prototype archive; official fixed-commit source route. See provenance.json."
+    },
+    {
+      "name": "fuse-3.15.0.tar.xz",
+      "url": "https://github.com/libfuse/libfuse/releases/download/fuse-3.15.0/fuse-3.15.0.tar.xz",
+      "sha256": "70589cfd5e1cff7ccd6ac91c86c01be340b227285c5e200baa284e401eea2ca0",
+      "basis": "URL and SHA256 from retained install-dependencies.sh, matching retained bytes."
+    },
+    {
+      "name": "musl-1.2.5.tar.gz",
+      "url": "https://distfiles.alpinelinux.org/distfiles/v3.21/musl-1.2.5.tar.gz",
+      "sha256": "a9a118bbe84d8764da0ea0d28b3ab3fae8477fc7e4085d90102b8596fc7c75e4",
+      "basis": "Parent-selected supplementary upstream archive route; parent job36 reports matching fetch. Not exact APK build source or historical acquisition proof."
+    }
+  ],
+  "retained": {
+    "LICENSE": "aa154fc9070614bbe7921f89db11efd1dba7a1f3a41685958110e2230f9c0ca1",
+    "install-dependencies.sh": "e666c28019cb64a2c6c69d6e2a56db7fba024a2c92eb9489bfe4a3ea20a985a5",
+    "libfuse-LGPL2.txt": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551",
+    "libfuse-mount.c.diff": "1c7fd9e26717545a476b226b083a9f9d05676c180edbd71a04bbd8a73599dc44",
+    "musl-COPYRIGHT": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af",
+    "squashfuse-LICENSE": "9e909cc8a8ba27b1a649c964cf9eda37de911f3138c2b64e6d2f01703904ac13",
+    "zlib-LICENSE": "e32ff4e00d9d94930537635291da39e7e612703334bf6fde8c7f1686fe8a45a2",
+    "zstd-LICENSE": "7055266497633c9025b777c78eb7235af13922117480ed5c674677adc381c9d8",
+    "runtime-asset.json": "06bc3b8cb69792cdd18dafa5241acdb70fe14637bff989aadabf9f56ba41291a",
+    "runtime-run.json": "23effd97885470d36bd1b73873491c3f31e2bd2e8c63939500f564c064f905e0",
+    "provenance.json": "41a91b2b7dcc31e4c94d70d7d71d9cc8aa15bc26d27b038200325c5ba327c1a6"
+  }
+}

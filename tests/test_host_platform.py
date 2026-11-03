@@ -12,12 +12,17 @@ class HostPlatformTests(unittest.TestCase):
             with self.subTest(machine=machine):
                 self.assertTrue(is_supported_host("win32", machine, 8))
 
+    def test_linux_x64_admission(self):
+        for machine in ("AMD64", "amd64", "x86_64", "X86_64"):
+            self.assertTrue(is_supported_host("linux", machine, 8))
+
     def test_unsupported_hosts(self):
         for host, machine, pointer_size in (
             ("win32", "ARM64", 8),
             ("win32", "AMD64", 4),
             ("win32", "x86_64", 4),
-            ("linux", "x86_64", 8),
+            ("linux", "ARM64", 8),
+            ("linux", "x86_64", 4),
             ("darwin", "x86_64", 8),
         ):
             with self.subTest(host=host, machine=machine, pointer_size=pointer_size):

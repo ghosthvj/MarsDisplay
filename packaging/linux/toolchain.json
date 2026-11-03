@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "platform": "linux/amd64",
+  "base_image": "ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852",
+  "python": {
+    "version": "3.13.5",
+    "url": "https://www.python.org/ftp/python/3.13.5/Python-3.13.5.tar.xz",
+    "sha256": "93e583f243454e6e9e4588ca2c2662206ad961659863277afcdb96801647d640",
+    "checksum_evidence": "https://www.python.org/ftp/python/3.13.5/Python-3.13.5.tar.xz.spdx.json",
+    "release_url": "https://www.python.org/downloads/release/python-3135/",
+    "evidence_scope": "PSF-published CPython SPDX package SHA256; no signature verification claimed"
+  },
+  "requirements_source": "pyproject.toml: project.dependencies + project.optional-dependencies.build + build-system.requires",
+  "browser": {
+    "installer": "project-pinned Playwright",
+    "selection": "chromium",
+    "PLAYWRIGHT_BROWSERS_PATH": "0",
+    "sandbox": "required at application launch; never disable to bypass container restrictions"
+  },
+  "provenance_directory": "/opt/provenance",
+  "reproducibility_scope": "Base and CPython source pinned; apt repositories and transitive wheel resolution are not locked"
+}
