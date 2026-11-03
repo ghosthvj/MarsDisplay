@@ -1,4 +1,4 @@
-"""Measure native original/RECORD associations; source/legal inputs remain required."""
+"""Acquire Linux native associations and source/legal inputs; not legal approval."""
 import argparse
 import ast
 import base64
@@ -7,10 +7,16 @@ from importlib import metadata, util
 import json
 from pathlib import Path
 import platform
+import re
 import subprocess
 import sys
+import tarfile
+import tomllib
 from types import SimpleNamespace
+from urllib.parse import quote
 
+from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
 
 _spec = util.spec_from_file_location('linux_association', Path(__file__).with_name('attribution.py'))
 attribution = util.module_from_spec(_spec)
@@ -64,7 +70,8 @@ def wheel_index(originals, distributions=None):
     return result
 
 
-QUALIFICATION = 'Measured original and RECORD associations only; source/legal acquisition required'
+QUALIFICATION = ('Measured installed-file associations and retained version-specific source/legal '
+                 'inputs; not binary build attestations or legal approval')
 
 
 def sdk_context():
@@ -80,6 +87,138 @@ def sdk_context():
 
 def json_bytes(value):
     return (json.dumps(value, indent=2, sort_keys=True) + '\n').encode()
+
+
+def owner(kind, name, version, source_name, source_version, reference, licenses, evidence):
+    for value in (name, version, source_name, source_version):
+        if not attribution.text(value):
+            raise ValueError('missing owner/source identity')
+    attribution.material._source_reference(reference)
+    if not licenses or not evidence:
+        raise ValueError('missing legal or ownership material')
+    return dict(kind=kind, name=name, version=version,
+                source=dict(name=source_name, version=source_version, reference=reference),
+                licenses=sorted(set(licenses)), evidence=sorted(set(evidence)))
+
+
+class Inputs:
+    """Acquire facts from installed SDK interfaces, never from caller owner records."""
+    def __init__(self, project, sdk):
+        self.project, self.sdk = project, sdk
+        self.materials, self.python, self.vendor = {}, [], []
+        self.shipped_browsers = set()
+        self.references = set()
+        self.driver = None
+        self.python_owner = None
+        self.qt_bundle = None
+
+    def put(self, name, data):
+        attribution.material._validate({name: data})
+        if name in self.materials and self.materials[name] != data:
+            raise ValueError('conflicting acquired material: ' + name)
+        self.materials[name] = data
+        return name
+
+    def distributions(self, roots):
+        inventory, texts = attribution.notices.collect_distributions(
+            roots, lookup=self.sdk.lookup,
+            material_root=self.project / 'third_party/license-material')
+        for name, data in texts.items():
+            self.put(name, data)
+        by_name = {canonicalize_name(item['name']): item for item in self.python}
+        by_name.update({canonicalize_name(item['name']): item for item in inventory})
+        self.python = list(by_name.values())
+        return by_name
+
+    def package(self, original, data):
+        relative = original.relative_to(self.sdk.root).as_posix()
+        paths = {'/' + relative}
+        # Noble's merged-/usr installations can retain pre-merge dpkg paths.
+        if relative.startswith(('usr/lib/', 'usr/lib64/', 'usr/bin/', 'usr/sbin/')):
+            paths.add('/' + relative[4:])
+        matches = set()
+        for path in sorted(paths):
+            for line in self.sdk.run(['dpkg-query', '--search', path]).splitlines():
+                package, separator, registered = line.rpartition(': ')
+                if separator and registered in paths:
+                    matches.update(package.split(', '))
+        if len(matches) != 1:
+            raise ValueError('acquire exactly one installed package owner')
+        package = matches.pop()
+        if not re.fullmatch(r'[a-z0-9][a-z0-9+.-]*(?::[a-z0-9-]+)?', package):
+            raise ValueError('invalid package identity')
+        fields = self.sdk.run(['dpkg-query', '--show',
+                              '--showformat=${binary:Package}\t${Version}\t${source:Package}\t${source:Version}\t${db:Status-Status}\n',
+                              package]).strip('\n').split('\t')
+        if len(fields) != 5 or fields[0] != package:
+            raise ValueError('package query identity mismatch')
+        _, version, source, source_version, status = fields
+        if status != 'installed' or not all((version, source, source_version)):
+            raise ValueError('missing installed package source identity')
+        info = self.sdk.root / 'var/lib/dpkg/info'
+        candidates = [info / (package + '.md5sums')]
+        if ':' in package:
+            candidates.append(info / (package.split(':')[0] + '.md5sums'))
+        sums = next((path for path in candidates if path.is_file()), None)
+        if sums is None:
+            raise ValueError('missing package md5sums')
+        hashes = []
+        for line in sums.read_text().splitlines():
+            parts = line.split(maxsplit=1)
+            if len(parts) == 2 and '/' + parts[1].lstrip('./') in paths:
+                hashes.append(parts[0])
+        if hashes != [hashlib.md5(data).hexdigest()]:
+            raise ValueError('package content hash mismatch')
+        copyright_path = self.sdk.root / 'usr/share/doc' / package.split(':')[0] / 'copyright'
+        target = copyright_path.resolve()
+        if (not target.is_relative_to(self.sdk.root / 'usr/share/doc')
+                or not target.is_file() or not target.stat().st_size):
+            raise ValueError('missing package copyright')
+        key = 'packages/' + package.replace(':', '_')
+        text = target.read_bytes()
+        licenses = [self.put(key + '/copyright', text)]
+        for common in sorted(set(re.findall(rb'/usr/share/common-licenses/([A-Za-z0-9.+-]+)', text))):
+            name = common.decode().rstrip('.')
+            path = self.sdk.root / 'usr/share/common-licenses' / name
+            licenses.append(self.put('common-licenses/' + name, path.read_bytes()))
+        evidence = self.put(key + '/' + hashlib.sha256(data).hexdigest() + '.json', json_bytes(dict(
+            package=package, version=version, source=source, source_version=source_version,
+            package_file=relative, md5=hashes[0], sha256=hashlib.sha256(data).hexdigest())))
+        reference = 'https://launchpad.net/ubuntu/+source/' + quote(source, safe='') + '/' + quote(source_version, safe='')
+        return owner('package', package, version, source, source_version, reference, licenses, [evidence])
+
+    def cpython(self):
+        if self.python_owner is not None:
+            return self.python_owner
+        pin = json.loads((self.project / 'packaging/linux/toolchain.json').read_text())['python']
+        if self.sdk.python_version != pin['version']:
+            raise ValueError('CPython SDK version differs from toolchain pin')
+        archive = self.sdk.prefix.parent / 'Python.tar.xz'
+        if attribution.digest(archive) != pin['sha256']:
+            raise ValueError('CPython source archive hash mismatch')
+        with tarfile.open(archive, 'r:xz') as stream:
+            member = stream.getmember('Python-' + pin['version'] + '/LICENSE')
+            if not member.isfile():
+                raise ValueError('CPython license must be a regular archive member')
+            license_data = stream.extractfile(member).read()
+        license_path = self.put('cpython/LICENSE', license_data)
+        evidence = self.put('cpython/source.json', json_bytes(pin))
+        self.python_owner = owner('cpython', 'CPython', pin['version'], 'CPython', pin['version'],
+                                  pin['url'], [license_path], [evidence])
+        return self.python_owner
+
+
+    def resolve(self, original, data, wheels):
+        if 'playwright' in original.parts and 'driver' in original.parts:
+            raise ValueError('vendor source acquisition not available')
+        if wheels:
+            raise ValueError('missing versioned wheel source: ' + canonicalize_name(wheels[0]['name']))
+        minor = '.'.join(self.sdk.python_version.split('.')[:2])
+        library = self.sdk.prefix / ('lib/libpython' + minor + '.so.1.0')
+        extensions = self.sdk.prefix / ('lib/python' + minor + '/lib-dynload')
+        if original == library or (original.parent == extensions and original.suffix == '.so'):
+            return self.cpython()
+        return self.package(original, data)
 
 
 def acquire(payload, toc, project, output):
@@ -138,12 +277,23 @@ def acquire(payload, toc, project, output):
     if any(len(matches) > 1 for matches in wheels.values()):
         raise ValueError('ambiguous wheel RECORD ownership')
 
+    inputs = Inputs(project, sdk)
+    configuration = tomllib.loads((project / 'pyproject.toml').read_text())
+    roots = [Requirement(item).name for item in configuration['project']['dependencies']]
+    inputs.distributions(roots)
     records, files = [], []
     for index, (name, (data, original)) in enumerate(measured.items()):
-        records.append(dict(file=name, original=f'originals/{index}', owners=[]))
+        owners, reason = [], None
+        try:
+            acquired = inputs.resolve(original, data, wheels[original])
+            inputs.references.add(acquired['source']['reference'])
+            owners.append(acquired)
+        except (ValueError, OSError, KeyError, tarfile.TarError) as error:
+            # File names in acquisition diagnostics are payload-relative, never SDK paths.
+            reason = str(error) if isinstance(error, ValueError) else 'missing acquisition input for ' + name
+        records.append(dict(file=name, original=f'originals/{index}', owners=owners))
         files.append(dict(file=name, sha256=hashlib.sha256(data).hexdigest(),
-                          wheel_records=wheels[original],
-                          unresolved='source/legal acquisition required'))
+                          wheel_records=wheels[original], unresolved=reason))
     diagnostics = dict(schema_version=1, qualification=QUALIFICATION,
                        files=files, aliases=aliases, separate_obligations=[
                            'Generated main application and PyInstaller bootloader: integrating build must qualify',
@@ -158,15 +308,48 @@ def acquire(payload, toc, project, output):
         destination = view / record['file']
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(data)
+    for name, data in inputs.materials.items():
+        destination = build / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(data)
     (build / 'evidence.json').write_bytes(json_bytes(dict(schema_version=1, records=records)))
     (output / 'acquisition.json').write_bytes(json_bytes(diagnostics))
-    return attribution.collect(view, build, output / 'association')
+    result = attribution.collect(view, build, output / 'association')
+    if result:
+        return result
+    inventory = json.loads((output / 'association/inventory.json').read_text())
+    inventory['qualification'] = QUALIFICATION
+    inventory['aliases'] = aliases
+    inventory['separate_obligations'] = diagnostics['separate_obligations']
+    inputs.put('native/inventory.json', json_bytes(inventory))
+    inputs.put('installed.json', json_bytes(dict(python=inputs.python, vendor=inputs.vendor,
+                                                shipped_browsers=sorted(inputs.shipped_browsers))))
+    directions = [QUALIFICATION, '', 'Full source access (retain alongside the distribution):',
+                  *sorted(inputs.references), '',
+                  'Chromium: check out the exact source tag, fetch its DEPS with depot_tools, and retain',
+                  'Playwright browser_patches at the recorded beta core commit. Registry association',
+                  'is not proof of the vendor build inputs or signatures.',
+                  'Wheel source references identify distribution releases, not independently attested',
+                  'vendored-library build revisions. Raw installed and registered notices are retained.',
+                  'Qt/PySide: retain full module sources, build/configuration and vendored code; keep',
+                  'equivalent source access available alongside binaries, mirroring if upstream expires.',
+                  'Dynamically linked components remain replaceable with compatible modified builds.',
+                  'Installed FFmpeg notices do not imply standalone FFmpeg is shipped.',
+                  *diagnostics['separate_obligations'], '']
+    inputs.put('SOURCE-ACCESS.txt', '\n'.join(directions).encode())
+    public = output / 'notices'
+    public.mkdir()
+    for name, data in inputs.materials.items():
+        destination = public / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(data)
+    return 0
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, epilog=(
-        'Measurement only; no qualified notices are produced. '
-        'Exit 1: source/legal acquisition required; 2: invalid input. '
+        'Exit 0: measured source/legal coverage, NOT legal approval; '
+        '1: unresolved acquisition, diagnostics retained without notices/; 2: invalid input. '
         'Publish only notices/, never intermediate ELF copies. '
         'See docs/linux-build-evidence.md.'))
     parser.add_argument('--payload', required=True, type=Path, help='shipped _internal directory')
