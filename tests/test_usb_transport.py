@@ -118,7 +118,7 @@ class TransportTests(unittest.TestCase):
             self.assertTrue(launch.call_args.kwargs['close_fds'])
 
     def make(self, mode=None, cancel=None, budgets=None, launcher_delay=None,
-             timing_clock=time.monotonic):
+             timing_clock=time.monotonic, **options):
         children, gates = [], []
         def launch(port, nonce):
             if launcher_delay is not None:
@@ -130,7 +130,7 @@ class TransportTests(unittest.TestCase):
             value = Gate(nonce);gates.append(value);return value
         obj = UsbTransport(worker.IDENTITY, cancel=cancel,
             budgets=budgets or ipc.Budgets(start=1, frame=1, close=0.5, reap=0.2),
-            launcher=launch, gate_factory=gate, timing_clock=timing_clock)
+            launcher=launch, gate_factory=gate, timing_clock=timing_clock, **options)
         def cleanup():
             if launcher_delay is not None:launcher_delay.set()
             for value in gates:value.fail_close = False
@@ -142,6 +142,37 @@ class TransportTests(unittest.TestCase):
                     child.wait(1)
         self.addCleanup(cleanup)
         return obj, children, gates
+
+    def test_injected_owner_honored_and_uncertain_cleanup_retained(self):
+        from mars_display.usb_process import OwnedWorker
+        owners = []
+        def factory(port, nonce, budgets, **options):
+            owner = OwnedWorker(port, nonce, budgets, **options)
+            owners.append(owner)
+            return owner
+        obj, children, gates = self.make(owner_factory=factory)
+        self.assertEqual(owners, [])
+        obj.open(); obj.open(); obj.send(FRAME); obj.set_brightness(60)
+        self.assertEqual(len(owners), 1)
+        self.assertIs(owners[0].child, children[0])
+        self.assertIs(owners[0].gate, gates[0])
+        self.assertIs(owners[0].budgets, obj.budgets)
+        self.assertEqual(len(children[0].port.writes), 123)
+        gates[0].fail_close = True
+        with self.assertRaises(UsbError) as raised:
+            obj.close()
+        self.assertTrue(raised.exception.ownership_uncertain)
+        self.assertTrue(obj.owned)
+        with self.assertRaises(UsbError):
+            obj.open()
+        self.assertEqual(len(owners), 1)
+        gates[0].fail_close = False
+        obj.close()
+        self.assertFalse(obj.owned)
+        self.assertTrue(owners[0].closed)
+        self.assertFalse(children[0].thread.is_alive())
+        obj.open(); obj.close()
+        self.assertEqual(len(owners), 2)
 
     def test_one_owned_child_two_frames_idempotent_close_and_explicit_reopen(self):
         obj, children, gates = self.make()

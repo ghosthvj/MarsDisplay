@@ -29,11 +29,13 @@ def _resolve(inventory):
 def run_session(channel, nonce, *, inventory=enumerate_devices,
                 port_factory=serial_factory, budgets=ipc.Budgets(),
                 clock=time.monotonic, sleep=time.sleep, timing_clock=time.monotonic,
-                encoder=encode_native):
+                encoder=encode_native, resolver=None):
     """Serve one already-admitted channel; injection is Python-only, never CLI.
 
     The parent must bound blocking native calls by owning/terminating this worker
     process. Replies contain fixed status bytes, not exceptions or frame history.
+    resolver(inventory) selects the current port at OPEN and before every write
+    operation; None retains the Windows COM resolver.
     """
     if not isinstance(nonce, bytes) or len(nonce) != 32:
         raise ValueError('Invalid USB session nonce')
@@ -58,7 +60,7 @@ def run_session(channel, nonce, *, inventory=enumerate_devices,
                     status = IDENTITY_ERROR
                     if body != IDENTITY.encode('ascii'):
                         raise ValueError('Unsupported USB identity')
-                    selected = _resolve(inventory)
+                    selected = (_resolve if resolver is None else resolver)(inventory)
                     status = OPEN_ERROR
                     port = port_factory(port=None, baudrate=115200, bytesize=8,
                                         parity='N', stopbits=1, rtscts=True,
@@ -77,7 +79,7 @@ def run_session(channel, nonce, *, inventory=enumerate_devices,
                     decode = measure() - started
                     status = IDENTITY_ERROR
                     started = measure()
-                    if _resolve(inventory) != selected:
+                    if (_resolve if resolver is None else resolver)(inventory) != selected:
                         raise ValueError('Current USB port changed')
                     identity = measure() - started
                     status = WRITE_ERROR
@@ -122,7 +124,7 @@ def run_session(channel, nonce, *, inventory=enumerate_devices,
                         raise ValueError('USB session is not open')
                     packet = encode_brightness(body[0])
                     status = IDENTITY_ERROR
-                    if _resolve(inventory) != selected:
+                    if (_resolve if resolver is None else resolver)(inventory) != selected:
                         raise ValueError('Current USB port changed')
                     status = WRITE_ERROR
                     deadline = clock() + budgets.frame
