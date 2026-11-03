@@ -4,6 +4,7 @@ import struct
 import sys
 
 from .browser import BrowserSession
+from .host_platform import is_supported_host
 from .lifecycle import Coordinator
 from .settings import SettingsError, SettingsStore, _checked
 from .transport import SimulatedTransport
@@ -44,8 +45,7 @@ def build_shell(app, store: SettingsStore):
 
 def main() -> int:
     """Run the tray application. All reported startup errors omit private values."""
-    if (sys.platform != "win32" or platform.machine().lower() not in {"amd64", "x86_64"}
-            or struct.calcsize("P") != 8):
+    if not is_supported_host(sys.platform, platform.machine(), struct.calcsize("P")):
         print(_UNSUPPORTED, file=sys.stderr)
         return 1
     try:

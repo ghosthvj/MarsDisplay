@@ -123,6 +123,42 @@ class AppTests(unittest.TestCase):
                          (1, "", "MarsDisplay requires Windows x64; use Windows 11 x64.\n"))
         self.assertEqual(list(Path(self.temp).iterdir()), [])
 
+    def test_host_rejection_precedes_startup_resources(self):
+        for host, machine, pointer_size in (
+            ("linux", "x86_64", 8),
+            ("darwin", "x86_64", 8),
+            ("win32", "ARM64", 8),
+            ("win32", "AMD64", 4),
+        ):
+            with self.subTest(host=host, machine=machine, pointer_size=pointer_size):
+                with patch("mars_display.app.sys.platform", host), patch(
+                    "mars_display.app.platform.machine", return_value=machine
+                ), patch("mars_display.app.struct.calcsize", return_value=pointer_size), patch(
+                    "PySide6.QtWidgets.QApplication"
+                ) as application, patch("mars_display.app.SettingsStore") as store, patch(
+                    "mars_display.app.build_shell"
+                ) as shell:
+                    self.assertEqual(self.invoke(), (
+                        1, "", "MarsDisplay requires Windows x64; use Windows 11 x64.\n"))
+                    application.assert_not_called()
+                    store.assert_not_called()
+                    shell.assert_not_called()
+                self.assertEqual(list(Path(self.temp).iterdir()), [])
+
+    def test_windows_x64_aliases_reach_existing_duplicate_admission(self):
+        for machine in ("AMD64", "x86_64"):
+            with self.subTest(machine=machine):
+                with patch("mars_display.app.sys.platform", "win32"), patch(
+                    "mars_display.app.platform.machine", return_value=machine
+                ), patch("mars_display.app.struct.calcsize", return_value=8), patch(
+                    "PySide6.QtWidgets.QApplication", return_value=APP
+                ), patch("mars_display.app.SettingsStore", return_value=self.store), patch(
+                    "mars_display.app.build_shell", return_value=None
+                ) as shell:
+                    self.assertEqual(self.invoke(), (0, "", "MarsDisplay is already running.\n"))
+                    shell.assert_called_once_with(APP, self.store)
+                self.assertEqual(list(Path(self.temp).iterdir()), [])
+
     def test_main_host_branches_and_sanitized_startup_messages(self):
         with patch("mars_display.app.sys.platform", "win32"), patch("mars_display.app.platform.machine", return_value="ARM64"):
             self.assertEqual(self.invoke(), (1, "", "MarsDisplay requires Windows x64; use Windows 11 x64.\n"))
