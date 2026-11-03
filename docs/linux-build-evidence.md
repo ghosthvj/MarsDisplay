@@ -31,12 +31,23 @@ There is no CLI owner override or proof-bypass option. No download is performed.
 | Wheel RECORD | Exact installed path, SHA256 and size; multiple matching owners reject. Raw licenses and dependency closure use unchanged `notices.collect_distributions`. |
 | Noble packages | Exact `dpkg-query --search` path, installed binary/source package versions, matching package md5sums, raw copyright and referenced common licenses. Version-specific Launchpad source routes identify Ubuntu source packages. |
 | CPython | Running SDK version matches toolchain pin; retained `Python.tar.xz` SHA256 is checked before reading its regular LICENSE member, without extraction. Only the SDK libpython and lib-dynload paths qualify this way. |
+| Node | Original is the installed Playwright driver node with verified RECORD bytes; `node --version` supplies actual version and versioned source archive route. Vendor notices retained. |
+| Chromium | Original is inside an exact installed registry directory; revision and four-part browser version supply source tag/DEPS directions. Other shipped vendor families reject. |
+| Qt/PySide | Exact wheel release and existing reviewed native-source registry are required. Immutable module sources, raw legal inputs and the full Qt release source route are retained. Windows PE byte policies are never applied to Linux ELF files. |
 
-This slice supports package and CPython native owners. Native wheel and vendor
-families remain explicitly unresolved until their acquisition unit is installed.
-Raw dependency notices use the unchanged distribution collector; they do not by
-themselves qualify an unsupported native owner. Version-specific source references
-are not binary-build attestations or legal certification.
+Pillow and greenlet retain version-specific release source routes and installed
+wheel licenses, including wheel-provided bundled notices. Unknown native wheel
+source families fail explicitly rather than acquiring an invented generic owner.
+Qt/PySide source references describe distribution releases and the retained full
+source routes, not separately attested build revisions of every bundled library.
+Existing registry coverage limits remain in the retained provenance files.
+
+`notices.collect_vendor` runs unchanged against the installed SDK. Thus SDK FFmpeg
+must still be installed with its notices, even though the screenshot build omits
+standalone FFmpeg. `installed.json` distinguishes the installed browser inventory
+from the shipped native browser set; no FFmpeg source association is invented for
+an absent executable. The exact beta Playwright core source commit from
+`notices.py` is preserved, never replaced by the stable v1.64.0 tag.
 
 ## Outputs and failures
 
@@ -64,9 +75,15 @@ host paths and are not public notes. The generated main application/PyInstaller
 bootloader and outer AppImage runtime remain explicit separate integrating-build
 obligations, not universally exempt components.
 
-## Verification
+## Verification and review boundaries
 
-Public-main fixtures cover measurement guards, complete package/CPython output,
-wrong package owner, changed package bytes, missing source/copyright and CPython
-archive corruption. Tests retain exact exit/stdout/stderr and input preservation
-checks. Wheel/Qt and Playwright acquisition are the next functional unit.
+Portable temporary fixtures drive the public `main` using a Python-only SDK
+context seam. Tests cover complete package, CPython, wheel, Node and Chromium
+acquisition; missing/changed originals, invalid RECORD hashes, wrong package and
+Node owners, missing copyright/source identity, and CPython archive corruption.
+Parent-owned Noble execution is still required to verify actual installed inputs.
+
+Measurement diagnostics, package/CPython acquisition, and additional wheel/vendor
+acquisition form separate functional review units, each with its public-main tests
+and documentation. No upstream legal bytes are committed by these units: existing
+collectors copy registered/installed bytes into generated output at execution time.

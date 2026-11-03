@@ -207,12 +207,113 @@ class Inputs:
                                   pin['url'], [license_path], [evidence])
         return self.python_owner
 
+    def vendor_inputs(self):
+        if self.driver is not None:
+            return
+        dist = self.sdk.lookup('playwright')
+        driver = Path(dist.locate_file('playwright/driver')).resolve()
+        selected = {driver / name: (driver / name).read_bytes()
+                    for name in ('node', 'package/package.json', 'package/browsers.json')}
+        matches = wheel_index(selected, self.sdk.distributions)
+        if any(len(items) != 1 or canonicalize_name(items[0]['name']) != 'playwright'
+               for items in matches.values()):
+            raise ValueError('vendor identity lacks exact Playwright RECORD origin')
+        core = json.loads(selected[driver / 'package/package.json'])
+        notices = attribution.notices
+        if (core.get('name') != 'playwright-core' or core.get('version') != notices._WINLDD_CORE
+                or core.get('gitHead', notices._WINLDD_COMMIT) != notices._WINLDD_COMMIT):
+            raise ValueError('unmapped Playwright core source identity')
+        inventory, texts = notices.collect_vendor(driver, material_root=self.project / 'third_party/license-material')
+        for name, data in texts.items():
+            self.put(name, data)
+        self.distributions(['playwright'])
+        self.put('vendor/core-source.json', json_bytes(dict(
+            version=core['version'], source_commit=notices._WINLDD_COMMIT,
+            reference='https://github.com/microsoft/playwright/archive/' + notices._WINLDD_COMMIT + '.tar.gz')))
+        self.references.add('https://github.com/microsoft/playwright/archive/' + notices._WINLDD_COMMIT + '.tar.gz')
+        self.vendor, self.driver = inventory, driver
+
+    def vendor_owner(self, original):
+        self.vendor_inputs()
+        if original == self.driver / 'node':
+            version = self.sdk.run([str(original), '--version']).strip()
+            if not re.fullmatch(r'v\d+\.\d+\.\d+', version):
+                raise ValueError('missing Node runtime version')
+            evidence = self.put('vendor/node.json', json_bytes(dict(
+                version=version, sha256=attribution.digest(original),
+                wheel_records=wheel_index({original: original.read_bytes()}, self.sdk.distributions)[original])))
+            return owner('vendor', 'Node.js', version[1:], 'Node.js', version[1:],
+                         'https://nodejs.org/dist/' + version + '/node-' + version + '.tar.xz',
+                         ['vendor/LICENSE'], [evidence, 'vendor/core-source.json'])
+        for item in self.vendor:
+            directory = self.driver / 'package/.local-browsers' / (item['name'].replace('-', '_') + '-' + item['revision'])
+            if not original.is_relative_to(directory):
+                continue
+            if item['name'] not in {'chromium', 'chromium-headless-shell'}:
+                raise ValueError('unsupported shipped browser source: ' + item['name'])
+            version = item.get('browser_version')
+            if not isinstance(version, str) or not re.fullmatch(r'\d+\.\d+\.\d+\.\d+', version):
+                raise ValueError('missing Chromium source version')
+            self.shipped_browsers.add(item['name'])
+            return owner('vendor', item['name'], item['revision'], 'Chromium', version,
+                         'https://chromium.googlesource.com/chromium/src/+/refs/tags/' + version,
+                         item['licenses'], [item['registry'], 'vendor/core-source.json'])
+        raise ValueError('original is outside registered vendor installations')
+
+    def wheel(self, record):
+        name, version = canonicalize_name(record['name']), record['version']
+        qt_family = name in {'pyside6', 'pyside6-essentials', 'pyside6-addons',
+                             'pyside6-webengine', 'pyside6-pdf', 'shiboken6'}
+        if name == 'pillow':
+            reference = 'https://github.com/python-pillow/Pillow/archive/refs/tags/' + version + '.tar.gz'
+        elif name == 'greenlet':
+            reference = 'https://github.com/python-greenlet/greenlet/archive/refs/tags/' + version + '.tar.gz'
+        elif qt_family:
+            if self.qt_bundle is None:
+                spec = util.spec_from_file_location('linux_source_material', Path(__file__).parents[1] / 'native_material.py')
+                module = util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                self.qt_bundle = module.read_inputs(self.project)
+            bundle = self.qt_bundle
+            modules = bundle['registry']['modules']
+            registry, legal = attribution.material.collect_license_material(
+                self.project / 'third_party/license-material')
+            if not any(canonicalize_name(package['name']) == name and package['version'] == version
+                       and entry['upstream_version'] == modules['pyside']['release']
+                       for entry in registry['materials'] for package in entry['packages']):
+                raise ValueError('unmapped Qt for Python release')
+            for path, data in legal.items():
+                self.put('upstream/' + path, data)
+            self.references.update(item['url'] for item in registry.get('source_archives', [])
+                                   if item['component'] == 'QtForPython'
+                                   and item['version'] == modules['pyside']['release'])
+            for path, data in bundle['files'].items():
+                self.put('native-source/' + path, data)
+            self.references.update(item['source_archive'] for item in modules.values())
+            qt_version = modules['qtbase']['release']
+            # Full release route covers modules beyond the reviewed Windows subset;
+            # this does not apply the PE byte policy to Linux ELF files.
+            self.references.add('https://download.qt.io/official_releases/qt/' + '.'.join(qt_version.split('.')[:2])
+                                + '/' + qt_version + '/single/qt-everywhere-src-' + qt_version + '.tar.xz')
+            reference = modules['pyside']['source_archive']
+        else:
+            raise ValueError('missing versioned wheel source: ' + name)
+        inventory = self.distributions([name])
+        item = inventory[name]
+        if item['version'] != version:
+            raise ValueError('wheel notice version differs from RECORD owner')
+        licenses = list(item['licenses'])
+        if qt_family:
+            licenses.extend('native-source/' + item['path'] for item in bundle['registry']['files']
+                            if item['kind'] in {'license', 'license-notice', 'attribution'})
+        evidence = self.put('wheel-records/' + hashlib.sha256(json_bytes(record)).hexdigest() + '.json', json_bytes(record))
+        return owner('wheel', record['name'], version, record['name'], version, reference, licenses, [evidence])
 
     def resolve(self, original, data, wheels):
         if 'playwright' in original.parts and 'driver' in original.parts:
-            raise ValueError('vendor source acquisition not available')
+            return self.vendor_owner(original)
         if wheels:
-            raise ValueError('missing versioned wheel source: ' + canonicalize_name(wheels[0]['name']))
+            return self.wheel(wheels[0])
         minor = '.'.join(self.sdk.python_version.split('.')[:2])
         library = self.sdk.prefix / ('lib/libpython' + minor + '.so.1.0')
         extensions = self.sdk.prefix / ('lib/python' + minor + '/lib-dynload')

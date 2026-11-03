@@ -206,6 +206,109 @@ class AcquisitionTests(unittest.TestCase):
         archive.write_bytes(b'changed')
         self.rejection('CPython source archive hash mismatch')
 
+    def vendor_fixture(self, browser=False):
+        from importlib.metadata import PackagePath
+        driver = self.root / 'site/playwright/driver'
+        texts = {'LICENSE': b'Node license', 'package/LICENSE': b'Playwright license',
+                 'package/NOTICE': b'Playwright notice', 'package/ThirdPartyNotices.txt': b'Vendor notices',
+                 'package/package.json': json.dumps(dict(name='playwright-core',
+                     version='1.64.0-beta-1791568591000')).encode(),
+                 'node': b'\x7fELFfixture'}
+        registry = [dict(name='chromium-headless-shell', revision='1248', browserVersion='156.0.8078.4'),
+                    dict(name='ffmpeg', revision='1011')]
+        texts['package/browsers.json'] = json.dumps(dict(browsers=registry)).encode()
+        for directory in ('chromium_headless_shell-1248', 'ffmpeg-1011'):
+            texts['package/.local-browsers/' + directory + '/LICENSE'] = b'Browser license'
+        chrome = 'package/.local-browsers/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell'
+        texts[chrome] = b'\x7fELFfixture'
+        for name, data in texts.items():
+            path = driver / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+        meta = Message()
+        meta['Name'], meta['Version'] = 'playwright', '1.64.0'
+        meta['Home-page'] = 'https://playwright.dev'
+        files = []
+        for name, data in texts.items():
+            if '.local-browsers' in name:
+                continue
+            entry = PackagePath('playwright/driver/' + name)
+            entry.hash = SimpleNamespace(mode='sha256', value=base64.urlsafe_b64encode(hashlib.sha256(data).digest()).decode().rstrip('='))
+            entry.size = len(data)
+            files.append(entry)
+        dist = SimpleNamespace(files=files, metadata=meta, requires=[], locate_file=lambda name: self.root / 'site' / name)
+        self.sdk.lookup = lambda name: dist
+        self.sdk.run = lambda args: 'v24.13.0\n'
+        original = driver / (chrome if browser else 'node')
+        self.toc.write_text(repr(('out', [('module.so', str(original), 'BINARY')])))
+        return dist, driver
+
+    def test_node_verified_record_and_actual_version_complete(self):
+        dist, _ = self.vendor_fixture()
+        self.assertEqual(self.invoke([dist]), (0, 'measured=1 associated=1 unresolved=0\n', ''))
+        data = json.loads((self.output / 'notices/native/inventory.json').read_text())
+        self.assertEqual(data['files'][0]['owner']['source']['reference'],
+                         'https://nodejs.org/dist/v24.13.0/node-v24.13.0.tar.xz')
+        installed = json.loads((self.output / 'notices/installed.json').read_text())
+        self.assertEqual(installed['shipped_browsers'], [])
+        self.assertIn('ffmpeg', [item['name'] for item in installed['vendor']])
+
+    def test_chromium_registry_identity_complete(self):
+        dist, _ = self.vendor_fixture(browser=True)
+        self.assertEqual(self.invoke([dist]), (0, 'measured=1 associated=1 unresolved=0\n', ''))
+        data = json.loads((self.output / 'notices/native/inventory.json').read_text())
+        self.assertEqual(data['files'][0]['owner']['source']['version'], '156.0.8078.4')
+        self.assertIn('156.0.8078.4', data['files'][0]['owner']['source']['reference'])
+        installed = json.loads((self.output / 'notices/installed.json').read_text())
+        self.assertEqual(installed['shipped_browsers'], ['chromium-headless-shell'])
+
+    def test_browser_missing_source_version_cannot_qualify(self):
+        dist, driver = self.vendor_fixture(browser=True)
+        path = driver / 'package/browsers.json'
+        data = json.loads(path.read_text())
+        data['browsers'][0].pop('browserVersion')
+        path.write_text(json.dumps(data))
+        # Update RECORD to isolate the source-identity rule, not RECORD corruption.
+        for entry in dist.files:
+            content = Path(dist.locate_file(entry)).read_bytes()
+            entry.hash.value = base64.urlsafe_b64encode(hashlib.sha256(content).digest()).decode().rstrip('=')
+            entry.size = len(content)
+        self.rejection('missing Chromium source version', [dist])
+
+    def wheel_fixture(self, name='greenlet', version='3.5.6'):
+        digest = base64.urlsafe_b64encode(hashlib.sha256(self.original.read_bytes()).digest()).decode().rstrip('=')
+        dist = self.distribution(digest)
+        meta = Message()
+        meta['Name'], meta['Version'] = name, version
+        meta['Home-page'] = 'https://example.org/project'
+        dist.metadata = meta
+        dist.requires = []
+        (self.original.parent / 'LICENSE').write_bytes(b'wheel license fixture')
+        from importlib.metadata import PackagePath
+        dist.files.append(PackagePath('LICENSE'))
+        self.sdk.lookup = lambda requested: dist
+        return dist
+
+    def test_wheel_source_and_notices_complete(self):
+        dist = self.wheel_fixture()
+        self.assertEqual(self.invoke([dist]), (0, 'measured=1 associated=1 unresolved=0\n', ''))
+        data = json.loads((self.output / 'notices/native/inventory.json').read_text())
+        item = data['files'][0]['owner']
+        self.assertEqual(item['source']['reference'],
+                         'https://github.com/python-greenlet/greenlet/archive/refs/tags/3.5.6.tar.gz')
+        self.assertEqual((self.output / 'notices' / item['licenses'][0]).read_bytes(), b'wheel license fixture')
+
+    def test_qt_keeps_reviewed_immutable_and_full_release_routes(self):
+        dist = self.wheel_fixture('PySide6_Essentials', '6.12.0')
+        for directory in ('native-material', 'license-material'):
+            shutil.copytree(SCRIPT.parents[2] / 'third_party' / directory,
+                            self.root / 'third_party' / directory)
+        self.assertEqual(self.invoke([dist]), (0, 'measured=1 associated=1 unresolved=0\n', ''))
+        directions = (self.output / 'notices/SOURCE-ACCESS.txt').read_text()
+        self.assertIn('f50facb83fc3dc5f3240c854668c7a6dd93871b2.tar.gz', directions)
+        self.assertIn('025bdad181de241e81bf853c8a2d7bf3d19261a9.tar.gz', directions)
+        self.assertIn('qt-everywhere-src-6.12.0.tar.xz', directions)
+        self.assertTrue((self.output / 'notices/native-source/provenance.json').is_file())
 
     def test_missing_record_hash_rejected_before_acquisition(self):
         dist = self.distribution('unused')
@@ -213,6 +316,15 @@ class AcquisitionTests(unittest.TestCase):
         self.assertEqual(self.invoke([dist]), (2, '', 'build-evidence: invalid wheel RECORD: module.so\n'))
         self.assertFalse(self.output.exists())
 
+    def test_missing_vendor_material_cannot_qualify(self):
+        dist, driver = self.vendor_fixture()
+        (driver / 'package/NOTICE').write_bytes(b'')
+        self.rejection('Missing vendor material: package/NOTICE', [dist])
+
+    def test_wrong_node_record_owner_cannot_qualify(self):
+        dist, _ = self.vendor_fixture()
+        dist.metadata.replace_header('Name', 'wrong-package')
+        self.rejection('vendor identity lacks exact Playwright RECORD origin', [dist])
 
     def test_toc_is_literal_not_executable(self):
         self.toc.write_text('__import__("os").abort()')
