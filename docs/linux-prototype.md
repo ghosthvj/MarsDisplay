@@ -2,7 +2,7 @@
 
 Target: **x86_64 Pop!_OS based on Ubuntu 24.04**, with a working system tray.
 This is a prototype for private testing, not qualified Linux support or a public
-release. The kit is generated under `dist/linux-prototype-42feea4/`; copy the whole
+release. The kit is generated under `dist/linux-prototype-17ff199/`; copy the whole
 directory, including notices and source material. No remote hardware acceptance
 is required before preparing it.
 
@@ -30,7 +30,7 @@ A separate, non-shipping browser probe hit a container sandbox denial; browser
 capture has NOT passed. COSMIC/Wayland tray behavior, physical image/brightness,
 sustained capture, disconnect cleanup and current native Windows remain unqualified.
 
-## Linux Save correction (source only; rebuilt artifact pending)
+## Linux Save correction (rebuilt prototype 17ff199)
 
 The first prototype can list `usb:1a86:5722:USB35INCHIPSV2` but reject Save with
 “Selected native screen is unavailable or ambiguous; refresh selection before saving.”
@@ -43,15 +43,17 @@ supported identity on an unambiguous `/dev/ttyACM[0-9]+` port is accepted. Save 
 not open USB or start capture. Backup and explicit migration acknowledgements are
 unchanged. This is not a permissions workaround or support for additional ports.
 
-The kit above still contains the original bytes. A corrected production payload,
-AppImage, checksums and matching source material must be rebuilt and verified by
-the parent before claiming delivery of this fix. Do not repackage the old onedir
-archive expecting corrected Save behavior. Real panel/capture acceptance remains
-pending; the user has reported tray/UI startup and device listing on the target.
+The corrected kit includes rebuilt application bytes, checksums and source at
+`17ff199`. Actual no-FUSE launch, ordinary Qt admission and frozen worker checks
+passed. Close the old tray instance before launching it; keep existing settings.
+Independent source checks passed 46 tests; an additional verifier helper failed
+before exercising behavior and was not retried. The user explicitly accepted this
+gap for experimental delivery. Real panel/capture acceptance remains pending; the
+user reported tray/UI startup and device listing with the first prototype.
 
 ## Parent build recipe (offline, in the verified Noble image)
 
-Use the production `build/linux-onedir.tar` from `42feea4`, never the probe tar or
+Use the corrected production `build/linux-onedir-configfix.tar` from `17ff199`, never the probe tar or
 current staged probe files. Extract that trusted archive into a fresh work area;
 pass its `MarsDisplay` directory, not the tar. Do not rebuild with host libraries.
 The verified builder is `marsdisplay-linux-build:t5a` (Python 3.13.5, glibc 2.39).
@@ -70,7 +72,8 @@ With input mounts at `/inputs` and a fresh writable `/work`, run:
 python -B /inputs/packaging/linux/build_appimage.py \
   --onedir /work/production/MarsDisplay \
   --tool /inputs/appimagetool-x86_64.AppImage --runtime /inputs/runtime-x86_64 \
-  --license /inputs/LICENSE --notices /work/notices --output /work/prototype
+  --license /inputs/LICENSE --notices /work/notices --output /work/prototype \
+  --source-ref 17ff199c50ee93f9370f47179d6fed22ebdeb03e
 cd /work/prototype
 sha256sum -c MarsDisplay-x86_64.AppImage.sha256
 ```
@@ -121,7 +124,7 @@ material rather than Noble package attribution.
 
 Runtime source, libfuse source and its runtime patch, dependency notices and source
 references accompany the kit. `SOURCE-REFERENCES.md` explains source locations and
-replacement/rebuild paths. Production source is archived from `42feea4`, never
+replacement/rebuild paths. Production source is archived from `17ff199`, never
 from the dirty checkout or the non-shipping probe. The packaging recipe is supplied
 separately. These records do not claim legal clearance or a completed public-release
 license audit; retain them with the prototype and do not publish it as a supported
