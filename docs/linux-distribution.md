@@ -1,8 +1,9 @@
 # Experimental Linux distribution
 
-Linux uses an x86_64 AppImage plus a companion source/notices ZIP. Higher-level
-build and release CI integration is in progress; this format does not imply a
-currently available public Linux release or legal clearance.
+Linux uses an experimental x86_64 AppImage plus a companion source/notices ZIP.
+The [host build command](linux-release-build.md) and reusable Linux workflow prepare
+four versioned assets; the joint release workflow waits for Windows and Linux.
+Implementation does not imply an already published release or legal clearance.
 
 The user reported physical image display and brightness working with the
 prototype on Pop!_OS 24.04 after manually enabling USB access. This is not a
@@ -46,6 +47,20 @@ The assembler adds `inventory.json` with `target: Linux-x86_64`, `source_commit`
 canonical `release` provenance, `appimage: {name, size, sha256}`, and a `files`
 mapping of every other companion member to SHA256. Unsafe paths, duplicate
 case-folded names, file/directory collisions and links are rejected.
+
+## Verification scope
+
+The initial committed `64ebd9a` candidate (`v0.0.0`, local validation only) passed
+its complete build, internal asset/provenance validation, no-FUSE private admission
+and extracted AppRun worker lifecycle checks. The clean committed source suite
+ran 647 tests with four existing Windows-specific skips.
+
+Independent candidate archive inspection never started because its verifier
+could not find Python. The maintainer explicitly accepted proceeding with this
+gap; do not describe that inspection as passed. Component implementations were
+independently checked. These results do not establish new physical hardware,
+prolonged operation, native Windows acceptance, or GitHub workflow execution.
+No release was published as part of this implementation.
 
 ## Maintainer build-format and check commands
 

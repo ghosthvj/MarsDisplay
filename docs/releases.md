@@ -1,11 +1,13 @@
-# Publish a Windows release
+# Publish a Windows and Linux release
 
-1. Open **Actions → Publish Windows release → Run workflow**, select **main**.
+1. Open **Actions → Publish Windows and Linux release → Run workflow**, select **main**.
 2. Enter a new **Tag**, for example `v0.2.0rc8` or `v0.2.0`, then run it.
    This requests public publication, not a dry run. No prior edit to
    `pyproject.toml` or manual tag creation is needed.
 3. After success, download the complete portable ZIP and its `.sha256` file
    from **Releases**. Do not distribute the EXE separately from its resources.
+   Linux adds an experimental x86_64 AppImage, companion support ZIP and both
+   SHA256 files. Preserve the companion sources/notices when distributing it.
 
 Tags must use canonical `vX.Y.Z` or `vX.Y.ZrcN` form (no leading zeroes in
 numeric components). `rc` tags create prereleases; other accepted tags create
@@ -34,7 +36,8 @@ continue to describe the actual shipped bytes.
 
 Tests (zero skips on Windows), native/license qualification and packaged smoke
 remain required. Only the publisher has write permission. It creates a draft,
-uploads the ZIP/checksum by that draft's ID, verifies remote asset hashes and
+waits for both platform builders, uploads all six assets by that draft's ID,
+verifies remote asset hashes and
 the actual tag commit, then publishes. Preserve bundled source-access directions
 and notices when redistributing the package.
 
@@ -72,8 +75,18 @@ All six assets must pass remote readback before the draft becomes public.
 `--linux-artifacts` is a publish-only option; `plan` and `stamp` reject it.
 Omitting the option preserves Windows-only publication and validation.
 
-The Linux format validator does not certify legal material or runtime behavior:
-only pass an independently qualified build, never the original private-test kit.
-See [Linux distribution](linux-distribution.md) for the artifact contract and
-experimental scope. The automated joint-build workflow is being integrated;
-this CLI support alone does not establish a qualified public Linux artifact.
+The joint workflow retains the existing Windows builder and adds the read-only
+**Experimental Linux AppImage** reusable workflow. Both receive the same tag and
+triggering commit. Publication requires both jobs to succeed, downloads their
+separate artifacts from the same run, and validates both before remote writes.
+Only the publisher receives write permission; no private Linux workspace is uploaded.
+The existing concurrency group is retained to serialize old and new release runs.
+
+The Linux workflow also supports manual build-only runs with a required
+`release_tag`; it never publishes. It runs source tests and the committed host
+recipe, including frozen worker checks and native/source association. See
+[Linux build](linux-release-build.md) and [Linux distribution](linux-distribution.md).
+The format validator does not certify legal material or desktop/hardware behavior.
+The initial candidate's independent archive verification was unavailable and the
+maintainer explicitly accepted that gap; it is not an independent verification pass.
+GitHub execution and native Windows acceptance have not been newly observed locally.

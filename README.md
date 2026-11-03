@@ -81,11 +81,16 @@ python -m playwright install chromium --only-shell
 python -m mars_display
 ```
 
-### Experimental Linux source run
+### Experimental Linux AppImage and source run
 
-The source entry point also admits Linux x86_64 (64-bit Python), targeting Pop!_OS
-based on Ubuntu 24.04 LTS. This is **not a qualified Linux release or AppImage**;
-actual desktop/session, hardware and frozen-runtime acceptance are still pending.
+Linux x86_64 targets Pop!_OS based on Ubuntu 24.04 LTS. A versioned AppImage build
+and joint Windows/Linux release mechanism are available in the repository; this
+does not mean a public Linux release has already been published. See
+[Linux distribution](docs/linux-distribution.md) for downloads, checksums, manual
+USB permissions and the explicitly accepted independent-verification gap, and
+[Linux build instructions](docs/linux-release-build.md) to prepare local artifacts.
+The prototype's physical display and brightness were user-tested on Pop!_OS 24.04;
+prolonged operation and general Linux compatibility are not established.
 
 Launch manually with `python -m mars_display` from an interactive desktop with a
 working system tray. No tray means startup fails; there is no fallback window.
