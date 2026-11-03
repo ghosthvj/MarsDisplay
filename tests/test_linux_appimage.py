@@ -59,6 +59,13 @@ class AppImageTests(unittest.TestCase):
                          (2, '', f'error: {message}\n'))
         self.assertEqual(before, sorted(str(p.relative_to(self.root)) for p in self.root.rglob('*')))
 
+    def test_explicit_source_reference_is_recorded(self):
+        result = self.cli(self.args + ['--source-ref', 'test-source-revision'])
+        self.assertEqual((result.returncode, result.stdout, result.stderr),
+                         (0, 'Created prototype: MarsDisplay-x86_64.AppImage\n', ''))
+        manifest = json.loads((self.output / 'MarsDisplay.AppDir/prototype.json').read_text())
+        self.assertEqual(manifest['source'], 'test-source-revision')
+
     def test_hashes_reject_before_writes(self):
         for path, name in [(self.tool, 'appimagetool'), (self.runtime, 'runtime')]:
             original = path.read_bytes()
@@ -98,6 +105,7 @@ class AppImageTests(unittest.TestCase):
         self.assertEqual((result.returncode, result.stdout, result.stderr),
                          (0, 'Created prototype: MarsDisplay-x86_64.AppImage\n', ''))
         appdir = self.output / 'MarsDisplay.AppDir'
+        self.assertEqual(json.loads((appdir / 'prototype.json').read_text())['source'], '42feea4')
         inner = appdir / 'usr/lib/marsdisplay/MarsDisplay'
         self.assertEqual(inner.stat().st_mode & 0o777, 0o751)
         self.assertEqual(os.readlink(inner.with_name('link')), 'MarsDisplay')

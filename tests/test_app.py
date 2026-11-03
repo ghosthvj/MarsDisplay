@@ -90,6 +90,32 @@ class AppTests(unittest.TestCase):
             self.assertEqual(self.shell.dialog.message.text(), "Configure a MARS URL before starting.")
             self.assertFalse(self.store.path.exists())
 
+    def test_linux_first_save_through_shell_uses_linux_selection_without_capture(self):
+        from mars_display.linux_usb_worker import resolve
+        from test_output_configuration import device, native
+        from mars_display.settings import NATIVE_IDENTITY
+
+        with patch('mars_display.app.BrowserSession') as browser:
+            factory = Mock()
+            self.shell = build_shell(APP, self.store, native_factory=factory,
+                                     configuration_resolver=resolve, windows_login=False)
+            before = self.shell.coordinator.snapshot()
+            dialog = self.shell.dialog
+            dialog.url.setText('https://mars.example')
+            with patch('mars_display.tray.enumerate_devices', return_value=(device('/dev/ttyACM0'),)):
+                dialog.refresh_devices.click()
+            dialog.identity.setCurrentIndex(1)
+            self.assertEqual(dialog.identity.currentData(), NATIVE_IDENTITY)
+            with patch('mars_display.lifecycle.enumerate_devices', return_value=(device('/dev/ttyACM0'),)) as inventory:
+                dialog.save.click()
+                inventory.assert_called_once_with()
+            self.assertEqual(self.store.load(), native(), dialog.message.text())
+            self.assertEqual(SettingsStore(self.store.schema1_backup_path).load(),
+                             Settings('https://mars.example', NATIVE_IDENTITY))
+            self.assertFalse(self.store.pre_brightness_backup_path.exists())
+            self.assertEqual(self.shell.coordinator.snapshot(), before)
+            browser.assert_not_called(); factory.assert_not_called()
+
     def test_invalid_and_corrupt_settings_are_unchanged_and_release_lock(self):
         for raw, message in (
             (b"private-url invalid JSON", "Settings file is not valid JSON; correct it or explicitly save new settings."),
@@ -207,6 +233,7 @@ with patch.object(app.sys, 'platform', 'linux'), \\
 
     def test_linux_composition_and_missing_tray(self):
         from mars_display.linux_usb_transport import create_transport
+        from mars_display.linux_usb_worker import resolve
         with patch('mars_display.app.sys.platform', 'linux'), patch(
             'mars_display.app.platform.machine', return_value='AMD64'
         ), patch('mars_display.app.struct.calcsize', return_value=8), patch(
@@ -221,6 +248,7 @@ with patch.object(app.sys, 'platform', 'linux'), \\
             self.assertIs(args[0], APP)
             self.assertEqual(args[1].path, Path(self.temp) / 'MarsDisplay' / 'settings.json')
             self.assertIs(kwargs['native_factory'], create_transport)
+            self.assertIs(kwargs['configuration_resolver'], resolve)
             self.assertFalse(kwargs['windows_login'])
             self.assertEqual(kwargs['missing_tray_message'],
                 'A system tray is required; run MarsDisplay in an interactive Linux session.')
@@ -240,7 +268,8 @@ for name in ('getuid', 'geteuid'):
     if hasattr(os, name):
         delattr(os, name)
 sys.modules.update({name: None for name in (
-    'mars_display.linux_paths', 'mars_display.linux_usb_transport')})
+    'mars_display.linux_paths', 'mars_display.linux_usb_transport',
+    'mars_display.linux_usb_worker')})
 widgets = Mock()
 widgets.QSystemTrayIcon.isSystemTrayAvailable.return_value = True
 with patch.dict(sys.modules, {'PySide6.QtWidgets': widgets}), \\

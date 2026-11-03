@@ -30,6 +30,25 @@ A separate, non-shipping browser probe hit a container sandbox denial; browser
 capture has NOT passed. COSMIC/Wayland tray behavior, physical image/brightness,
 sustained capture, disconnect cleanup and current native Windows remain unqualified.
 
+## Linux Save correction (source only; rebuilt artifact pending)
+
+The first prototype can list `usb:1a86:5722:USB35INCHIPSV2` but reject Save with
+“Selected native screen is unavailable or ambiguous; refresh selection before saving.”
+Its configuration validator still used the Windows COM-port rule. Linux application
+composition now supplies the existing Linux worker resolver for migration, Save
+and enabling saved brightness; Windows keeps its existing default resolver.
+
+Selection is still checked against fresh inventory while stopped: only one exact
+supported identity on an unambiguous `/dev/ttyACM[0-9]+` port is accepted. Save does
+not open USB or start capture. Backup and explicit migration acknowledgements are
+unchanged. This is not a permissions workaround or support for additional ports.
+
+The kit above still contains the original bytes. A corrected production payload,
+AppImage, checksums and matching source material must be rebuilt and verified by
+the parent before claiming delivery of this fix. Do not repackage the old onedir
+archive expecting corrected Save behavior. Real panel/capture acceptance remains
+pending; the user has reported tray/UI startup and device listing on the target.
+
 ## Parent build recipe (offline, in the verified Noble image)
 
 Use the production `build/linux-onedir.tar` from `42feea4`, never the probe tar or
@@ -58,8 +77,9 @@ sha256sum -c MarsDisplay-x86_64.AppImage.sha256
 
 The output contains AppDir, image, checksum and tool log. Failures retain their
 output for diagnosis; reruns need a NEW destination. Inputs must remain immutable
-throughout the command. The manifest records the caller's source/builder contract,
-not independent proof of an arbitrary input's origin. Existing payload notices,
+throughout the command. Pass `--source-ref <revision>` when packaging a corrected production build; the
+legacy default is `42feea4`. The manifest records the caller's source/builder
+contract, not independent proof of an arbitrary input's origin. Existing payload notices,
 modes and contained relative symlinks are preserved. AppRun execs the inner binary
 with unchanged arguments/environment/PID, preserving the frozen worker launch path.
 

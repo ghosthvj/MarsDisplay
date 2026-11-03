@@ -31,7 +31,7 @@ def compose_transport(context, *, native_factory=None):
 
 
 def build_shell(app, store: SettingsStore, *, native_factory=None,
-                windows_login=True, missing_tray_message=_WINDOWS_TRAY):
+                configuration_resolver=None, windows_login=True, missing_tray_message=_WINDOWS_TRAY):
     """Compose an idle tray with an explicit store (also usable by packaging/tests).
 
     No platform spoofing or test flags belong to the product command. The caller
@@ -47,7 +47,8 @@ def build_shell(app, store: SettingsStore, *, native_factory=None,
     transport = (compose_transport if native_factory is None else
                  partial(compose_transport, native_factory=native_factory))
     return create_shell(app, store, lambda: Coordinator(
-        store, BrowserSession, transport_context_factory=transport),
+        store, BrowserSession, transport_context_factory=transport,
+        configuration_resolver=configuration_resolver),
         windows_login=windows_login)
 
 
@@ -76,10 +77,11 @@ def main() -> int:
         if linux:
             from .linux_paths import linux_settings_path
             from .linux_usb_transport import create_transport
+            from .linux_usb_worker import resolve
 
             store = SettingsStore(linux_settings_path())
             shell = build_shell(app, store, native_factory=create_transport,
-                                windows_login=False, missing_tray_message=missing_tray_message)
+                                configuration_resolver=resolve, windows_login=False, missing_tray_message=missing_tray_message)
         else:
             store = SettingsStore()
             shell = build_shell(app, store)

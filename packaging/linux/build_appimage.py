@@ -39,7 +39,7 @@ def tree(root):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     for name, help_text in [
-        ('onedir', 'verified production directory from 42feea4 (not a tar or probe)'),
+        ('onedir', 'verified production directory matching --source-ref (not a tar or probe)'),
         ('tool', 'original pinned appimagetool AppImage, not extracted AppRun'),
         ('runtime', 'independently pinned local type2 runtime'),
         ('output', 'new output directory; parent must exist; failures retained'),
@@ -47,6 +47,8 @@ def main(argv=None):
         ('license', 'project LICENSE file'),
     ]:
         parser.add_argument('--' + name, required=True, type=Path, help=help_text)
+    parser.add_argument('--source-ref', default='42feea4',
+                        help='caller-verified source revision for manifest (default: 42feea4)')
     args = parser.parse_args(argv)
     try:
         if sys.platform != 'linux' or platform.machine() != 'x86_64':
@@ -89,7 +91,7 @@ def main(argv=None):
                 stream.write(data)
         (appdir / 'AppRun').chmod(0o755)
         manifest = {
-            'source': '42feea4', 'builder': 'Ubuntu Noble / Python 3.13.5 / glibc 2.39',
+            'source': args.source_ref, 'builder': 'Ubuntu Noble / Python 3.13.5 / glibc 2.39',
             'input_contract': 'Caller supplies verified immutable production onedir',
             'tools': pins, 'qualification': 'Experimental; not redistribution clearance',
             'checks': ['Parent reports production frozen worker smoke PASS'],
