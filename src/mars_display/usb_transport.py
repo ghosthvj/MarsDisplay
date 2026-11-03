@@ -35,14 +35,17 @@ class _Cancel:
 
 
 class UsbTransport:
+    """Owned session; owner_factory is a Python-only OwnedWorker-compatible seam."""
     def __init__(self, identity, *, cancel=None, budgets=ipc.Budgets(),
-                 launcher=launch_worker, gate_factory=WindowsGate, timing_clock=time.monotonic):
+                 launcher=launch_worker, gate_factory=WindowsGate, timing_clock=time.monotonic,
+                 owner_factory=None):
         if identity != IDENTITY:
             raise ValueError('An explicit supported USB identity is required')
         if not isinstance(budgets, ipc.Budgets):
             raise ValueError('Validated USB safety budgets are required')
         self.identity, self.budgets = identity, budgets
         self._launcher, self._gate_factory = launcher, gate_factory
+        self._owner_factory = owner_factory
         self._stopping = threading.Event()
         self._cancel = _Cancel(self._stopping, cancel)
         self._operation = threading.Lock()
@@ -138,7 +141,8 @@ class UsbTransport:
                 self._listener.bind(('127.0.0.1', 0))
                 self._listener.listen(1)
                 port = self._listener.getsockname()[1]
-                self._owner = OwnedWorker(port, nonce, self.budgets,
+                factory = OwnedWorker if self._owner_factory is None else self._owner_factory
+                self._owner = factory(port, nonce, self.budgets,
                     launcher=self._launcher, gate_factory=self._gate_factory)
                 self._owner.start()
                 self._owner.wait_start(deadline, self._cancel)

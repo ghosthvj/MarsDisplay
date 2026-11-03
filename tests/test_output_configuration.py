@@ -1,5 +1,5 @@
 """P4 stopped transactions and explicit context composition, never native output."""
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 import json
 from pathlib import Path
 import tempfile
@@ -42,6 +42,124 @@ class OutputConfigurationTests(unittest.TestCase):
         controller=Coordinator(self.store,lambda _:source,Output,**kwargs)
         self.controllers.append(controller)
         return controller,source
+
+    def test_linux_configuration_transactions_use_fresh_resolver(self):
+        from mars_display.linux_usb_worker import resolve
+        inventory = Mock(return_value=(device('/dev/ttyACM0'),))
+        resolver = Mock(wraps=resolve)
+        source, output = Mock(), Mock()
+        controller = Coordinator(self.store, source, output,
+            inventory_provider=inventory, configuration_resolver=resolver)
+        before = controller.snapshot()
+        original = self.store.path.read_bytes()
+        controller.migrate_settings(native(), acknowledge_legacy_incompatibility=True)
+        self.assertEqual(self.store.load(), native())
+        self.assertEqual(self.store.schema1_backup_path.read_bytes(), original)
+        inventory.return_value = (device('/dev/ttyACM7'), device('/dev/ttyACM0', 'OTHER'))
+        changed = native('https://changed.example')
+        controller.save_settings(changed)
+        self.assertEqual(self.store.load(), changed)
+        self.assertEqual(controller.snapshot(), before)
+        v2 = self.store.path.read_bytes()
+        enabled = controller.enable_brightness(acknowledge_legacy_incompatibility=True)
+        self.assertEqual(enabled, replace(changed, schema_version=3))
+        self.assertEqual(self.store.pre_brightness_backup_path.read_bytes(), v2)
+        before = controller.snapshot()
+        edited = replace(enabled, mars_url='https://edited.example')
+        controller.save_settings(edited)
+        self.assertEqual(self.store.load(), edited)
+        self.assertEqual(controller.snapshot(), before)
+        self.assertEqual(self.store.schema1_backup_path.read_bytes(), original)
+        self.assertEqual(self.store.pre_brightness_backup_path.read_bytes(), v2)
+        self.assertEqual(resolver.call_count, 4)
+        self.assertEqual(inventory.call_count, 4)
+        self.assertTrue(all(call.args == (inventory,) for call in resolver.call_args_list))
+        source.assert_not_called(); output.assert_not_called()
+
+    def test_linux_rejected_transactions_preserve_all_files_and_counters(self):
+        from mars_display.linux_usb_worker import resolve
+        cases = ((), (device('/dev/ttyACM0'), device('/dev/ttyACM1')),
+                 (device('/dev/ttyACM0'), device('/dev/ttyACM0', 'OTHER')),
+                 (device('/dev/ttyUSB0'),))
+        for stage in ('migration', 'save2', 'brightness', 'save3'):
+            for observations in cases:
+                with self.subTest(stage=stage, observations=observations), tempfile.TemporaryDirectory() as root:
+                    store = SettingsStore(Path(root) / 'settings.json')
+                    store.save(self.initial)
+                    if stage != 'migration':
+                        store.migrate_to_v2(native(), acknowledge_legacy_incompatibility=True)
+                    if stage == 'save3':
+                        store.migrate_to_v3(replace(native(), schema_version=3),
+                            acknowledge_legacy_incompatibility=True)
+                    inventory = Mock(return_value=observations)
+                    resolver = Mock(wraps=resolve)
+                    source, output = Mock(), Mock()
+                    controller = Coordinator(store, source, output,
+                        inventory_provider=inventory, configuration_resolver=resolver)
+                    operations = {
+                        'migration': lambda: controller.migrate_settings(native(), acknowledge_legacy_incompatibility=True),
+                        'save2': lambda: controller.save_settings(native()),
+                        'brightness': lambda: controller.enable_brightness(acknowledge_legacy_incompatibility=True),
+                        'save3': lambda: controller.save_settings(replace(native(), schema_version=3)),
+                    }
+                    files = {p.name: p.read_bytes() for p in Path(root).iterdir()}
+                    before = controller.snapshot()
+                    with self.assertRaises(SettingsError) as error:
+                        operations[stage]()
+                    self.assertEqual(str(error.exception), 'Selected native screen is unavailable or ambiguous; refresh selection before saving.')
+                    self.assertEqual({p.name: p.read_bytes() for p in Path(root).iterdir()}, files)
+                    self.assertEqual(controller.snapshot(), before)
+                    resolver.assert_called_once_with(inventory)
+                    inventory.assert_called_once_with()
+                    source.assert_not_called(); output.assert_not_called()
+
+    def test_injected_resolver_follows_ack_stopped_and_simulation_guards(self):
+        resolver, inventory = Mock(), Mock()
+        controller, source = self.coordinator(configuration_resolver=resolver,
+                                               inventory_provider=inventory)
+        controller.save_settings(self.initial)
+        raw = self.store.path.read_bytes()
+        for operation, message in (
+            (lambda: controller.migrate_settings(native()),
+             'Schema 2 is incompatible with older binaries; explicit acknowledgement is required.'),
+            (controller.enable_brightness,
+             'Schema 3 is incompatible with older binaries; explicit acknowledgement is required.'),
+        ):
+            with self.assertRaises(SettingsError) as error:
+                operation()
+            self.assertEqual(str(error.exception), message)
+        controller.start(); self.assertTrue(source.entered.wait(1))
+        for stopping in (False, True):
+            if stopping:
+                controller.stop()
+            before = controller.snapshot()
+            for operation in (
+                lambda: controller.save_settings(native()),
+                lambda: controller.migrate_settings(native(), acknowledge_legacy_incompatibility=True),
+                lambda: controller.enable_brightness(acknowledge_legacy_incompatibility=True),
+            ):
+                with self.assertRaises(LifecycleError) as error:
+                    operation()
+                self.assertEqual(str(error.exception), 'Settings can be saved only while stopped.')
+                self.assertEqual(controller.snapshot(), before)
+        resolver.assert_not_called(); inventory.assert_not_called()
+        self.assertEqual(self.store.path.read_bytes(), raw)
+        self.assertFalse(self.store.schema1_backup_path.exists())
+        self.assertFalse(self.store.pre_brightness_backup_path.exists())
+
+    def test_default_resolver_is_dynamic_and_rejects_linux_ports(self):
+        inventory = Mock(return_value=(device('/dev/ttyACM0'),))
+        controller, _ = self.coordinator(inventory_provider=inventory)
+        raw = self.store.path.read_bytes(); before = controller.snapshot()
+        from mars_display.usb_worker import _resolve
+        with patch('mars_display.usb_worker._resolve', wraps=_resolve) as resolver:
+            with self.assertRaises(SettingsError) as error:
+                controller.migrate_settings(native(), acknowledge_legacy_incompatibility=True)
+            self.assertEqual(str(error.exception), 'Selected native screen is unavailable or ambiguous; refresh selection before saving.')
+            resolver.assert_called_once_with(inventory)
+        self.assertEqual(self.store.path.read_bytes(), raw)
+        self.assertFalse(self.store.schema1_backup_path.exists())
+        self.assertEqual(controller.snapshot(), before)
 
     def test_context_freezes_one_settings_load_and_same_cancel_event(self):
         allow=Event();entered=Event();made=Event();self.gates.append(allow)

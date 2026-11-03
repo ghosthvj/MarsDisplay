@@ -54,7 +54,8 @@ class SingleInstanceGuard:
 
 
 def create_shell(app: QApplication, store: SettingsStore,
-                 coordinator_factory: Callable[[], Coordinator]) -> "TrayShell | None":
+                 coordinator_factory: Callable[[], Coordinator], *,
+                 windows_login: bool = True) -> "TrayShell | None":
     """Acquire before invoking factory; None means already running (no worker).
 
     The caller owns reporting startup errors/already-running and entering exec().
@@ -67,7 +68,8 @@ def create_shell(app: QApplication, store: SettingsStore,
         return None
     try:
         configured = store.load()
-        return TrayShell(app, coordinator_factory(), configured, guard, store=store)
+        return TrayShell(app, coordinator_factory(), configured, guard, store=store,
+                         windows_login=windows_login)
     except Exception:
         guard.release()
         raise
@@ -358,7 +360,7 @@ class TrayShell(QObject):
 
     def __init__(self, app: QApplication, coordinator: Coordinator,
                  configured: Settings | None, guard: SingleInstanceGuard, *,
-                 store: SettingsStore | None = None):
+                 store: SettingsStore | None = None, windows_login: bool = True):
         super().__init__()
         self.app = app
         self.coordinator = coordinator
@@ -381,13 +383,15 @@ class TrayShell(QObject):
         self.dialog = SettingsDialog(configured)
         self.dialog.start_on_launch.setChecked(self._startup_enabled)
         self.dialog.start_on_launch.toggled.connect(self._save_startup_preference)
+        self._windows_login = windows_login
         self._windows_startup = None
         self._windows_startup_state = None
         self._windows_startup_error = ""
-        try:
-            self._windows_startup = create_windows_startup()
-        except SettingsError as error:
-            self._windows_startup_error = str(error)
+        if windows_login:
+            try:
+                self._windows_startup = create_windows_startup()
+            except SettingsError as error:
+                self._windows_startup_error = str(error)
         self._load_windows_startup()
         self.dialog.start_with_windows.toggled.connect(self._save_windows_startup)
         self.dialog.update_startup_path.clicked.connect(lambda: self._save_windows_startup(True))
@@ -459,6 +463,11 @@ class TrayShell(QObject):
         self.refresh()
 
     def _load_windows_startup(self):
+        if not self._windows_login:
+            self.dialog.start_with_windows.hide()
+            self.dialog.windows_startup_hint.hide()
+            self.dialog.update_startup_path.hide()
+            return
         self._windows_startup_state = None
         hint = self._windows_startup_error or "Available in the packaged Windows application."
         if self._windows_startup is not None:
@@ -478,6 +487,8 @@ class TrayShell(QObject):
             and self._windows_startup_state.needs_update))
 
     def _save_windows_startup(self, enabled):
+        if not self._windows_login:
+            return
         if self.coordinator.snapshot().exit_requested:
             self.dialog.start_with_windows.blockSignals(True)
             self.dialog.start_with_windows.setChecked(bool(self._windows_startup_state

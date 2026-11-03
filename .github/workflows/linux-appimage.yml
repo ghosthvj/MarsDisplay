@@ -1,0 +1,56 @@
+name: Experimental Linux AppImage
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: 'Canonical build-only version tag; does not publish'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Canonical build-only version tag; does not publish'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  appimage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13.16'
+          architecture: x64
+      - name: Install source test SDK
+        run: python -m pip install '.[build]'
+      - name: Source tests (offscreen, not desktop acceptance)
+        env:
+          QT_QPA_PLATFORM: offscreen
+          PLAYWRIGHT_BROWSERS_PATH: '0'
+          PYTHONPATH: src:tests
+        run: python -B -m unittest discover -s tests -v
+      - name: Build and validate versioned AppImage assets
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          mkdir -p dist
+          python -B packaging/linux/build_release.py --tag "$RELEASE_TAG" --output dist/linux-release
+      - name: Upload checked Linux assets
+        if: ${{ success() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: MarsDisplay-Linux-x86_64
+          compression-level: 0
+          path: |
+            dist/linux-release/MarsDisplay-*-Linux-x86_64.AppImage
+            dist/linux-release/MarsDisplay-*-Linux-x86_64.AppImage.sha256
+            dist/linux-release/MarsDisplay-*-Linux-x86_64-support.zip
+            dist/linux-release/MarsDisplay-*-Linux-x86_64-support.zip.sha256
+          if-no-files-found: error
+          retention-days: 7

@@ -45,14 +45,58 @@ class ReleaseWorkflowTests(unittest.TestCase):
         text = (ROOT / '.github/workflows/release.yml').read_text()
         before, publisher = text.split('  publish:\n')
         self.assertNotIn('contents: write', before)
-        self.assertIn('    needs: build\n', publisher)
+        self.assertIn('    needs: [build, linux]\n', publisher)
         self.assertIn('      contents: write\n      actions: read', publisher)
         self.assertIn('--name MarsDisplay-Windows-x64 --dir release-assets', publisher)
+        self.assertIn('--name MarsDisplay-Linux-x86_64 --dir linux-release-assets', publisher)
+        self.assertEqual(publisher.count('gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"'), 2)
+        self.assertIn('--linux-artifacts linux-release-assets', publisher)
         self.assertIn('python3 -B packaging/release.py publish --artifacts release-assets', publisher)
         self.assertNotIn('always()', publisher)
         self.assertNotIn('--clobber', text)
         self.assertEqual(text.count('          persist-credentials: false'), 2)
         self.assertEqual(text.count('          ref: ${{ github.sha }}'), 2)
+
+    def test_linux_builder_shares_plan_and_tag_without_write_permission(self):
+        text = (ROOT / '.github/workflows/release.yml').read_text()
+        linux = text.split('  linux:\n')[1].split('  publish:\n')[0]
+        self.assertIn('    needs: prepare\n    uses: ./.github/workflows/linux-appimage.yml', linux)
+        self.assertIn('      release_tag: ${{ inputs.tag }}', linux)
+        self.assertIn('      contents: read', linux)
+        self.assertNotIn('if:', linux)
+        self.assertNotIn('continue-on-error', text)
+
+    def test_linux_workflow_builds_and_uploads_only_four_public_assets(self):
+        text = (ROOT / '.github/workflows/linux-appimage.yml').read_text()
+        self.assertIn('  workflow_call:\n', text)
+        self.assertIn('  workflow_dispatch:\n', text)
+        self.assertEqual(text.count('      release_tag:'), 2)
+        self.assertEqual(text.count('        required: true'), 2)
+        self.assertIn('    runs-on: ubuntu-24.04', text)
+        self.assertIn('permissions:\n  contents: read', text)
+        self.assertNotIn('contents: write', text)
+        self.assertIn('          persist-credentials: false', text)
+        self.assertIn('          ref: ${{ github.sha }}', text)
+        self.assertIn('          RELEASE_TAG: ${{ inputs.release_tag }}', text)
+        self.assertIn('python -B packaging/linux/build_release.py --tag "$RELEASE_TAG" --output dist/linux-release', text)
+        self.assertIn('python -B -m unittest discover -s tests -v', text)
+        self.assertLess(text.index('unittest discover'), text.index('packaging/linux/build_release.py'))
+        upload = text.split('      - name: Upload checked Linux assets\n')[1]
+        self.assertIn('        if: ${{ success() }}', upload)
+        self.assertIn('          name: MarsDisplay-Linux-x86_64', upload)
+        self.assertIn('          if-no-files-found: error', upload)
+        paths = upload.split('          path: |\n')[1].split('          if-no-files-found:')[0]
+        self.assertEqual([line.strip() for line in paths.splitlines()], [
+            'dist/linux-release/MarsDisplay-*-Linux-x86_64.AppImage',
+            'dist/linux-release/MarsDisplay-*-Linux-x86_64.AppImage.sha256',
+            'dist/linux-release/MarsDisplay-*-Linux-x86_64-support.zip',
+            'dist/linux-release/MarsDisplay-*-Linux-x86_64-support.zip.sha256'])
+        self.assertNotIn('always()', text)
+        self.assertNotIn('continue-on-error', text)
+        self.assertNotIn('--sudo-docker', text)
+        for line in text.splitlines():
+            if 'run:' in line:
+                self.assertNotIn('${{ inputs.', line)
 
     def test_tag_is_data_and_stamping_precedes_sdk_install(self):
         release = (ROOT / '.github/workflows/release.yml').read_text()

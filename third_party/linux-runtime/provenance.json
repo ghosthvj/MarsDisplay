@@ -1,0 +1,25 @@
+{
+  "scope": "Outer AppImage runtime materials; measured hashes are not legal clearance or verified attestation.",
+  "retention": "The eight raw legal/build texts are verbatim copies from retained prototype build/runtime-attribution inputs. Their SHA256 values are in runtime-inputs.json. Original acquisition records are incomplete; reference URLs below do not prove historical download routes or exact compiled dependency versions.",
+  "runtime_source": {
+    "commit": "fedfad51acc2860b2916a1eef32ba4a500ff31ef",
+    "basis": "Prototype SOURCE-REFERENCES.md identifies this source commit; parent-retained API asset/run selected fields provide metadata association only.",
+    "url": "https://github.com/AppImage/type2-runtime/archive/fedfad51acc2860b2916a1eef32ba4a500ff31ef.tar.gz",
+    "route_basis": "Official source archive route for the fixed commit, selected for acquisition; retained archive hash is the byte pin."
+  },
+  "component_references": {
+    "libfuse": "https://github.com/libfuse/libfuse/releases/download/fuse-3.15.0/fuse-3.15.0.tar.xz",
+    "squashfuse": "https://github.com/vasi/squashfuse/archive/0.5.2.tar.gz",
+    "recipe_basis": "Both versioned routes and their digests are present in the retained install-dependencies.sh; squashfuse source is referenced, not downloaded by this helper.",
+    "musl": "https://git.musl-libc.org/cgit/musl/tree/COPYRIGHT",
+    "zlib": "https://zlib.net/zlib_license.html",
+    "zstd": "https://github.com/facebook/zstd/blob/dev/LICENSE",
+    "notice_basis": "These three reference URLs are quoted in retained runtime LICENSE. They are mutable references, not exact-version source identity claims."
+  },
+  "musl_supplement": {
+    "url": "https://distfiles.alpinelinux.org/distfiles/v3.21/musl-1.2.5.tar.gz",
+    "basis": "Parent-selected supplementary route, not historical acquisition proof. Parent job36 fetched this URL and reported an exact retained SHA256 match: a9a118bbe84d8764da0ea0d28b3ab3fae8477fc7e4085d90102b8596fc7c75e4. This writer performed no live fetch.",
+    "limits": "musl 1.2.5 upstream archive is supplementary, not exact Alpine APK build source. Actual musl/zlib/zstd Alpine build revisions remain unconfirmed; this is not a new rebuild gate."
+  },
+  "relink": "Use BUILD.md and build scripts inside the fixed runtime source archive to rebuild/relink a modified runtime, including the retained libfuse source and mount.c patch. The standalone install-dependencies.sh copy is evidence, not an independently runnable recipe: its relative paths refer to the source tree. Repack using appimagetool --runtime-file with the modified runtime and intentionally update production pins. No restriction on reverse engineering for debugging modified LGPL components is imposed. No rebuild or byte-reproducibility claim is made."
+}

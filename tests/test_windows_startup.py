@@ -242,6 +242,39 @@ class StartupUITests(unittest.TestCase):
         self.assertFalse(self.login.load().needs_update)
         self.assertTrue(shell.dialog.update_startup_path.isHidden())
 
+    def test_disabled_login_capability_stays_hidden_and_capture_persists(self):
+        from mars_display.tray import create_shell
+        from mars_display.startup_preferences import StartupPreferenceStore
+        with patch('test_tray.create_shell', side_effect=lambda *args: create_shell(
+            *args, windows_login=False)), patch(
+                'mars_display.tray.create_windows_startup') as login:
+            shell = self.make()
+            original = self.store.path.read_bytes()
+            for action in (shell.show_settings, shell.refresh,
+                           lambda: shell.dialog.start_with_windows.setChecked(True),
+                           shell.dialog.update_startup_path.click, shell.show_settings):
+                action()
+                for control in (shell.dialog.start_with_windows,
+                                shell.dialog.windows_startup_hint,
+                                shell.dialog.update_startup_path):
+                    self.assertTrue(control.isHidden())
+            self.assertFalse(shell.dialog.start_on_launch.isHidden())
+            self.assertFalse(shell.dialog.start_on_launch.isChecked())
+            shell.dialog.start_on_launch.click()
+            self.assertTrue(StartupPreferenceStore(self.store.path).load())
+            shell.exit_action.trigger()
+            shell.timer.stop()
+            shell.deleteLater()
+            self.shell = create_shell(f.APP, self.store, self.factory, windows_login=False)
+            self.assertTrue(self.shell.dialog.start_on_launch.isChecked())
+            self.assertTrue(self.shell.stop_action.isEnabled())
+            self.shell.stop_action.trigger()
+            f.APP.processEvents()
+            self.assertFalse(self.session.opened.is_set())
+            self.assertEqual(self.shell.coordinator.snapshot().frames_sent, 0)
+            self.assertEqual(self.store.path.read_bytes(), original)
+            login.assert_not_called()
+
     def test_unavailable_control_leaves_previous_manual_actions_unchanged(self):
         with patch('mars_display.tray.create_windows_startup', return_value=None): shell = self.make()
         self.assertFalse(shell.dialog.start_with_windows.isEnabled())

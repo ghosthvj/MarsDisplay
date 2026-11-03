@@ -1,4 +1,4 @@
-name: Publish Windows release
+name: Publish Windows and Linux release
 on:
   workflow_dispatch:
     inputs:
@@ -36,8 +36,16 @@ jobs:
     permissions:
       contents: read
 
+  linux:
+    needs: prepare
+    uses: ./.github/workflows/linux-appimage.yml
+    with:
+      release_tag: ${{ inputs.tag }}
+    permissions:
+      contents: read
+
   publish:
-    needs: build
+    needs: [build, linux]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -55,9 +63,16 @@ jobs:
         run: >-
           gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
           --name MarsDisplay-Windows-x64 --dir release-assets
+      - name: Download only this run's checked Linux assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_HOST: github.com
+        run: >-
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
+          --name MarsDisplay-Linux-x86_64 --dir linux-release-assets
       - name: Validate assets and publish a new release
         env:
           RELEASE_TAG: ${{ inputs.tag }}
           GH_TOKEN: ${{ github.token }}
           GH_HOST: github.com
-        run: python3 -B packaging/release.py publish --artifacts release-assets --tag "$RELEASE_TAG"
+        run: python3 -B packaging/release.py publish --artifacts release-assets --tag "$RELEASE_TAG" --linux-artifacts linux-release-assets

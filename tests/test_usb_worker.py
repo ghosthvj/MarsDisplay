@@ -1,6 +1,7 @@
 """Persistent worker through framed socket peers and explicit fake ports only."""
 from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 import socket
 import threading
 import time
@@ -37,7 +38,7 @@ class Port:
 
 
 class WorkerTests(unittest.TestCase):
-    def start(self, snapshots=None, failure=None):
+    def start(self, snapshots=None, failure=None, **options):
         client,server=socket.socketpair();port=Port(failure);events=[];results=[]
         snapshots=list(snapshots or [(DEVICE,),(DEVICE,),(DEVICE,)])
         now=[0.]
@@ -51,7 +52,7 @@ class WorkerTests(unittest.TestCase):
         def clock():return now[0]
         def sleep(seconds):now[0]+=seconds
         def execute():
-            try:results.append(worker.run_session(server,TOKEN,inventory=inventory,port_factory=factory,clock=clock,sleep=sleep))
+            try:results.append(worker.run_session(server,TOKEN,inventory=inventory,port_factory=factory,clock=clock,sleep=sleep,**options))
             finally:server.close()
         thread=threading.Thread(target=execute);thread.start()
         def cleanup():
@@ -80,6 +81,32 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(tuple(port.writes),encode_portrait(FRAME)*2)
         self.assertEqual(events[0],'inventory');self.assertEqual(events[2:],['inventory','inventory'])
         self.assertEqual(events[1],dict(port=None,baudrate=115200,bytesize=8,parity='N',stopbits=1,rtscts=True,dsrdtr=False,write_timeout=3,timeout=1))
+
+    def test_injected_resolver_open_frame_brightness_and_refresh(self):
+        for rejected in (None, ipc.FRAME, ipc.TIMED_FRAME, ipc.GROUPED_FRAME, ipc.BRIGHTNESS):
+            with self.subTest(rejected=rejected):
+                calls = []
+                def resolve(inventory):
+                    calls.append(inventory())
+                    return 'fake-port' if len(calls) == 1 or rejected is None else 'changed-port'
+                with patch.object(worker, '_resolve', side_effect=AssertionError('default used')):
+                    c,p,e,r,t = self.start(resolver=resolve)
+                    self.assertEqual(self.request(c,ipc.OPEN,1,worker.IDENTITY.encode()),worker.OK)
+                    self.assertEqual(p.port, 'fake-port')
+                    if rejected is None:
+                        self.assertEqual(self.request(c,ipc.FRAME,2,ipc.encode_frame(FRAME)),worker.OK)
+                        self.assertEqual(self.request(c,ipc.BRIGHTNESS,3,b'\x3c'),worker.OK)
+                        self.assertEqual(self.request(c,ipc.CLOSE,4),worker.OK)
+                    else:
+                        body = b'\x3c' if rejected == ipc.BRIGHTNESS else ipc.encode_frame(FRAME)
+                        self.assertEqual(self.request(c,rejected,2,body),worker.IDENTITY_ERROR)
+                    t.join(1)
+                self.assertEqual(r, [0] if rejected is None else [1])
+                self.assertEqual((p.opens,p.closes), (1,1))
+                self.assertEqual(calls, [(DEVICE,)] * (3 if rejected is None else 2))
+                self.assertEqual(e.count('inventory'), len(calls))
+                self.assertEqual(p.writes, list(encode_portrait(FRAME)) + [bytes.fromhex('19800000006e')]
+                                 if rejected is None else [])
 
     def test_close_before_open_is_usb_free(self):
         c,p,e,r,t=self.start();self.assertEqual(self.request(c,ipc.CLOSE,1),worker.OK)
