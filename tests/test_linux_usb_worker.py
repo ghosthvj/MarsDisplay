@@ -1,5 +1,7 @@
 """Linux resolution and private entry guards; no native serial access."""
 from dataclasses import replace
+import contextlib
+import io
 import os
 import socket
 import subprocess
@@ -125,26 +127,34 @@ class GuardTests(unittest.TestCase):
                 self.assertEqual((result.returncode, result.stdout, result.stderr), (2, b'', b''))
                 self.assertEqual(os.listdir(directory), [])
 
-    def test_host_root_frozen_import_and_admission_reject_before_effects(self):
-        cases = [('platform', 'win32'), ('root', True), ('frozen', True), ('gui', True), ('admission', True)]
-        for mode, value in cases:
-            with self.subTest(mode=mode), \
+    def test_host_root_import_and_admission_reject_before_effects(self):
+        cases = [('platform', 'win32'), ('root', True), ('effective_root', True),
+                 ('gui', True), ('parent', True), ('descriptor', True),
+                 ('nonce', True), ('admission', True)]
+        for frozen, (mode, value) in ((frozen, case) for frozen in (False, True) for case in cases):
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with self.subTest(mode=mode, frozen=frozen), \
+                    contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr), \
                     patch.object(linux.sys, 'platform', value if mode == 'platform' else 'linux'), \
                     patch.object(linux.os, 'getuid', return_value=0 if mode == 'root' else 1000, create=True), \
-                    patch.object(linux.os, 'geteuid', return_value=1000, create=True), \
-                    patch.object(linux.sys, 'frozen', mode == 'frozen', create=True), \
+                    patch.object(linux.os, 'geteuid', return_value=0 if mode == 'effective_root' else 1000, create=True), \
+                    patch.object(linux.sys, 'frozen', frozen, create=True), \
                     patch.dict(sys.modules, {name: module for name, module in sys.modules.copy().items()
                         if name not in ('mars_display.app', 'mars_display.settings', 'PySide6.QtCore',
                                         'PySide6.QtGui', 'PySide6.QtWidgets')}, clear=True), \
-                    patch.object(linux.os, 'getppid', return_value=123), \
-                    patch.object(linux.os, 'fstat'), \
+                    patch.object(linux.os, 'getppid', return_value=124 if mode == 'parent' else 123, create=True), \
+                    patch.object(linux.os, 'fstat', side_effect=OSError() if mode == 'descriptor' else None), \
                     patch.object(linux, 'await_admission', side_effect=ValueError('private')) as admission, \
                     patch.object(linux.socket, 'socket') as channel, \
                     patch.object(linux, 'run_session') as session:
                 if mode == 'gui':
                     sys.modules['mars_display.settings'] = Mock()
                 inventory, factory = Mock(), Mock()
-                self.assertEqual(linux.main(self.args(), inventory=inventory, port_factory=factory), 2)
+                args = self.args()
+                if mode == 'nonce':
+                    args[2] = 'bad'
+                self.assertEqual(linux.main(args, inventory=inventory, port_factory=factory), 2)
+                self.assertEqual((stdout.getvalue(), stderr.getvalue()), ('', ''))
                 inventory.assert_not_called()
                 factory.assert_not_called()
                 channel.assert_not_called()
@@ -153,6 +163,34 @@ class GuardTests(unittest.TestCase):
                     admission.assert_not_called()
                 else:
                     admission.assert_called_once()
+
+    def test_callable_admitted_source_and_simulated_frozen(self):
+        # Mocked admission proves ordering only, not native frozen FD inheritance.
+        forbidden = ('mars_display.app', 'mars_display.settings', 'PySide6.QtCore',
+                     'PySide6.QtGui', 'PySide6.QtWidgets')
+        for frozen in (False, True):
+            events = []
+            with self.subTest(frozen=frozen), \
+                    patch.object(sys, 'platform', 'linux'), \
+                    patch.object(sys, 'frozen', frozen, create=True), \
+                    patch.object(os, 'getuid', return_value=1000, create=True), \
+                    patch.object(os, 'geteuid', return_value=1000, create=True), \
+                    patch.object(os, 'getppid', return_value=123, create=True), \
+                    patch.object(os, 'fstat'), \
+                    patch.dict(sys.modules, {name: module for name, module in sys.modules.copy().items()
+                        if name not in forbidden}, clear=True), \
+                    patch.object(linux, 'await_admission', side_effect=lambda *args: events.append('admitted')) as admission, \
+                    patch.object(linux.socket, 'socket') as channel, \
+                    patch.object(linux, 'run_session', side_effect=lambda *args, **kwargs: events.append('session') or 0) as session:
+                channel.return_value.__enter__.return_value.connect.side_effect = lambda *args: events.append('connect')
+                inventory, factory = Mock(), Mock()
+                args = self.args()
+                self.assertEqual(linux.main(args, inventory=inventory, port_factory=factory), 0)
+                admission.assert_called_once_with(99, args[2], 123, float(args[5]))
+                self.assertEqual(events, ['admitted', 'connect', 'session'])
+                self.assertIs(session.call_args.kwargs['inventory'], inventory)
+                inventory.assert_not_called()
+                factory.assert_not_called()
 
 
 def load_tests(loader, tests, pattern):

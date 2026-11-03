@@ -228,32 +228,65 @@ class RealOwnerTests(unittest.TestCase):
         self.assertEqual(self.stream.readline(), b'')
 
     def test_cancel_after_ready_parsed_before_release(self):
-        parsed, proceed = threading.Event(), threading.Event()
-        receive = ipc.receive_packet
+        # Cleanup closes control before kill. Force each child scheduling order;
+        # neither may receive a release or enter the fixture's admitted PING loop.
+        for order in ('kill_before_read', 'reject_before_kill'):
+            with self.subTest(order=order):
+                parsed, proceed = threading.Event(), threading.Event()
+                killing, allow_kill = threading.Event(), threading.Event()
+                receive = ipc.receive_packet
 
-        def hold(*args, **kwargs):
-            result = receive(*args, **kwargs)
-            parsed.set()
-            if not proceed.wait(3):
-                raise RuntimeError('test watchdog')
-            return result
+                def hold(*args, **kwargs):
+                    result = receive(*args, **kwargs)
+                    parsed.set()
+                    if not proceed.wait(3):
+                        raise RuntimeError('test receive watchdog')
+                    return result
 
-        with mock.patch.object(process.ipc, 'receive_packet', side_effect=hold):
-            try:
-                self.launch()
-                self.arm()
-                self.stream.write(b'READY\n')
-                self.assertTrue(parsed.wait(2))
-                cancel = threading.Event()
-                cancel.set()
-                with self.assertRaises(ipc.Cancelled):
-                    self.owner.wait_start(time.monotonic() + 1, cancel)
-            finally:
-                proceed.set()
-                if self.owner is not None:
-                    self.owner.stop(time.monotonic() + 2)
-        self.assertFalse(self.owner.released)
-        self.assertEqual(self.stream.readline(), b'')
+                with mock.patch.object(process.ipc, 'receive_packet', side_effect=hold), \
+                        mock.patch.object(process.ipc, 'send_packet', wraps=ipc.send_packet) as release:
+                    try:
+                        self.launch()
+                        self.arm()
+                        command = b'READY HOLD_READ\n' if order == 'kill_before_read' else b'READY HOLD_REJECT\n'
+                        self.stream.write(command)
+                        self.assertTrue(parsed.wait(2))
+                        if order == 'kill_before_read':
+                            self.assertEqual(self.stream.readline(), b'WAITING\n')
+                        kill = self.owner.child.kill
+
+                        def hold_kill():
+                            killing.set()
+                            if not allow_kill.wait(3):
+                                raise RuntimeError('test kill watchdog')
+                            kill()
+
+                        with mock.patch.object(self.owner.child, 'kill', side_effect=hold_kill):
+                            cancel = threading.Event()
+                            cancel.set()
+                            with self.assertRaises(ipc.Cancelled):
+                                self.owner.wait_start(time.monotonic() + 1, cancel)
+                            proceed.set()
+                            self.assertTrue(killing.wait(2))
+                            self.assertIsNone(self.owner.control)
+                            self.assertIsNone(self.owner.child_endpoint)
+                            rejection = self.stream.readline() if order == 'reject_before_kill' else b''
+                            allow_kill.set()
+                            self.owner.stop(time.monotonic() + 2)
+                        self.assertFalse(self.owner.released)
+                        release.assert_not_called()
+                        self.assertTrue(self.owner.reaped)
+                        self.assertTrue(self.owner.closed)
+                        self.assertFalse(self.owner.thread.is_alive())
+                        self.assertEqual(self.owner.child.returncode, -9)
+                        self.assertEqual(rejection, b'REJECTED\n' if order == 'reject_before_kill' else b'')
+                        # Exact terminal transcript: no ADMITTED or PONG effects.
+                        self.assertEqual(self.stream.read(), b'')
+                    finally:
+                        proceed.set()
+                        allow_kill.set()
+                        if self.owner is not None:
+                            self.owner.stop(time.monotonic() + 2)
 
     def test_creator_thread_before_after_arm_and_whole_parent_death(self):
         def output_line(child):

@@ -21,18 +21,37 @@ def child(fd, nonce, parent, deadline, report_port):
         if stream.readline() != b'ARM\n':
             return 2
         original = admission.arm_parent_death
+        receive = admission.ipc.receive_packet
+        barrier = None
+
+        def receive_release(*args, **kwargs):
+            if barrier == b'READY HOLD_READ\n':
+                stream.write(b'WAITING\n')
+                if stream.readline() != b'READ\n':
+                    raise RuntimeError('test read barrier rejected')
+            return receive(*args, **kwargs)
+
+        admission.ipc.receive_packet = receive_release
 
         def arm(expected):
+            nonlocal barrier
             original(expected)
             stream.write(b'ARMED\n')
-            if stream.readline() != b'READY\n':
+            barrier = stream.readline()
+            if barrier not in (b'READY\n', b'READY HOLD_READ\n', b'READY HOLD_REJECT\n'):
                 raise RuntimeError('test barrier rejected')
 
         admission.arm_parent_death = arm
         try:
             admission.await_admission(fd, nonce, parent, deadline)
-        except Exception:
+        except Exception as error:
+            if barrier == b'READY HOLD_REJECT\n' and not (
+                    isinstance(error, admission.ipc.ProtocolError)
+                    and str(error) == 'Incomplete USB message'):
+                raise AssertionError('Expected control EOF, not another rejection') from error
             stream.write(b'REJECTED\n')
+            if barrier == b'READY HOLD_REJECT\n':
+                stream.readline()  # Keep the rejected child alive until owned kill.
             return 3
         stream.write(b'ADMITTED\n')
         for line in stream:

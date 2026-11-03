@@ -18,15 +18,15 @@ from test_usb_worker import FRAME
 
 
 class CompositionTests(unittest.TestCase):
-    def test_source_vector_frozen_rejection_and_owner_adapter(self):
+    def test_source_and_frozen_vectors_and_owner_adapter(self):
         nonce = 'ab' * 32
         with patch.object(sys, 'frozen', False, create=True):
             self.assertEqual(linux.worker_command(123, nonce, 9, 456, 789.0),
                 [sys.executable, '-m', 'mars_display.linux_usb_worker',
                  '--linux-usb-worker', '123', nonce, '9', '456', '789.0'])
         with patch.object(sys, 'frozen', True, create=True):
-            with self.assertRaises(RuntimeError):
-                linux.worker_command(123, nonce, 9, 456, 789.0)
+            self.assertEqual(linux.worker_command(123, nonce, 9, 456, 789.0),
+                [sys.executable, '--linux-usb-worker', '123', nonce, '9', '456', '789.0'])
         gate, launcher = Mock(side_effect=AssertionError('Windows gate used')), Mock()
         with patch.object(linux, 'OwnedWorker') as owner:
             linux.owner_factory(123, nonce, ipc.Budgets(), launcher=launcher, gate_factory=gate)

@@ -1,4 +1,4 @@
-"""Private source-only Linux worker. Importing this module has no device effects."""
+"""Private Linux worker. Importing this module has no device effects."""
 import os
 import re
 import socket
@@ -75,15 +75,10 @@ def serial_adapter(inventory, factory=serial_factory):
 
 
 def main(args=None, *, inventory=enumerate_devices, port_factory=serial_factory):
-    """Quiet private route; inherited supervisor release precedes all data IPC.
-
-    Kept callable for a future early frozen bootstrap, but frozen execution is
-    deliberately rejected until that bootstrap's guard contract is implemented.
-    """
+    """Quiet source/early-frozen route; supervisor release precedes all data IPC."""
     try:
         args = list(sys.argv[1:] if args is None else args)
-        if (sys.platform != 'linux' or getattr(sys, 'frozen', False)
-                or os.getuid() == 0 or os.geteuid() == 0):
+        if sys.platform != 'linux' or os.getuid() == 0 or os.geteuid() == 0:
             return 2
         forbidden = ('mars_display.app', 'mars_display.settings', 'PySide6.QtCore',
                      'PySide6.QtGui', 'PySide6.QtWidgets')
