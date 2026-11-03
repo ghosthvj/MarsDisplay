@@ -27,6 +27,12 @@ class UsbError(RuntimeError):
         self.ownership_uncertain = ownership_uncertain
 
 
+class UsbCancelled(UsbError):
+    """Cooperative Stop rejected a command before any submission."""
+    def __init__(self):
+        super().__init__('cancelled')
+
+
 class _Cancel:
     def __init__(self, internal, external):
         self.internal, self.external = internal, external
@@ -38,7 +44,7 @@ class UsbTransport:
     """Owned session; owner_factory is a Python-only OwnedWorker-compatible seam."""
     def __init__(self, identity, *, cancel=None, budgets=ipc.Budgets(),
                  launcher=launch_worker, gate_factory=WindowsGate, timing_clock=time.monotonic,
-                 owner_factory=None):
+                 owner_factory=None, finish_inflight_on_cancel=False):
         if identity != IDENTITY:
             raise ValueError('An explicit supported USB identity is required')
         if not isinstance(budgets, ipc.Budgets):
@@ -48,6 +54,8 @@ class UsbTransport:
         self._owner_factory = owner_factory
         self._stopping = threading.Event()
         self._cancel = _Cancel(self._stopping, cancel)
+        self._finish_inflight_on_cancel = finish_inflight_on_cancel
+        self._command_cancel = self._stopping if finish_inflight_on_cancel else self._cancel
         self._operation = threading.Lock()
         self._owner, self._channel, self._listener = None, None, None
         self._opened, self._request = False, 0
@@ -67,8 +75,15 @@ class UsbTransport:
         if not self._operation.acquire(blocking=False):
             raise UsbError('busy')
 
-    def _check(self, deadline):
-        if self._cancel.is_set():
+    def _admit_command(self):
+        # Called under the operation lock, outside the failure/disposal handler.
+        # Stop after this check may finish one command, within its original budget.
+        if self._finish_inflight_on_cancel and self._cancel.is_set():
+            raise UsbCancelled()
+
+    def _check(self, deadline, *, command=False):
+        cancel = self._command_cancel if command else self._cancel
+        if cancel.is_set():
             raise ipc.Cancelled('USB operation cancelled')
         if time.monotonic() >= deadline:
             raise TimeoutError('USB operation deadline exceeded')
@@ -180,18 +195,19 @@ class UsbTransport:
         try:
             if not self._opened:
                 raise UsbError('not open')
+            self._admit_command()
             uncertain = True  # Lost/cancelled reply after submission cannot prove no writes.
             try:
                 deadline = time.monotonic() + self.budgets.frame
                 started = self._timing_clock()
-                result = self._exchange(ipc.GROUPED_FRAME, body, deadline, cancel=self._cancel)
+                result = self._exchange(ipc.GROUPED_FRAME, body, deadline, cancel=self._command_cancel)
                 exchange = self._timing_clock() - started
                 if not isinstance(result, ipc.WorkerTiming):
                     uncertain = result in (WRITE_ERROR, DRAIN_ERROR, CLOSE_ERROR)
                     raise RuntimeError('USB frame failed')
                 detail = SendTiming(result.decode, result.identity, result.encode,
                                     result.write, result.drain, body_encode, exchange, groups=result.groups)
-                self._check(deadline)
+                self._check(deadline, command=True)
                 self._last_send_timing = detail
             except BaseException:
                 self._fail('frame', uncertain)
@@ -210,14 +226,15 @@ class UsbTransport:
         try:
             if not self._opened:
                 raise UsbError('not open')
+            self._admit_command()
             uncertain = True
             try:
                 deadline = time.monotonic() + self.budgets.frame
-                result = self._exchange(ipc.BRIGHTNESS, body, deadline, cancel=self._cancel)
+                result = self._exchange(ipc.BRIGHTNESS, body, deadline, cancel=self._command_cancel)
                 if result != OK:
                     uncertain = result in (WRITE_ERROR, DRAIN_ERROR, CLOSE_ERROR)
                     raise RuntimeError('USB brightness failed')
-                self._check(deadline)
+                self._check(deadline, command=True)
             except BaseException:
                 self._fail('brightness', uncertain)
         finally:

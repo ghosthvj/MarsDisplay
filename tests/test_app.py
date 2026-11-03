@@ -218,6 +218,10 @@ with patch.object(app.sys, 'platform', 'linux'), \\
         factory = Mock()
         self.assertIs(compose_transport(context, native_factory=factory), factory.return_value)
         factory.assert_called_once_with(NATIVE_IDENTITY, cancel=context.cancel)
+        def strict_factory(identity, *, cancel):
+            return identity, cancel
+        self.assertEqual(compose_transport(context, native_factory=strict_factory),
+                         (NATIVE_IDENTITY, context.cancel))
         factory.side_effect = RuntimeError('native rejected')
         with self.assertRaisesRegex(RuntimeError, '^native rejected$'):
             compose_transport(context, native_factory=factory)
@@ -247,7 +251,8 @@ with patch.object(app.sys, 'platform', 'linux'), \\
             args, kwargs = shell.call_args
             self.assertIs(args[0], APP)
             self.assertEqual(args[1].path, Path(self.temp) / 'MarsDisplay' / 'settings.json')
-            self.assertIs(kwargs['native_factory'], create_transport)
+            self.assertIs(kwargs['native_factory'].func, create_transport)
+            self.assertEqual(kwargs['native_factory'].keywords, {'finish_inflight_on_cancel': True})
             self.assertIs(kwargs['configuration_resolver'], resolve)
             self.assertFalse(kwargs['windows_login'])
             self.assertEqual(kwargs['missing_tray_message'],

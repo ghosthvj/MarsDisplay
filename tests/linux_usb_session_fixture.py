@@ -22,11 +22,20 @@ def main():
 
     class Port:
         def open(self):
+            self.writes = 0
             record('open')
             block('open')
 
         def write(self, data):
             record('write', data.hex())
+            self.writes += 1
+            if mode == 'pause-pixels' and self.writes == 3:
+                Path(report + '.paused').touch()
+                deadline = time.monotonic() + 2
+                while not Path(report + '.release').exists():
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError('fixture release deadline exceeded')
+                    time.sleep(.005)
             block('write')
             return len(data)
 

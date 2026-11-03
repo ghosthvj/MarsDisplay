@@ -66,8 +66,14 @@ startup path** when the app offers it.
 
 ## Start, Stop and Exit
 
-**Start** launches the owned browser and opens the panel. **Stop** cancels capture and
-closes only the resources MarsDisplay created. **Exit** waits for acknowledged cleanup
+**Start** launches the owned browser and opens the panel. On Windows and Linux,
+**Stop** stops scheduling capture and lets an already-admitted USB frame or brightness
+command finish before closing only the resources MarsDisplay created. The current
+command keeps its original deadline (up to 20 seconds); the UI stays **Stopping**
+until cleanup completes. A command rejected before admission is not counted as sent.
+Timeouts, failed transfers and forced closure still report uncertainty; nothing is
+resent automatically. This prevents normal Stop from deliberately cutting a frame,
+but host completion is not confirmation that the physical panel displayed it. **Exit** waits for acknowledged cleanup
 before releasing the single-instance lock, so two copies can never fight over the port.
 If cleanup is uncertain the app says so and refuses a new Start instead of pretending.
 
