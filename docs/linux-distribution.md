@@ -73,6 +73,32 @@ Python packages alone does not install these native libraries or browser binarie
 This runner preparation does not change the separate Docker SDK, Windows workflow,
 browser sandbox policy, or the requirement that tests pass before artifact building.
 
+### Chromium sandbox admission on the CI runner
+
+After installation, CI reports the runner's user-namespace settings and validates
+one full Chromium executable and one headless-shell executable under Playwright's
+package-local browser directory. Missing, ambiguous, escaping, non-executable or
+unsafe attachment paths stop the job before any profile is loaded.
+
+When Ubuntu's `apparmor_restrict_unprivileged_userns` is `1`, CI loads ephemeral
+AppArmor ABI 4 profiles granting `userns` only to those two exact executable paths.
+This follows Chromium's [documented per-executable approach](https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md).
+The profiles use `flags=(unconfined)` to permit those otherwise unconfined browser
+executables to create their own namespaces; this is a narrow exception to Ubuntu's
+user-namespace restriction, not a disablement of Chromium's sandbox. No wildcard
+attachments, global sysctl changes, service restarts or persistent host policy
+files are used. This policy is only for the ephemeral CI VM, not an AppImage change
+or an instruction to alter users' machines. Installed browser paths must remain
+trusted: executable replacement at an allowed path would inherit its permission.
+
+With or without that exception, an unprivileged preflight starts both the default
+headless shell and full Chromium with `chromium_sandbox=True`, renders local HTML,
+captures a PNG and closes each browser. Failures stop the job before the unchanged
+full source suite and artifact build; there is no unsandboxed fallback. The runner
+preflight, rather than mocked local tests, establishes actual sandbox availability.
+A conditional Chromium diagnostic alone does not prove an AppArmor denial; the
+reported settings and preflight result provide additional evidence on the runner.
+
 ## Maintainer build-format and check commands
 
 Run from the source Git repository, using Python 3.11 or newer. Prepare content
