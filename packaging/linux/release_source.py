@@ -26,7 +26,7 @@ OPTIONAL = tuple('docs/' + name + '.md' for name in (
     'linux-prototype', 'linux-usb-measurement', 'linux-attribution',
     'linux-usb-measurement-results', 'linux-appimage', 'linux-runtime-inputs',
     'linux-build-evidence', 'linux-distribution', 'linux-usb-runtime',
-    'linux-release-source', 'linux-release-assembly', 'linux-release-build',
+    'linux-release-source', 'linux-release-assembly', 'linux-release-build', 'linux-sdk-transport',
 )) + ('.github/workflows/linux-appimage.yml',)
 
 
