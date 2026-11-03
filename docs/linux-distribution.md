@@ -62,6 +62,17 @@ independently checked. These results do not establish new physical hardware,
 prolonged operation, native Windows acceptance, or GitHub workflow execution.
 No release was published as part of this implementation.
 
+## CI source-test prerequisites
+
+The Linux workflow installs native Qt EGL/OpenGL and keyboard libraries on the
+Ubuntu runner before running the offscreen source tests. Offscreen mode does not
+remove Qt's shared-library requirements. It also installs Playwright Chromium
+(including its headless shell) and browser system dependencies after the Python
+SDK, using `PLAYWRIGHT_BROWSERS_PATH=0` for both installation and tests. Installing
+Python packages alone does not install these native libraries or browser binaries.
+This runner preparation does not change the separate Docker SDK, Windows workflow,
+browser sandbox policy, or the requirement that tests pass before artifact building.
+
 ## Maintainer build-format and check commands
 
 Run from the source Git repository, using Python 3.11 or newer. Prepare content
