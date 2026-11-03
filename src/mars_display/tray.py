@@ -1,6 +1,7 @@
 """Injectable Qt tray shell. No application entry point, browser, or USB I/O."""
 from collections.abc import Callable
 from dataclasses import replace
+import sys
 
 from PySide6.QtCore import QLockFile, QObject, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
@@ -149,6 +150,11 @@ class SettingsDialog(QDialog):
         self.setWindowIcon(_icon())
         self.setObjectName("statusWindow")
         self.setMinimumWidth(650)
+        if sys.platform == "linux" and QApplication.platformName().startswith("wayland"):
+            # Qt sends an unlimited width as zero in xdg-shell. COSMIC can
+            # mis-size a window when that zero is paired with a fixed height
+            # (cosmic-comp#2999). Keep resizing, but use a finite maximum hint.
+            self.setMaximumWidth(32767)
         height = min(760, self.screen().availableGeometry().height() - 48)
         self.resize(650, height)
         self.setFixedHeight(height)

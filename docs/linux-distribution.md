@@ -32,6 +32,19 @@ USB serial access may require membership in `dialout` on Pop!_OS/Ubuntu. Check
 account to `dialout` if appropriate, then log out and back in. This is a manual,
 privileged system decision; the AppImage does not change permissions or groups.
 
+### Settings window on Wayland
+
+Settings requests an initial width of 650 logical pixels and a fixed height that
+fits the available desktop. On Linux/Wayland, a finite maximum width of 32767
+replaces Qt's unlimited-width hint; horizontal resizing remains available. This
+avoids the zero-width/fixed-height hint combination implicated in
+[COSMIC's size-constraint issue](https://github.com/pop-os/cosmic-comp/issues/2999),
+without changing Windows or X11 sizing. It is not a fixed-width window.
+
+Offscreen tests check the Qt limits and readable layout, not COSMIC placement.
+On the target desktop, check the initial width, manual resizing, and the running
+capture view before treating the compositor workaround as validated.
+
 ## Offline artifact format
 
 | File | Purpose |
