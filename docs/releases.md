@@ -61,3 +61,19 @@ before SDK installation: `release_tag cannot be combined with layout_diagnostics
 Diagnostics with an empty tag retain their existing behavior and do not package.
 Legacy CLI `plan`/`publish` without `--tag` retain project-version behavior;
 explicit-tag publication requires the stamped provenance. Tests mock GitHub.
+
+## Combined Linux publication boundary
+
+`publish --artifacts WINDOWS_DIR --linux-artifacts LINUX_DIR --tag vX.Y.Z`
+validates both platform directories before any remote write. Linux contributes
+four versioned files: AppImage, support ZIP, and both SHA256 sidecars. Its
+support manifest binds the image hash and canonical source/version provenance.
+All six assets must pass remote readback before the draft becomes public.
+`--linux-artifacts` is a publish-only option; `plan` and `stamp` reject it.
+Omitting the option preserves Windows-only publication and validation.
+
+The Linux format validator does not certify legal material or runtime behavior:
+only pass an independently qualified build, never the original private-test kit.
+See [Linux distribution](linux-distribution.md) for the artifact contract and
+experimental scope. The automated joint-build workflow is being integrated;
+this CLI support alone does not establish a qualified public Linux artifact.

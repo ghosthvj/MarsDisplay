@@ -124,8 +124,19 @@ def available(repo, tag):
         raise ValueError('Tag or release already exists; choose a new version.')
 
 
-def publish(folder, version, sha, repo, requested_tag=None):
+def linux_assets(folder, version, sha, tag=None):
+    """Load the optional portable Linux validator without changing Windows imports."""
+    spec = util.spec_from_file_location('linux_release_assets',
+                                       Path(__file__).parent / 'linux/release_assets.py')
+    module = util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.assets(folder, version, sha, tag)
+
+
+def publish(folder, version, sha, repo, requested_tag=None, *, linux_folder=None):
     expected = assets(folder, version, sha, requested_tag)  # No remote mutation until local checks pass.
+    if linux_folder is not None:
+        expected.update(linux_assets(linux_folder, version, sha, requested_tag))
     tag, prerelease = 'v' + version, 'rc' in version
     prefix = 'repos/' + repo
     # Exclusive create rejects existing tags, including leftovers from a failed run.
@@ -149,12 +160,33 @@ def publish(folder, version, sha, repo, requested_tag=None):
     print(f'Published https://github.com/{repo}/releases/tag/{tag}')
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
+def _arguments(argv):
+    # Identify commands with the legacy parser before introducing publish-only
+    # syntax, including malformed options supplied to plan/stamp.
+    parser = argparse.ArgumentParser(description=__doc__, exit_on_error=False, epilog=(
+        'publish also accepts --linux-artifacts DIR for qualified Linux AppImage, '
+        'support ZIP and their checksums. Omitting it preserves Windows-only publication.'))
     parser.add_argument('command', choices=('plan', 'stamp', 'publish'))
     parser.add_argument('--tag', help='Canonical vX.Y.Z or vX.Y.ZrcN; required for stamp, otherwise defaults to project version.')
     parser.add_argument('--artifacts', default='release-assets', help='Directory containing only the qualified ZIP and SHA256 sidecar.')
-    args = parser.parse_args(argv)
+    try:
+        try:
+            known, _ = parser.parse_known_args(argv)
+        except argparse.ArgumentError:
+            known = None  # The new option may precede the publish command.
+        if known is not None and known.command != 'publish':
+            return parser.parse_args(argv)
+        expanded = argparse.ArgumentParser(parents=[parser], add_help=False,
+                                           exit_on_error=False)
+        expanded.add_argument('--linux-artifacts', help='Additional qualified Linux asset directory.')
+        args = expanded.parse_args(argv)
+        return args if args.command == 'publish' else parser.parse_args(argv)
+    except argparse.ArgumentError as error:
+        parser.error(str(error))
+
+
+def main(argv=None):
+    args = _arguments(argv)
     try:
         if args.command == 'stamp':
             record = versioning.prepare(Path.cwd(), args.tag)
@@ -166,7 +198,7 @@ def main(argv=None):
                 available(repo, args.tag)
             print(f'Release plan: v{version} ({"prerelease" if "rc" in version else "stable"})')
         else:
-            publish(args.artifacts, version, sha, repo, args.tag)
+            publish(args.artifacts, version, sha, repo, args.tag, linux_folder=args.linux_artifacts)
         return 0
     except (ValueError, OSError, KeyError, TypeError, subprocess.TimeoutExpired) as error:
         print('Release error: ' + str(error), file=sys.stderr)
