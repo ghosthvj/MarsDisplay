@@ -78,3 +78,20 @@ certify legal completeness, or publish releases. The integrating build must
 supply complete corresponding source, instructions and measured native notices,
 resolve missing evidence, and perform runtime qualification before publication.
 Windows packaging and the legacy Linux prototype remain separate and unchanged.
+
+## Distribution runtime selection
+
+The distribution uses `packaging/linux/Release.spec` in the pinned Noble builder.
+It preserves the prototype's application analysis, USB bootstrap and Chromium
+collection, but omits only files beneath the package-local standalone
+`.local-browsers/ffmpeg-N/` directories. MarsDisplay captures PNG through CDP;
+it does not enable Playwright video recording, the consumer of that executable.
+Chromium's internal media libraries, Node, browser registry, sandbox settings and
+SDK versions are unchanged. The original `MarsDisplay.spec` still builds the
+original prototype layout; Windows uses its existing independent recipe.
+
+The builder SDK still installs FFmpeg. Notice collection may therefore include
+supplementary SDK material, but shipped-payload inventory must explicitly record
+the standalone recorder's absence, not describe the complete SDK as the runtime.
+Source inspection and selection fixtures do not substitute for the actual frozen
+build and worker smoke or establish fresh physical-device qualification.
