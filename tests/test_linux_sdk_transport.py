@@ -38,7 +38,7 @@ class TransportTests(unittest.TestCase):
         self.manifest = dict(release=self.record, installed_version='1.2.3', execution_uid=10001,
                              executable_sha256=hashlib.sha256(self.binary).hexdigest(),
                              checks=['frozen-worker-smoke', 'native-source-association'])
-        self.extra, self.calls, self.fail = [], [], False
+        self.extra, self.calls, self.fail_command = [], [], False
 
     def runner(self, args, **kwargs):
         self.calls.append(args)
@@ -53,7 +53,7 @@ class TransportTests(unittest.TestCase):
         with tarfile.open(fileobj=kwargs['stdin']) as incoming:
             self.assertEqual(incoming.getnames(), ['source/packaging/linux/build_sdk.py', 'release.json'])
             self.assertEqual(json.load(incoming.extractfile('release.json')), self.record)
-        if self.fail:
+        if self.fail_command:
             kwargs['stderr'].write(b'container failed\n')
             raise subprocess.CalledProcessError(2, args)
         with tarfile.open(fileobj=kwargs['stdout'], mode='w') as archive:
@@ -97,7 +97,7 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(self.calls[0][:3], ['sudo', '-n', 'docker'])
 
     def test_failed_command_retains_private_log_without_extraction(self):
-        self.fail = True
+        self.fail_command = True
         with self.assertRaises(subprocess.CalledProcessError):
             self.invoke()
         self.assertEqual((self.output / 'docker.log').read_bytes(), b'container failed\n')

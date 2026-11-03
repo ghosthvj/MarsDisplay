@@ -1,4 +1,45 @@
-# Linux release SDK stage
+# Build a Linux AppImage release
+
+## Host command
+
+From a Linux x86_64 checkout with Python 3.13 and Docker available:
+
+```sh
+mkdir -p dist
+python -B packaging/linux/build_release.py --tag v0.0.0 --output dist/linux-candidate
+```
+
+`v0.0.0` is a local validation example; choose the intended canonical tag for a
+real build. No tag, remote release, push or publication is performed. Add
+`--sudo-docker` only when explicitly choosing `sudo -n` for the Docker client;
+the application build still runs as UID/GID 10001, never root.
+
+The command builds committed HEAD only. It clones without hardlinks, stamps the
+disposable checkout and exports exact source; original files and index, including
+uncommitted changes, remain untouched and are not packaged. The output parent must
+already exist and be unlinked; the output directory must not exist.
+
+SDK provisioning and verified input acquisition need network access. Application
+installation, freezing, worker smoke and native collection run in the offline,
+read-only SDK through the [stream transport](linux-sdk-transport.md). Only original
+public TOML, toolchain JSON and Dockerfile enter the SDK build context. The image
+is inspected and run by its measured local image ID, not a mutable tag. Pinned
+tool bytes are checked before making appimagetool executable.
+
+Success returns four files: versioned AppImage and support ZIP, each with SHA256.
+The support ZIP contains instructions, canonical stamped source and merged public
+notices; the published SDK build record must equal the checked sidecar. Measured
+AppImage/SDK records and recipe identity accompany them. Existing asset build and
+check CLIs validate canonical Git/source/hash bindings before success is reported.
+
+Private `.linux-release-*` workspaces beside the output retain diagnostics,
+source copies, downloaded tools and SDK tar files. Docker images are also retained.
+Publish only the explicitly returned four-asset directory, never its parent or a
+failed/partial output. Failures exit 2 and name retained diagnostics; no automatic
+retry or cleanup. This command does not establish new desktop/hardware support or
+legal clearance. Integrated candidate qualification remains separate.
+
+## Inner SDK stage
 
 `packaging/linux/build_sdk.py` is the inner build stage, not a publisher or the
 host-side Git/stamping orchestrator. Run it in the pinned Noble SDK, as a nonroot
