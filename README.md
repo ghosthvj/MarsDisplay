@@ -27,7 +27,7 @@ and you decide when capture runs. No scraping, no screen capture, no vendor app.
   logs and a frame preview. Host completion is reported as host completion — never
   dressed up as an acknowledgement from the panel.
 
-## Requirements
+## Windows release requirements
 
 - Windows x64 in an interactive desktop session with a system tray
 - The USB screen: SHCHV TUS-35 ("USB Screen"), VID `1A86` / PID `5722`, serial `USB35INCHIPSV2`
@@ -45,7 +45,7 @@ and you decide when capture runs. No scraping, no screen capture, no vendor app.
 
 ## Configuration
 
-Everything is stored in `%LOCALAPPDATA%\MarsDisplay\settings.json`. The first save also
+On Windows, settings are stored in `%LOCALAPPDATA%\MarsDisplay\settings.json`. The first save also
 keeps a schema-1 backup beside it, so an older build can always read your setup back.
 
 **MARS URL** — the HTTPS page to display. Nothing loads until you press Start.
@@ -80,6 +80,26 @@ pip install -e .
 python -m playwright install chromium --only-shell
 python -m mars_display
 ```
+
+### Experimental Linux source run
+
+The source entry point also admits Linux x86_64 (64-bit Python), targeting Pop!_OS
+based on Ubuntu 24.04 LTS. This is **not a qualified Linux release or AppImage**;
+actual desktop/session, hardware and frozen-runtime acceptance are still pending.
+
+Launch manually with `python -m mars_display` from an interactive desktop with a
+working system tray. No tray means startup fails; there is no fallback window.
+Run as a non-root user (both real and effective UID must be nonzero) with existing
+serial-device permissions. MarsDisplay does not change permissions, install udev
+rules, or weaken the Chromium sandbox. Close other software holding the panel.
+
+Linux settings use `$XDG_CONFIG_HOME/MarsDisplay/settings.json` when XDG_CONFIG_HOME
+is absolute and nonempty; otherwise `$HOME/.config/MarsDisplay/settings.json`.
+Backups, the instance lock and capture-on-launch preference live alongside it.
+There is no migration from Windows settings. Windows login controls are hidden;
+*Start capture when MarsDisplay opens* remains a separate, persistent opt-in,
+not Linux autostart. Stop or Exit cancels pending launch capture.
+See [Linux runtime limits](docs/linux-usb-runtime.md) before attempting hardware use.
 
 The test suite is headless Qt plus a loopback browser fixture; it never touches USB:
 

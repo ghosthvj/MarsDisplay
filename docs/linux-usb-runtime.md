@@ -1,8 +1,19 @@
-# Internal Linux USB backend
+# Experimental Linux source runtime
 
-The Linux backend is an internal composition seam, **not working AppImage,
-GUI integration, or hardware qualification**. Normal application admission on
-Linux remains disabled. Windows defaults and packaging are unchanged.
+The source application admits non-root Linux x64 and composes the Linux USB
+backend, XDG settings and tray presentation at the application boundary.
+This is **not AppImage, desktop or hardware qualification**. Windows defaults
+and packaging are unchanged. See the [source-run requirements](../README.md#experimental-linux-source-run)
+for manual launch, system tray and existing serial-permission prerequisites.
+
+Real or effective UID 0, unavailable credentials, and unsupported hosts are
+rejected before Qt or settings construction. Unsupported hosts report
+`MarsDisplay requires Windows or Linux x64.` Credential rejection reports
+`MarsDisplay requires a non-root Linux user; cannot verify safe user credentials.`
+A missing Linux tray reports
+`A system tray is required; run MarsDisplay in an interactive Linux session.`
+There is no simulation or window fallback. Windows login controls are hidden on
+Linux; capture-on-launch is independent, opt-in and not OS-login registration.
 
 ## Ownership and admission
 
@@ -51,7 +62,7 @@ No public help option or admission bypass is added.
 Source tests execute the hook and simulate `sys.frozen` in callable worker tests.
 They do **not** prove PyInstaller runtime-hook ordering or inherited descriptor
 survival. T5 must qualify both in an actual frozen build; no Linux spec, AppDir or
-AppImage recipe is provided here. Normal Linux GUI admission remains unchanged.
+AppImage recipe is provided here. Source GUI admission does not qualify frozen launch.
 
 ## Serial scope and limits
 
@@ -73,5 +84,7 @@ udev installation or automatic permission changes are provided.
 Deterministic tests use fake inventory/serial, including real admitted child
 processes and blocked native-operation simulations. They do not access a panel.
 Independent verification of admission and concurrency remains required. Native
-Windows regression, Pop!_OS desktop acceptance, real hardware checks, GUI wiring
+Windows regression, Pop!_OS desktop acceptance, real hardware checks
 and AppImage packaging/clean-machine validation remain separate pending work.
+Offscreen GUI composition tests do not establish a usable native tray or confirm
+the target desktop/session.

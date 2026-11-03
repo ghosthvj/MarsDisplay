@@ -105,6 +105,16 @@ class AppTests(unittest.TestCase):
                 self.assertEqual(self.store.path.read_bytes(), raw)
                 self.admitted()
 
+    def test_shell_constructor_failure_releases_lock_for_both_capabilities(self):
+        for windows_login in (True, False):
+            with self.subTest(windows_login=windows_login), patch(
+                'mars_display.tray.TrayShell', side_effect=RuntimeError('constructor')
+            ):
+                with self.assertRaisesRegex(RuntimeError, '^constructor$'):
+                    build_shell(APP, self.store, windows_login=windows_login)
+            self.admitted()
+            self.assertFalse(self.store.path.exists())
+
     def test_no_real_tray_rejects_without_settings_or_coordinator(self):
         with patch.object(QSystemTrayIcon, "isSystemTrayAvailable", return_value=False):
             with patch("mars_display.app.Coordinator", side_effect=AssertionError("no tray")):
@@ -115,17 +125,18 @@ class AppTests(unittest.TestCase):
     def test_unsupported_module_command_has_exact_output_and_no_eager_qt(self):
         # Separate interpreter proves admission happens before Qt import or store construction.
         script = ("import runpy,sys; import mars_display.app as app; "
-                  "app.sys.platform='linux'; sys.modules['PySide6']=None; "
+                  "app.sys.platform='darwin'; sys.modules['PySide6']=None; "
                   "runpy.run_module('mars_display',run_name='__main__')")
         result = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True,
                                 timeout=3, env={**os.environ, "LOCALAPPDATA": self.temp})
         self.assertEqual((result.returncode, result.stdout, result.stderr),
-                         (1, "", "MarsDisplay requires Windows x64; use Windows 11 x64.\n"))
+                         (1, "", "MarsDisplay requires Windows or Linux x64.\n"))
         self.assertEqual(list(Path(self.temp).iterdir()), [])
 
     def test_host_rejection_precedes_startup_resources(self):
         for host, machine, pointer_size in (
-            ("linux", "x86_64", 8),
+            ("linux", "ARM64", 8),
+            ("linux", "x86_64", 4),
             ("darwin", "x86_64", 8),
             ("win32", "ARM64", 8),
             ("win32", "AMD64", 4),
@@ -139,11 +150,114 @@ class AppTests(unittest.TestCase):
                     "mars_display.app.build_shell"
                 ) as shell:
                     self.assertEqual(self.invoke(), (
-                        1, "", "MarsDisplay requires Windows x64; use Windows 11 x64.\n"))
+                        1, "", "MarsDisplay requires Windows or Linux x64.\n"))
                     application.assert_not_called()
                     store.assert_not_called()
                     shell.assert_not_called()
                 self.assertEqual(list(Path(self.temp).iterdir()), [])
+
+    def test_linux_root_and_failed_uid_checks_precede_resources(self):
+        for uid, euid in ((0, 1000), (1000, 0), (0, 0),
+                          (OSError('private'), 1000), (1000, OSError('private')),
+                          (AttributeError('getuid'), 1000), (1000, None)):
+            script = f'''
+import sys, os
+from unittest.mock import patch
+import mars_display.app as app
+sys.modules.update({{name: None for name in (
+    'PySide6', 'mars_display.linux_paths', 'mars_display.linux_usb_transport')}})
+with patch.object(app.sys, 'platform', 'linux'), \\
+     patch.object(app.platform, 'machine', return_value='x86_64'), \\
+     patch.object(app.struct, 'calcsize', return_value=8), \\
+     patch.object(os, 'getuid', create=True, side_effect={repr(uid) if isinstance(uid, Exception) else 'None'}, return_value={uid if isinstance(uid, int) else 1000}), \\
+     patch.object(os, 'geteuid', create=True, side_effect={repr(euid) if isinstance(euid, Exception) else 'None'}, return_value={repr(euid) if not isinstance(euid, Exception) else 1000}), \\
+     patch.object(app, 'SettingsStore', side_effect=AssertionError('store')):
+    raise SystemExit(app.main())
+'''
+            result = subprocess.run([sys.executable, '-B', '-c', script],
+                                    capture_output=True, text=True, timeout=3)
+            self.assertEqual((result.returncode, result.stdout, result.stderr),
+                (1, '', 'MarsDisplay requires a non-root Linux user; cannot verify safe user credentials.\n'))
+            self.assertEqual(list(Path(self.temp).iterdir()), [])
+
+    def test_native_factory_receives_same_cancel_and_never_falls_back(self):
+        from dataclasses import replace
+        from threading import Event
+        from types import SimpleNamespace
+        from mars_display.app import compose_transport
+        from mars_display.settings import NATIVE_IDENTITY, NATIVE_PROFILE
+        from mars_display.transport import SimulatedTransport
+        context = SimpleNamespace(settings=Settings('https://mars.example', NATIVE_IDENTITY,
+            2, 'native', NATIVE_PROFILE), cancel=Event())
+        factory = Mock()
+        self.assertIs(compose_transport(context, native_factory=factory), factory.return_value)
+        factory.assert_called_once_with(NATIVE_IDENTITY, cancel=context.cancel)
+        factory.side_effect = RuntimeError('native rejected')
+        with self.assertRaisesRegex(RuntimeError, '^native rejected$'):
+            compose_transport(context, native_factory=factory)
+        factory.reset_mock()
+        factory.side_effect = None
+        context.settings = replace(context.settings, output_mode='simulated', native_profile=None)
+        self.assertIsInstance(compose_transport(context, native_factory=factory), SimulatedTransport)
+        factory.assert_not_called()
+        object.__setattr__(context.settings, 'output_mode', 'invalid')
+        with self.assertRaises(SettingsError):
+            compose_transport(context, native_factory=factory)
+        factory.assert_not_called()
+
+    def test_linux_composition_and_missing_tray(self):
+        from mars_display.linux_usb_transport import create_transport
+        with patch('mars_display.app.sys.platform', 'linux'), patch(
+            'mars_display.app.platform.machine', return_value='AMD64'
+        ), patch('mars_display.app.struct.calcsize', return_value=8), patch(
+            'os.getuid', return_value=1000, create=True
+        ), patch('os.geteuid', return_value=1000, create=True), patch(
+            'PySide6.QtWidgets.QApplication', return_value=APP
+        ), patch.dict(os.environ, {'XDG_CONFIG_HOME': self.temp}), patch(
+            'mars_display.app.build_shell', return_value=None
+        ) as shell:
+            self.assertEqual(self.invoke(), (0, '', 'MarsDisplay is already running.\n'))
+            args, kwargs = shell.call_args
+            self.assertIs(args[0], APP)
+            self.assertEqual(args[1].path, Path(self.temp) / 'MarsDisplay' / 'settings.json')
+            self.assertIs(kwargs['native_factory'], create_transport)
+            self.assertFalse(kwargs['windows_login'])
+            self.assertEqual(kwargs['missing_tray_message'],
+                'A system tray is required; run MarsDisplay in an interactive Linux session.')
+            shell.reset_mock()
+            with patch.object(QSystemTrayIcon, 'isSystemTrayAvailable', return_value=False):
+                self.assertEqual(self.invoke(), (1, '',
+                    'A system tray is required; run MarsDisplay in an interactive Linux session.\n'))
+            shell.assert_not_called()
+            self.assertEqual(list(Path(self.temp).iterdir()), [])
+
+    def test_windows_needs_no_unix_apis_or_linux_imports(self):
+        script = '''
+import os, sys
+from unittest.mock import Mock, patch
+import mars_display.app as app
+for name in ('getuid', 'geteuid'):
+    if hasattr(os, name):
+        delattr(os, name)
+sys.modules.update({name: None for name in (
+    'mars_display.linux_paths', 'mars_display.linux_usb_transport')})
+widgets = Mock()
+widgets.QSystemTrayIcon.isSystemTrayAvailable.return_value = True
+with patch.dict(sys.modules, {'PySide6.QtWidgets': widgets}), \\
+     patch.object(app.sys, 'platform', 'win32'), \\
+     patch.object(app.platform, 'machine', return_value='AMD64'), \\
+     patch.object(app.struct, 'calcsize', return_value=8), \\
+     patch.object(app, 'SettingsStore') as store, \\
+     patch.object(app, 'build_shell', return_value=None) as shell:
+    result = app.main()
+    store.assert_called_once_with()
+    shell.assert_called_once_with(widgets.QApplication.return_value, store.return_value)
+    raise SystemExit(result)
+'''
+        result = subprocess.run([sys.executable, '-B', '-c', script],
+                                capture_output=True, text=True, timeout=3)
+        self.assertEqual((result.returncode, result.stdout, result.stderr),
+                         (0, '', 'MarsDisplay is already running.\n'))
 
     def test_windows_x64_aliases_reach_existing_duplicate_admission(self):
         for machine in ("AMD64", "x86_64"):
@@ -161,7 +275,7 @@ class AppTests(unittest.TestCase):
 
     def test_main_host_branches_and_sanitized_startup_messages(self):
         with patch("mars_display.app.sys.platform", "win32"), patch("mars_display.app.platform.machine", return_value="ARM64"):
-            self.assertEqual(self.invoke(), (1, "", "MarsDisplay requires Windows x64; use Windows 11 x64.\n"))
+            self.assertEqual(self.invoke(), (1, "", "MarsDisplay requires Windows or Linux x64.\n"))
         with patch("mars_display.app.sys.platform", "win32"), patch("mars_display.app.platform.machine", return_value="AMD64"), patch("PySide6.QtWidgets.QApplication", return_value=APP), patch("mars_display.app.SettingsStore", return_value=self.store):
             with patch("mars_display.app.build_shell", return_value=None):
                 self.assertEqual(self.invoke(), (0, "", "MarsDisplay is already running.\n"))
