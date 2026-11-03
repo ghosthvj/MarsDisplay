@@ -49,6 +49,30 @@ class SettingsTests(unittest.TestCase):
                               SettingsStore)
         self.assertEqual(list(self.root.iterdir()), [])
 
+    def test_linux_environment_does_not_change_defaults_or_explicit_serialization(self):
+        environment = {"HOME": str(self.root / "home"),
+                       "XDG_CONFIG_HOME": str(self.root / "xdg")}
+        for local in (None, "", "relative-private"):
+            with self.subTest(local=local):
+                values = environment | ({"LOCALAPPDATA": local} if local is not None else {})
+                with patch.dict(os.environ, values, clear=True):
+                    self.assert_error(SettingsStoreError,
+                                      "LOCALAPPDATA is unavailable; provide an explicit settings path.",
+                                      SettingsStore)
+                self.assertEqual(list(self.root.iterdir()), [])
+        with patch.dict(os.environ, environment | {"LOCALAPPDATA": str(self.root / "windows")},
+                        clear=True):
+            self.assertEqual(SettingsStore().path,
+                             self.root / "windows" / "MarsDisplay" / "settings.json")
+            value = Settings("https://mars.example", "panel-é")
+            self.store.save(value)
+            expected = ('{\n  "schema_version": 1,\n'
+                        '  "mars_url": "https://mars.example",\n'
+                        '  "device_identity": "panel-\\u00e9"\n}\n')
+            self.assertEqual(self.path.read_bytes(), expected.replace("\n", os.linesep).encode("utf-8"))
+            self.assertEqual(self.store.load(), value)
+            self.assertEqual(list(self.root.iterdir()), [self.path.parent])
+
     def test_valid_roundtrip_is_versioned_immutable_and_has_no_extra_options(self):
         for device in (None, "passive-device-id"):
             settings = Settings("https://mars.example/prefix", device)
