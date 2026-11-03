@@ -98,6 +98,37 @@ class ReleaseWorkflowTests(unittest.TestCase):
             if 'run:' in line:
                 self.assertNotIn('${{ inputs.', line)
 
+    def test_linux_source_tests_install_native_qt_dependencies(self):
+        text = (ROOT / '.github/workflows/linux-appimage.yml').read_text()
+        marker = '      - name: Install source test runtime\n'
+        self.assertIn(marker, text)
+        runtime = text.split(marker, 1)[1].split('      - name:', 1)[0]
+        self.assertIn('sudo apt-get update', runtime)
+        install = next(line.strip() for line in runtime.splitlines()
+                       if line.strip().startswith('sudo apt-get install '))
+        self.assertEqual(shlex.split(install), [
+            'sudo', 'apt-get', 'install', '-y', '--no-install-recommends',
+            'libegl1', 'libgl1', 'libopengl0', 'libxkbcommon0'])
+        self.assertLess(runtime.index('apt-get update'), runtime.index('apt-get install'))
+        self.assertLess(text.index(marker), text.index('unittest discover'))
+
+    def test_linux_source_tests_install_matching_playwright_chromium(self):
+        text = (ROOT / '.github/workflows/linux-appimage.yml').read_text()
+        marker = '      - name: Install source test runtime\n'
+        self.assertIn(marker, text)
+        runtime = text.split(marker, 1)[1].split('      - name:', 1)[0]
+        tests = text.split('      - name: Source tests (offscreen, not desktop acceptance)\n', 1)[1].split('      - name:', 1)[0]
+        for step in (runtime, tests):
+            self.assertIn("          PLAYWRIGHT_BROWSERS_PATH: '0'", step)
+        install = next(line.strip() for line in runtime.splitlines()
+                       if 'playwright install' in line)
+        self.assertEqual(shlex.split(install), [
+            'python', '-m', 'playwright', 'install', '--with-deps', 'chromium'])
+        self.assertLess(text.index("python -m pip install '.[build]'"), text.index(marker))
+        self.assertLess(text.index(marker), text.index('unittest discover'))
+        self.assertNotIn('--no-sandbox', runtime)
+        self.assertNotIn('continue-on-error', text)
+
     def test_tag_is_data_and_stamping_precedes_sdk_install(self):
         release = (ROOT / '.github/workflows/release.yml').read_text()
         portable = (ROOT / '.github/workflows/windows-portable.yml').read_text()
