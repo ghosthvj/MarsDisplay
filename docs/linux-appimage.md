@@ -1,4 +1,4 @@
-# Experimental Linux build environment (T5a)
+# Experimental Linux build environment and onedir candidate
 
 This recipe prepares an **x86_64 Ubuntu 24.04 build image**, not an AppImage or a
 supported Linux release. Windows packaging and dependency pins are unchanged.
@@ -78,3 +78,61 @@ report that environment limitation rather than weakening isolation.
 Portable `tests/test_linux_packaging.py` checks metadata/recipe constraints and
 executes dependency argument construction with installation intercepted. It does
 not build Docker, launch a browser, or qualify a frozen artifact.
+
+## T5b: production onedir and no-USB smoke (parent-controlled)
+
+`packaging/linux/MarsDisplay.spec` is independent of Windows packaging. The custom
+USB runtime hook runs before standard Qt hooks; ordinary launch calls `app.main`.
+Standard PyInstaller Qt hooks collect the imported Qt modules/plugins, rather than
+all of PySide6. Playwright's standard hook collects its package-local driver and
+Chromium tree, preserving the path expected by `BrowserSession`. Default
+PyInstaller mode/symlink handling is retained; UPX is disabled.
+
+Run from the project root in Bash, using the already verified T5a builder.
+Only tracked Python source and the four named packaging files enter the container;
+no host venv, cache, credentials, `.git`, USB or display mounts are involved.
+The archive is emitted only after build and smoke succeed (logs go to stderr):
+
+```sh
+set -o pipefail
+set -C # Refuse to overwrite an existing output archive.
+mkdir -p build
+{ git ls-files 'src/mars_display/*.py'; printf '%s\n' \
+    packaging/linux/MarsDisplay.spec packaging/linux/entrypoint.py \
+    packaging/linux/usb_bootstrap.py packaging/linux/smoke.py; } |
+  tar -cf - -T - |
+  sudo -n docker run --rm -i --network=none --cap-drop=ALL --read-only \
+    --tmpfs /work:rw,exec,uid=10001,gid=10001 --tmpfs /tmp:rw,exec,mode=1777 \
+    marsdisplay-linux-build:t5a bash -euc '
+      tar -xf -
+      export PYINSTALLER_CONFIG_DIR=/work/build/pyinstaller-config
+      timeout 600 python -m PyInstaller --noconfirm \
+        --workpath build/work --distpath build/dist packaging/linux/MarsDisplay.spec >&2
+      timeout 50 env PYTHONPATH=src python -B packaging/linux/smoke.py \
+        --appdir build/dist/MarsDisplay >&2
+      tar -cf - build/dist/MarsDisplay
+    ' > build/linux-onedir.tar
+```
+
+Here `--appdir` means the **production onedir directory containing `MarsDisplay`**,
+not a future AppImage AppDir. Alternatively use `--executable /absolute/path/to/MarsDisplay`.
+The runner needs the matching source tree on `PYTHONPATH` for the public ownership
+and packet APIs; it is not shipped in the production bundle. `--help` is passive.
+Each protocol operation has a 3–4 second deadline, subprocesses are reaped in
+`finally`, and a 40-second runner watchdog bounds the scenarios. HOME/XDG paths
+are temporary and a settings sentinel must remain unchanged.
+
+The smoke verifies quiet malformed/reserved argument rejection, inherited control
+FD READY/release using the real `OwnedWorker`, data HELLO and CLOSE-before-OPEN
+with OK/exit 0/reap, wrong-identity OPEN with IDENTITY_ERROR/exit 1, and wrong or
+withheld release with exit 2 and no data connection. It never sends a valid panel
+identity, so the production protocol rejects before resolver/serial access.
+Source tests exercise this runner but do **not** qualify frozen execution.
+
+**Separate next boundary:** a verification-only frozen `smoke_probe.py` importing
+Qt offscreen and bundled `BrowserSession`, serving controlled loopback HTML,
+asserting an RGB frame and cleanup with Chromium sandbox enabled. It is not yet
+implemented. Actual Wayland/XCB/offscreen plugin loading, native dependencies,
+browser sandbox/cleanup, COSMIC and hardware remain unverified. A successful
+private-worker smoke does not establish those properties or AppImage support.
+AppRun/AppDir, license manifest and pinned AppImage tools remain T5c.
