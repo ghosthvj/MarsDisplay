@@ -4,3 +4,5 @@ third_party/license-material/provenance.json text eol=lf
 third_party/native-material/raw/** -text -whitespace conflict-marker-size=32
 third_party/native-material/provenance.json text eol=lf
 third_party/native-material/policy.json text eol=lf
+# Runtime material is also verified byte-for-byte against retained SHA256 pins.
+third_party/linux-runtime/** -text -whitespace

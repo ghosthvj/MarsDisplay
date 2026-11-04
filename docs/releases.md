@@ -65,6 +65,14 @@ Diagnostics with an empty tag retain their existing behavior and do not package.
 Legacy CLI `plan`/`publish` without `--tag` retain project-version behavior;
 explicit-tag publication requires the stamped provenance. Tests mock GitHub.
 
+Cross-platform tests canonicalize temporary fixture paths before comparing them
+with resolved tool paths. Artifact fixtures derive both platforms' source bytes
+and hashes from the fixture's Git commit and the version-stamp transformation,
+not from working-tree line endings. `.gitattributes` preserves the hash-pinned
+`third_party/linux-runtime/` material byte-for-byte on checkout, including with
+`core.autocrlf=true`. Do not normalize retained bytes, regenerate pins or skip
+Windows tests to compensate for checkout conversion.
+
 ## Combined Linux publication boundary
 
 `publish --artifacts WINDOWS_DIR --linux-artifacts LINUX_DIR --tag vX.Y.Z`

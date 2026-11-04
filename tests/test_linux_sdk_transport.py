@@ -26,7 +26,7 @@ class TransportTests(unittest.TestCase):
         versioning = load(ROOT / 'packaging/release_version.py')
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
         self.source, self.output = self.root / 'source', self.root / 'output'
         (self.source / 'packaging/linux').mkdir(parents=True)
         (self.source / 'packaging/linux/build_sdk.py').write_bytes(b'# SDK fixture\n')
