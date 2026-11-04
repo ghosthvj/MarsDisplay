@@ -131,9 +131,18 @@ latency/FPS, reconnect or landscape claim is established by fake-provider tests.
 
 ## Source API and ownership
 
-`UsbTransport(identity, cancel=None, budgets=Budgets())` performs no I/O during
-construction. Its explicit `open()`, `send(RGBFrame)` and `close()` return None
-on success; native operation is Windows-only. It is not selected by the app.
+`UsbTransport(identity, cancel=None, budgets=Budgets(), finish_inflight_on_cancel=False)`
+performs no I/O during construction. Its explicit `open()`, `send(RGBFrame)` and
+`close()` return None on success. Windows and Linux application composition enables
+`finish_inflight_on_cancel=True`; direct callers retain immediate cancellation by default.
+With this opt-in, the operation-lock admission check rejects an already-requested
+Stop with `UsbCancelled` (a `UsbError` with phase `cancelled`, both uncertainty flags
+false), without IPC submission or success/timing updates. The session remains owned
+until ordinary close. Only the lifecycle's own Stop in send/brightness treats this
+specific cancellation as benign; genuine failures and cleanup uncertainty remain visible.
+Stop after admission may finish one command, even if no bytes had yet been sent.
+Its original absolute deadline and forced-close token remain active through reply
+validation and the final check; startup still observes external cancellation.
 Trusted Python-only launcher/gate injection supports isolated tests, never a
 shipping backend/endpoint/executable configuration switch.
 

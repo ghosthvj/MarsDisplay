@@ -39,6 +39,13 @@ race can permit effects before termination. Timeouts bound caller waits, not
 kernel scheduling or kill/reap latency. Uncertain cleanup retains ownership and
 blocks reopening; it is not treated as success. No frames are automatically retried.
 
+The application enables graceful Stop for admitted frame/brightness commands on
+both Linux and Windows: finish within the original command deadline, then close.
+Startup cancellation remains immediate, and explicit transport close can still abort
+an in-flight command. Direct transport callers retain immediate cancellation unless
+they explicitly opt in. No device reset, serial-option change or panel acknowledgment
+is introduced; physical Stop/restart behavior still requires hardware qualification.
+
 ## Early frozen dispatch contract (not yet qualified)
 
 `packaging/linux/usb_bootstrap.py` implements the Linux-private runtime hook.

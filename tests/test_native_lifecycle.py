@@ -82,7 +82,7 @@ class NativeLifecycleTests(unittest.TestCase):
         cancel=Event();native=Mock();simulated=Mock()
         with patch.object(application,'UsbTransport',return_value=native,create=True) as usb, patch.object(application,'SimulatedTransport',return_value=simulated) as sim:
             self.assertIs(application.compose_transport(StartContext(self.native,cancel)),native)
-            usb.assert_called_once_with(IDENTITY,cancel=cancel);sim.assert_not_called()
+            usb.assert_called_once_with(IDENTITY,cancel=cancel,finish_inflight_on_cancel=True);sim.assert_not_called()
             self.assertIs(application.compose_transport(StartContext(Settings('https://mars.example',IDENTITY),cancel)),simulated)
             sim.assert_called_once_with();self.assertEqual(usb.call_count,1)
 

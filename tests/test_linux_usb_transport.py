@@ -35,7 +35,7 @@ class CompositionTests(unittest.TestCase):
 
 
 class RealTransportTests(unittest.TestCase):
-    def make(self, mode='normal'):
+    def make(self, mode='normal', **options):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         report = Path(directory.name) / 'events'
@@ -51,8 +51,8 @@ class RealTransportTests(unittest.TestCase):
             owners.append(value)
             return value
 
-        obj = linux.create_transport(IDENTITY, launcher=launcher,
-            budgets=ipc.Budgets(start=1, frame=.3, close=.2, reap=.5))
+        budgets = options.pop('budgets', ipc.Budgets(start=1, frame=.3, close=.2, reap=.5))
+        obj = linux.create_transport(IDENTITY, launcher=launcher, budgets=budgets, **options)
         obj._owner_factory = owner
 
         def cleanup():
@@ -92,6 +92,42 @@ class RealTransportTests(unittest.TestCase):
         self.assertEqual([value for kind, value in events if kind == 'options'],
             [dict(port=None, baudrate=115200, bytesize=8, parity='N', stopbits=1,
                   rtscts=True, dsrdtr=False, write_timeout=3, timeout=1, exclusive=True)])
+
+    def test_graceful_stop_finishes_frame_and_fresh_session_sends_again(self):
+        cancel = threading.Event()
+        obj, owners, report = self.make('pause-pixels', cancel=cancel,
+            finish_inflight_on_cancel=True, budgets=ipc.Budgets(start=1, frame=1, close=.2, reap=.5))
+        obj.open()
+        errors = []
+        def send():
+            try:
+                obj.send(FRAME)
+            except Exception as error:
+                errors.append(error)
+        thread = threading.Thread(target=send)
+        thread.start()
+        try:
+            deadline = time.monotonic() + 1
+            while not Path(str(report) + '.paused').exists():
+                self.assertLess(time.monotonic(), deadline, 'pixel barrier watchdog')
+                threading.Event().wait(.005)
+            cancel.set()
+        finally:
+            Path(str(report) + '.release').touch()
+            thread.join(2)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(errors, [])
+        obj.close()
+        self.assert_reaped(obj, owners)
+        self.assertEqual([bytes.fromhex(value) for kind, value in self.events(report) if kind == 'write'],
+                         list(encode_portrait(FRAME)))
+        fresh, owners, report = self.make(cancel=threading.Event(), finish_inflight_on_cancel=True)
+        fresh.open()
+        fresh.send(FRAME)
+        fresh.close()
+        self.assert_reaped(fresh, owners)
+        self.assertEqual([bytes.fromhex(value) for kind, value in self.events(report) if kind == 'write'],
+                         list(encode_portrait(FRAME)))
 
     def test_wrong_handshake_no_serial_or_inventory(self):
         obj, owners, report = self.make('nonce')

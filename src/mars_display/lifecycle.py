@@ -10,7 +10,7 @@ from .settings import (Settings, SettingsError, SettingsStore, _checked, _ACK_ER
                        _ACK_V3_ERROR, BRIGHTNESS_LEVELS)
 from .devices import enumerate_devices
 from .transport import Transport
-from .usb_transport import UsbError
+from .usb_transport import UsbCancelled, UsbError
 
 
 class LifecycleError(RuntimeError):
@@ -537,8 +537,13 @@ class Coordinator:
                         if native:
                             self._record_timing("cadence_wait", stage_started)
                 except Exception as error:
-                    failed = True
-                    if native:
+                    cancelled = (native and stage in ('send', 'brightness')
+                                 and cancel.is_set() and isinstance(error, UsbCancelled)
+                                 and not error.delivery_uncertain and not error.ownership_uncertain)
+                    failed = not cancelled
+                    if cancelled:
+                        pass  # No submission: preserve counters and run ordinary cleanup.
+                    elif native:
                         self._native_failure(error, stage)
                     else:
                         with self._lock:

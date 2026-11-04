@@ -25,7 +25,8 @@ def compose_transport(context, *, native_factory=None):
     """Passive construction from one validated, frozen Start; no mode fallback."""
     settings = _checked(context.settings)
     if settings.output_mode == "native":
-        factory = UsbTransport if native_factory is None else native_factory
+        factory = (partial(UsbTransport, finish_inflight_on_cancel=True)
+                   if native_factory is None else native_factory)
         return factory(settings.device_identity, cancel=context.cancel)
     return SimulatedTransport()
 
@@ -80,7 +81,8 @@ def main() -> int:
             from .linux_usb_worker import resolve
 
             store = SettingsStore(linux_settings_path())
-            shell = build_shell(app, store, native_factory=create_transport,
+            shell = build_shell(app, store,
+                                native_factory=partial(create_transport, finish_inflight_on_cancel=True),
                                 configuration_resolver=resolve, windows_login=False, missing_tray_message=missing_tray_message)
         else:
             store = SettingsStore()
