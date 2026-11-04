@@ -19,6 +19,10 @@ on:
         description: 'Capture isolated UI layout diagnostics without packaging'
         type: boolean
         default: false
+      openssl_candidate:
+        description: 'Build two unqualified OpenSSL candidates; upload metadata only'
+        type: boolean
+        default: false
       trace_openssl_origins:
         description: 'Expose only two OpenSSL source paths in public hosted-runner logs'
         type: boolean
@@ -28,7 +32,7 @@ permissions:
 jobs:
   portable:
     runs-on: windows-2025
-    timeout-minutes: 30
+    timeout-minutes: ${{ inputs.openssl_candidate && 120 || 30 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, node24
         with:
@@ -40,6 +44,9 @@ jobs:
       - name: Reject conflicting build options
         if: ${{ inputs.release_tag != '' && inputs.layout_diagnostics }}
         run: python -c "raise SystemExit('release_tag cannot be combined with layout_diagnostics.')"
+      - name: Reject conflicting OpenSSL candidate options
+        if: ${{ inputs.openssl_candidate && (inputs.release_tag != '' || inputs.layout_diagnostics || inputs.trace_openssl_origins) }}
+        run: python -c "raise SystemExit('openssl_candidate cannot be combined with release_tag, layout_diagnostics or trace_openssl_origins.')"
       - name: Prepare build-only release version
         if: ${{ inputs.release_tag != '' && !inputs.layout_diagnostics }}
         env:
@@ -85,11 +92,23 @@ jobs:
             build/windows-layout-diagnostics/test-result.json
           if-no-files-found: error
           retention-days: 7
+      - name: Controlled OpenSSL candidate (no native admission)
+        id: openssl_candidate
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.openssl_candidate }}
+        run: python -B packaging/build_openssl_candidate.py --download --inputs build/openssl-inputs --output build/openssl-candidate
+      - name: Upload controlled OpenSSL metadata only
+        if: ${{ always() && inputs.openssl_candidate }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, node24
+        with:
+          name: MarsDisplay-UNQUALIFIED-controlled-OpenSSL
+          path: build/openssl-candidate/candidate.json
+          if-no-files-found: warn
+          retention-days: 7
       # Native notices must be qualified from the actual Windows SDK/payload.
       # Without qualification, retain/upload metadata only, never binaries.
       - name: Native build and isolated packaged smoke
         id: native_build
-        if: ${{ !inputs.layout_diagnostics }}
+        if: ${{ !inputs.layout_diagnostics && !inputs.openssl_candidate }}
         shell: pwsh
         env:
           MARSDISPLAY_TRACE_OPENSSL: ${{ github.event_name == 'workflow_dispatch' && inputs.trace_openssl_origins && '1' || '' }}
@@ -106,7 +125,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, node24
-        if: ${{ success() && !inputs.layout_diagnostics }}
+        if: ${{ success() && !inputs.layout_diagnostics && !inputs.openssl_candidate }}
         with:
           name: MarsDisplay-Windows-x64
           path: |

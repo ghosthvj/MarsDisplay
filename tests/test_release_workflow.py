@@ -172,6 +172,6 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("      layout_diagnostics:\n        description: 'Capture isolated UI layout diagnostics without packaging'\n        type: boolean\n        default: false", text)
         self.assertIn('r.wasSuccessful() and not r.skipped', text)
         self.assertIn('python packaging/build_portable.py', text)
-        self.assertIn('if: ${{ success() && !inputs.layout_diagnostics }}', text)
+        self.assertIn('if: ${{ success() && !inputs.layout_diagnostics && !inputs.openssl_candidate }}', text)
         self.assertIn('permissions:\n  contents: read', text)
         self.assertNotIn('contents: write', text)

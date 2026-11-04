@@ -89,6 +89,14 @@ GitHub logs. It is restricted to manual GitHub-hosted Windows runs; reusable
 release builds cannot enable it. It never dumps PATH, environment values or
 application data, and does not change the redacted artifact or native gate.
 
+The manual `openssl_candidate` option (default **false**) instead builds two
+controlled OpenSSL candidates and uploads only `candidate.json`, always marked
+`UNQUALIFIED`. It cannot be combined with `release_tag`, `layout_diagnostics` or
+`trace_openssl_origins`; conflicting input fails before SDK installation. It runs
+the Windows source gate but skips application packaging and binary uploads. A
+successful comparison does not admit DLLs or publish a release. See
+[the controlled recipe and remaining qualification requirements](windows-openssl-build.md).
+
 ## Combined Linux publication boundary
 
 `publish --artifacts WINDOWS_DIR --linux-artifacts LINUX_DIR --tag vX.Y.Z`

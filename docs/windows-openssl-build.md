@@ -46,11 +46,49 @@ bundled inside Strawberry differs from the selected NASM and must not substitute
 for it. These are build tools, not payload files. Their pinned archive identity is
 not evidence that a Windows compilation or reproducibility check has passed.
 
+## Unqualified candidate recipe
+
+Manually dispatch **Windows portable prototype** with `openssl_candidate=true` and
+leave `release_tag` empty and both other diagnostic options false. This input is
+absent from reusable release calls and defaults to false. Normal builds retain
+their 30-minute limit; candidate measurement has a 120-minute limit.
+
+The Windows command is:
+
+```powershell
+python -B packaging/build_openssl_candidate.py --download --inputs build/openssl-inputs --output build/openssl-candidate
+```
+
+Without `--download`, provide the three pinned archives as `openssl.tar.gz`,
+`nasm.zip` and `perl.zip` in the inputs directory. Both downloaded input and output
+directories must be new. The command never overwrites existing output.
+
+The initial candidate selects exactly one installed MSVC `14.44.*` toolset under
+Visual Studio 18 Enterprise and SDK directory `10.0.26100.0`. This family selection
+is **measurement, not a final compiler byte pin**. It inventories compiler/support
+files, headers and libraries, verifies native tool versions and constructs a
+restricted tool environment instead of inheriting PATH or compiler/Perl/OpenSSL
+overrides. Portable NASM takes precedence over Strawberry's different bundled copy.
+
+Two independent source/build trees use `VC-WIN64A shared`, the source release-date
+epoch, explicit compiler path normalization, `/Brepro`, `/Z7`, a stable PDB reference
+and NASM reproducibility flags. Each runs `nmake` and `nmake test`; source/tool input
+changes or unequal DLL hashes fail. These flags are a candidate recipe, **not yet
+observed Windows reproducibility evidence**. Upstream test output remains in the
+job log; an upstream pass is not a claim that every optional upstream test ran.
+
+Only `candidate.json` is uploaded. It remains `UNQUALIFIED` even after successful
+comparison, and records versions, aggregate input fingerprints, recipe digest
+(canonical LF source), flags, upstream-test outcomes and DLL measurements. It does
+not serialize absolute build paths, inherited environment, arbitrary exceptions,
+DLL contents or release assets. Failures before an owned output exists leave no
+candidate report; later failures retain the failed phase and exception type.
+
 ## Remaining integration
 
-The Windows recipe, exact MSVC/SDK byte pins, narrow QtNetwork selection hook and
-candidate workflow are not integrated yet. Before static admission, require two clean builds
-at different workspace paths, upstream test results, matching DLL bytes, reviewed
-source/tool/recipe evidence and packaged TLS checks. Preserve the CPython OpenSSL
-pair and normal Qt dependency traversal. Never replace static expectations with
-hashes observed during packaging, or fall back to an ambient PATH provider.
+Native Windows execution, reviewed exact MSVC/SDK byte pins, the narrow QtNetwork
+selection hook and static DLL admission remain pending. Require observed clean-build
+equality, reviewed source/tool/recipe evidence and packaged TLS checks before
+admission. Preserve the CPython OpenSSL pair and normal Qt dependency traversal.
+Never replace static expectations with hashes observed during packaging, or fall
+back to an ambient PATH provider.
