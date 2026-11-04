@@ -47,6 +47,17 @@ def _read_archive(path):
     return data
 
 
+def archive_parts(relative):
+    """Validate a relative archive name against the Windows filename namespace."""
+    parts = relative.split('/')
+    for part in parts:
+        if (part in ('', '.', '..') or part.endswith((' ', '.'))
+                or any(ord(c) < 32 or ord(c) == 127 or c in '\\:<>"|?*' for c in part)
+                or part.split('.')[0].upper() in _RESERVED):
+            raise ValueError('Unsafe source archive path')
+    return parts
+
+
 def _source_members(archive):
     entries, spellings, total = {}, {}, 0
     members = archive.getmembers()
@@ -61,12 +72,7 @@ def _source_members(archive):
         if not name.startswith(SOURCE_ROOT + '/'):
             raise ValueError('Unexpected source archive root')
         relative = name[len(SOURCE_ROOT) + 1:]
-        parts = relative.split('/')
-        for part in parts:
-            if (part in ('', '.', '..') or part.endswith((' ', '.'))
-                    or any(ord(c) < 32 or ord(c) == 127 or c in '\\:<>"|?*' for c in part)
-                    or part.split('.')[0].upper() in _RESERVED):
-                raise ValueError('Unsafe source archive path')
+        parts = archive_parts(relative)
         for length in range(1, len(parts) + 1):
             spelling = '/'.join(parts[:length])
             key = spelling.casefold()

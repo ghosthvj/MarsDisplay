@@ -30,10 +30,26 @@ absolute paths or environment variables. Linked inputs, unreadable directories
 and oversized trees fail rather than yielding an incomplete fingerprint.
 A fingerprint is a measurement, not a supplier attestation or admission decision.
 
+## Portable tool inputs
+
+`packaging/openssl_tools.py` prepares only two explicitly pinned ZIP archives into
+new directories. It verifies size, SHA-256, namespace, entry types, expansion bounds
+and CRCs before writing. It never runs the extracted tools or consults PATH.
+
+| Tool | Archive SHA-256 | Integrity evidence |
+| --- | --- | --- |
+| NASM 2.16.03 x64 | `3ee4782247bcb874378d02f7eab4e294a84d3d15f3f6ee2de2f47a46aa7226e6` | Measured official HTTPS archive; no retrieved publisher checksum/signature |
+| Strawberry Perl 5.42.0.1 x64 portable | `a1cde185656cf307b51670eed69f648b9eff15b5c518cb136e027c628e650b71` | Publisher `https://strawberryperl.com/releases.json` |
+
+Acquisition URLs and executable-relative paths are fixed in `TOOLS`. The NASM
+bundled inside Strawberry differs from the selected NASM and must not substitute
+for it. These are build tools, not payload files. Their pinned archive identity is
+not evidence that a Windows compilation or reproducibility check has passed.
+
 ## Remaining integration
 
-The Windows recipe, exact tool pins, narrow QtNetwork selection hook and candidate
-workflow are not integrated yet. Before static admission, require two clean builds
+The Windows recipe, exact MSVC/SDK byte pins, narrow QtNetwork selection hook and
+candidate workflow are not integrated yet. Before static admission, require two clean builds
 at different workspace paths, upstream test results, matching DLL bytes, reviewed
 source/tool/recipe evidence and packaged TLS checks. Preserve the CPython OpenSSL
 pair and normal Qt dependency traversal. Never replace static expectations with
