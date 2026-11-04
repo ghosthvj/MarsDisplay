@@ -3,7 +3,7 @@ import hashlib
 from importlib import metadata
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import re
 import stat
 import sys
@@ -14,6 +14,39 @@ LOCATIONS = {'cpython-sdk', 'pyside6', 'openssl-install', 'git-install',
 DLL_LIMIT = 32 * 1024 * 1024
 REPORT_LIMIT = 4096
 STATUSES = {'missing', 'ambiguous', 'unknown_location', 'unavailable'}
+
+
+def trace(entries):
+    """Opt-in disclosure of two source paths on manual hosted Windows CI only."""
+    if (sys.platform != 'win32' or os.environ.get('MARSDISPLAY_TRACE_OPENSSL') != '1'
+            or os.environ.get('GITHUB_ACTIONS') != 'true'
+            or os.environ.get('RUNNER_ENVIRONMENT') != 'github-hosted'
+            or os.environ.get('GITHUB_EVENT_NAME') != 'workflow_dispatch'):
+        return
+    report = {'status': 'unavailable'}
+    if isinstance(entries, (list, tuple)) and len(entries) <= 8192:
+        files = {}
+        for name in ('libcrypto-3-x64.dll', 'libssl-3-x64.dll'):
+            matches = [entry for entry in entries if isinstance(entry, (list, tuple))
+                       and len(entry) == 3 and entry[0] == name]
+            fact = {'status': 'missing'}
+            if len(matches) > 1:
+                fact = {'status': 'ambiguous'}
+            elif matches:
+                _, source, kind = matches[0]
+                fact = {'status': 'unavailable'}
+                if (kind == 'BINARY' and isinstance(source, str) and len(source) <= 1024
+                        and all(ord(char) >= 32 and ord(char) != 127 for char in source)):
+                    path = PureWindowsPath(source)
+                    if (path.is_absolute() and re.fullmatch(r'[A-Za-z]:', path.drive)
+                            and path.name.lower() == name and '..' not in path.parts
+                            and not any(':' in part for part in path.parts[1:])):
+                        fact = {'status': 'selected', 'source_path': source}
+            files[name] = fact
+        report = {'status': 'UNQUALIFIED', 'files': files}
+    # JSON escaping and a fixed prefix prevent multiline workflow commands.
+    # No source file, PATH, other environment value or application data is read.
+    print('OpenSSL source trace: ' + json.dumps(report, sort_keys=True))
 
 
 def _roots(source):

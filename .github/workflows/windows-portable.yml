@@ -19,6 +19,10 @@ on:
         description: 'Capture isolated UI layout diagnostics without packaging'
         type: boolean
         default: false
+      trace_openssl_origins:
+        description: 'Expose only two OpenSSL source paths in public hosted-runner logs'
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -87,6 +91,8 @@ jobs:
         id: native_build
         if: ${{ !inputs.layout_diagnostics }}
         shell: pwsh
+        env:
+          MARSDISPLAY_TRACE_OPENSSL: ${{ github.event_name == 'workflow_dispatch' && inputs.trace_openssl_origins && '1' || '' }}
         run: |
           Get-ChildItem Env: | Where-Object { $_.Name -match '^(QT_|QML|PYTHON|PLAYWRIGHT_)' } | ForEach-Object { Remove-Item "Env:$($_.Name)" }
           python packaging/build_portable.py

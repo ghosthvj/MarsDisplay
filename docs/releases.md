@@ -82,6 +82,13 @@ not retain absolute paths or PATH. Unknown locations remain redacted. These
 facts identify collection locations, not suppliers or qualified source builds;
 they never replace the native policy or authorize updating its hashes.
 
+If the location remains unknown, the manual build-only workflow offers
+`trace_openssl_origins` (default **false**). Enabling it explicitly exposes only
+the selected `libcrypto-3-x64.dll` and `libssl-3-x64.dll` source paths in public
+GitHub logs. It is restricted to manual GitHub-hosted Windows runs; reusable
+release builds cannot enable it. It never dumps PATH, environment values or
+application data, and does not change the redacted artifact or native gate.
+
 ## Combined Linux publication boundary
 
 `publish --artifacts WINDOWS_DIR --linux-artifacts LINUX_DIR --tag vX.Y.Z`

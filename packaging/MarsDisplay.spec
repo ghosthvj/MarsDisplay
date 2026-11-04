@@ -45,6 +45,7 @@ try:
     _selection_spec = util.spec_from_file_location('marsdisplay_openssl_selection', root / 'packaging/openssl_selection.py')
     _selection = util.module_from_spec(_selection_spec)
     _selection_spec.loader.exec_module(_selection)
+    _selection.trace(a.binaries)
     _selection.write(Path(DISTPATH).parent / 'openssl-selection.json', a.binaries)
 except Exception:
     pass
