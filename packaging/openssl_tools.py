@@ -38,6 +38,8 @@ def _members(archive):
     if len(members) > MAX_FILES:
         raise ValueError('Tool archive exceeds entry limit')
     for member in members:
+        if member.orig_filename != member.filename:
+            raise ValueError('Tool archive member name was normalized')
         mode = stat.S_IFMT(member.external_attr >> 16)
         allowed = (0, stat.S_IFDIR) if member.is_dir() else (0, stat.S_IFREG)
         if mode not in allowed or member.external_attr & 0x400:

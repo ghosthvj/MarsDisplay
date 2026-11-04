@@ -35,6 +35,9 @@ A fingerprint is a measurement, not a supplier attestation or admission decision
 `packaging/openssl_tools.py` prepares only two explicitly pinned ZIP archives into
 new directories. It verifies size, SHA-256, namespace, entry types, expansion bounds
 and CRCs before writing. It never runs the extracted tools or consults PATH.
+Original ZIP member names must match the names exposed after ZIP parsing;
+normalization or NUL truncation fails with `Tool archive member name was normalized`.
+This check precedes the existing namespace checks and all extraction.
 
 | Tool | Archive SHA-256 | Integrity evidence |
 | --- | --- | --- |

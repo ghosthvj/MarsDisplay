@@ -22,7 +22,14 @@ class OpenSSLToolTests(unittest.TestCase):
         with zipfile.ZipFile(self.archive, 'w') as archive:
             archive.writestr('bin/tool.exe', b'MZ fixture tool')
             for name, content in extra:
+                if isinstance(name, str):
+                    member = zipfile.ZipInfo('fixture')
+                    member.filename = name  # Preserve intentionally malformed archive bytes.
+                    name = member
                 archive.writestr(name, content)
+        with zipfile.ZipFile(self.archive) as archive:
+            self.assertEqual([member.orig_filename for member in archive.infolist()[1:]],
+                             [name if isinstance(name, str) else name.filename for name, _ in extra])
         record = {'sha256': hashlib.sha256(self.archive.read_bytes()).hexdigest(),
                   'size': self.archive.stat().st_size, 'executable': 'bin/tool.exe'}
         return patch.dict(self.module.TOOLS, {'fixture': record})
@@ -53,13 +60,59 @@ class OpenSSLToolTests(unittest.TestCase):
         cases = [[(name, b'x')] for name in ('../escape', '/absolute', 'COM¹.txt',
                  'CONOUT$', 'bad?.exe', 'trailing.', 'dir\\escape', 'C:escape')]
         cases += [[('BIN/other', b'x')], [('a', b'x'), ('a/b', b'y')], [(link, b'target')]]
-        for entries in cases:
+        for index, entries in enumerate(cases):
+            target = self.root / f'case-{index}'
             with self.subTest(entries=entries), self.fixture(entries):
                 before = self.archive.read_bytes()
                 with self.assertRaises(ValueError):
-                    self.module.prepare('fixture', self.archive, self.target)
-                self.assertFalse(self.target.exists())
+                    self.module.prepare('fixture', self.archive, target)
+                self.assertFalse(target.exists())
                 self.assertEqual(self.archive.read_bytes(), before)
+
+    def test_raw_names_are_rejected_before_zip_normalization_can_hide_them(self):
+        for separator in ('/', '\\'):
+            for index, name in enumerate(('dir\\escape', 'dir\x00hidden')):
+                target = self.root / f'raw-{ord(separator)}-{index}'
+                with (self.subTest(separator=separator, name=name),
+                      patch.object(zipfile.os, 'sep', separator), self.fixture([(name, b'x')])):
+                    before = self.archive.read_bytes()
+                    with self.assertRaises(ValueError) as caught:
+                        self.module.prepare('fixture', self.archive, target)
+                    if separator == '\\' or '\x00' in name:
+                        self.assertEqual(str(caught.exception), 'Tool archive member name was normalized')
+                    self.assertFalse(target.exists())
+                    self.assertEqual(self.archive.read_bytes(), before)
+
+    def test_raw_writer_and_independent_reader(self):
+        for sep in ('/', '\\'):
+            for index, name in enumerate(
+                    ('extra/file', 'extra\\file', 'extra\x00file')):
+                with self.subTest(separator=sep, name=name):
+                    target = self.root / f'probe-{ord(sep)}-{index}'
+                    with self.fixture([(name, b'preserved')]):
+                        before = hashlib.sha256(self.archive.read_bytes()).digest()
+                        with patch.object(zipfile.os, 'sep', sep):
+                            if index == 0:
+                                result = self.module.prepare(
+                                    'fixture', self.archive, target)
+                                self.assertEqual(
+                                    result.read_bytes(), b'MZ fixture tool')
+                                self.assertEqual(
+                                    (target / 'extra/file').read_bytes(),
+                                    b'preserved')
+                            else:
+                                message = (
+                                    'Tool archive member name was normalized'
+                                    if sep == '\\' or index == 2
+                                    else 'Unsafe source archive path')
+                                with self.assertRaises(ValueError) as caught:
+                                    self.module.prepare(
+                                        'fixture', self.archive, target)
+                                self.assertEqual(str(caught.exception), message)
+                                self.assertFalse(target.exists())
+                        self.assertEqual(
+                            hashlib.sha256(self.archive.read_bytes()).digest(),
+                            before)
 
     def test_existing_output_bounds_and_linked_input_are_preserved(self):
         with self.fixture():
