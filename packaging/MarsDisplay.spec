@@ -38,3 +38,13 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='MarsDisplay',
           console=False, upx=False, contents_directory='_internal')
 collection = COLLECT(exe, a.binaries, a.datas, name='MarsDisplay', upx=False)
+
+# Supplemental metadata only. Failure must not replace the native qualification
+# decision; no sidecar is included in the portable payload.
+try:
+    _selection_spec = util.spec_from_file_location('marsdisplay_openssl_selection', root / 'packaging/openssl_selection.py')
+    _selection = util.module_from_spec(_selection_spec)
+    _selection_spec.loader.exec_module(_selection)
+    _selection.write(Path(DISTPATH).parent / 'openssl-selection.json', a.binaries)
+except Exception:
+    pass

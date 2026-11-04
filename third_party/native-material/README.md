@@ -23,6 +23,12 @@ old actual Windows39038363658 inventory. No builder code reads that diagnostic;
 every build must measure current facts independently, then the v2 gate measures
 again. A basename or wheel owner version is not upstream version proof.
 
+Rejected Windows builds may also retain redacted `openssl_selection` facts from
+PyInstaller's four OpenSSL binary entries. Source/payload hash agreement and an
+installation category establish a collection location, not vendor identity,
+corresponding source, build configuration or approval. Review the actual
+provider's distribution and source evidence before changing a policy association.
+
 The 233 origin records/204 unmodified content-addressed files retain complete
 module notice supersets: actual copyrights, conditional QtUsage, versions,
 LicenseFile inputs, extra licenses, patents and authors. For example qjpeg's Qt

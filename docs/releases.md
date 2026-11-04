@@ -73,6 +73,15 @@ not from working-tree line endings. `.gitattributes` preserves the hash-pinned
 `core.autocrlf=true`. Do not normalize retained bytes, regenerate pins or skip
 Windows tests to compensate for checkout conversion.
 
+For native OpenSSL mismatches, use the build-only **Windows portable prototype**
+workflow on the investigation branch with empty `release_tag` and
+`layout_diagnostics=false`. A rejected build remains failed and uploads only its
+`UNQUALIFIED` diagnostic. `openssl_selection` reports recognized installation
+categories only when the selected source bytes match the packaged DLL; it does
+not retain absolute paths or PATH. Unknown locations remain redacted. These
+facts identify collection locations, not suppliers or qualified source builds;
+they never replace the native policy or authorize updating its hashes.
+
 ## Combined Linux publication boundary
 
 `publish --artifacts WINDOWS_DIR --linux-artifacts LINUX_DIR --tag vX.Y.Z`
