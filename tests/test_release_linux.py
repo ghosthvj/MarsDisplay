@@ -68,11 +68,14 @@ class CombinedReleaseTests(unittest.TestCase):
                         'user.email=fixture@example.invalid', 'commit', '-qm', 'fixture'],
                        check=True, capture_output=True)
         sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
-        original = Path('pyproject.toml').read_bytes()
+        original = subprocess.check_output(['git', 'show', sha + ':pyproject.toml'])
+        stamped = release.versioning.render(original, self.tag)
         archive = next(Path('assets').glob('*.zip'))
         with zipfile.ZipFile(archive) as z:
             files = {name: z.read(name) for name in z.namelist()}
         inventory = json.loads(files['MarsDisplay/inventory.json'])
+        files['MarsDisplay/source/pyproject.toml'] = stamped
+        inventory['files']['source/pyproject.toml'] = hashlib.sha256(stamped).hexdigest()
         inventory.update(source_commit=sha,
                          release=release.versioning.provenance(original, self.tag, sha))
         files['MarsDisplay/inventory.json'] = json.dumps(inventory).encode()
@@ -84,7 +87,7 @@ class CombinedReleaseTests(unittest.TestCase):
         content = Path('content')
         (content / 'source').mkdir(parents=True)
         (content / 'notices').mkdir()
-        (content / 'source/pyproject.toml').write_bytes(original)
+        (content / 'source/pyproject.toml').write_bytes(stamped)
         (content / 'README.md').write_text('Isolated format fixture.')
         (content / 'notices/LICENSE').write_text('Fixture, not legal qualification.')
         Path('input.AppImage').write_bytes(b'format fixture only')
@@ -99,6 +102,11 @@ class CombinedReleaseTests(unittest.TestCase):
                                    digest='sha256:' + hashlib.sha256(p.read_bytes()).hexdigest())
                        for folder in ('assets', 'linux-assets') for p in Path(folder).iterdir()}
         self.env['GITHUB_SHA'] = sha
+        # Real Git and Python children still need executable lookup on Windows;
+        # retain no GitHub credentials in the isolated publication environment.
+        for key in ('PATH', 'SYSTEMROOT'):
+            if key in os.environ:
+                self.env[key] = os.environ[key]
         before = {p: p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}
         out, err = io.StringIO(), io.StringIO()
 

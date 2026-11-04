@@ -25,7 +25,7 @@ class AssemblyTests(unittest.TestCase):
         self.assembly = load(ROOT / 'packaging/linux/assemble_release.py')
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
         self.source = self.root / 'onedir'
         self.source.mkdir()
         self.binary = self.source / 'MarsDisplay'

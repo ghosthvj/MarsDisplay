@@ -18,7 +18,7 @@ class BuildTests(unittest.TestCase):
         self.fixture = SourceTests()
         self.fixture.setUp()
         self.addCleanup(self.fixture.doCleanups)
-        self.root = self.fixture.root
+        self.root = self.fixture.root.resolve()
         self.fixture.put('pyproject.toml', b'[project]\nname = "mars-display"\nversion = "0.1.0"\n')
         self.fixture.put('packaging/linux/build_sdk.py', b'# SDK fixture\n')
         self.tools = {'appimagetool-x86_64.AppImage': b'tool', 'runtime-x86_64': b'runtime'}
@@ -32,7 +32,7 @@ class BuildTests(unittest.TestCase):
         self.fixture.git('add', 'staged.txt')
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.output = Path(self.temp.name) / 'assets'
+        self.output = Path(self.temp.name).resolve() / 'assets'
         self.module = load(ROOT / 'packaging/linux/build_release.py')
         self.calls, self.fail_stage, self.work = [], False, None
         self.bad_public_record = False
