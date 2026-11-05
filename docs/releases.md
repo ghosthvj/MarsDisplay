@@ -73,22 +73,6 @@ not from working-tree line endings. `.gitattributes` preserves the hash-pinned
 `core.autocrlf=true`. Do not normalize retained bytes, regenerate pins or skip
 Windows tests to compensate for checkout conversion.
 
-For native OpenSSL mismatches, use the build-only **Windows portable prototype**
-workflow on the investigation branch with empty `release_tag` and
-`layout_diagnostics=false`. A rejected build remains failed and uploads only its
-`UNQUALIFIED` diagnostic. `openssl_selection` reports recognized installation
-categories only when the selected source bytes match the packaged DLL; it does
-not retain absolute paths or PATH. Unknown locations remain redacted. These
-facts identify collection locations, not suppliers or qualified source builds;
-they never replace the native policy or authorize updating its hashes.
-
-If the location remains unknown, the manual build-only workflow offers
-`trace_openssl_origins` (default **false**). Enabling it explicitly exposes only
-the selected `libcrypto-3-x64.dll` and `libssl-3-x64.dll` source paths in public
-GitHub logs. It is restricted to manual GitHub-hosted Windows runs; reusable
-release builds cannot enable it. It never dumps PATH, environment values or
-application data, and does not change the redacted artifact or native gate.
-
 Windows packaging uses the pinned FireDaemon OpenSSL 3.5.9 prebuilt x64 pair.
 The workflow prepares it after the source gate: fixed ZIP/DLL hashes and Windows
 Authenticode checks must pass before packaging. A local QtNetwork hook preserves

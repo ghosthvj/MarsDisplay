@@ -126,47 +126,16 @@ class BuildTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unsupported native material schema'):
             self.builder.collect_native(self.runtime, self.info, native)
 
-    def test_openssl_selection_is_retained_without_qualifying_or_exposing_paths(self):
-        name = 'libssl-3-x64.dll'
-        data = b'MZ selected OpenSSL fixture'
-        self.runtime['_internal/' + name] = data
-        process = self.process
-
-        def with_selection(command, **kwargs):
-            result = process(command, **kwargs)
-            stage = Path(command[command.index('--distpath') + 1]).parent
-            record = {'schema': 1, 'files': {name: {
-                'status': 'selected', 'location': 'strawberry-perl',
-                'source_sha256': hashlib.sha256(data).hexdigest()}}}
-            (stage / 'openssl-selection.json').write_text(json.dumps(record))
-            return result
-
-        with patch.object(self, 'process', with_selection):
-            with self.assertRaisesRegex(ValueError, 'Missing reviewed native notices'):
-                self.execute(default_native=True)
-        reports = list((self.repo / 'build').glob('unqualified-native-*.json'))
-        self.assertEqual(len(reports), 1)
-        report = json.loads(reports[0].read_bytes())
-        self.assertEqual(report['openssl_selection']['status'], 'UNQUALIFIED')
-        self.assertEqual(report['openssl_selection']['files'][name],
-                         {'status': 'matched', 'location': 'strawberry-perl',
-                          'sha256': hashlib.sha256(data).hexdigest()})
-        self.assertNotIn(str(self.repo), reports[0].read_text())
-        self.assertFalse((self.repo / 'dist').exists())
-        self.assertEqual(list((self.repo / 'build').iterdir()), reports)
-        self.assertEqual(self.events, ['inspect', 'compile', 'smoke'])
-
     def test_evidence_failure_preserves_original_rejection_and_prior_bytes(self):
         prior = self.repo / 'build/unqualified-native-prior.json'
         prior.parent.mkdir(); prior.write_bytes(b'prior report')
         settings = self.repo / 'settings.json'; settings.write_bytes(b'private settings')
         artifact = self.repo / 'dist/older.zip'
         artifact.parent.mkdir(); artifact.write_bytes(b'prior artifact')
-        unavailable = Mock(collect=Mock(side_effect=RuntimeError('private-secret-C:/SDK')),
-                           read=Mock(side_effect=RuntimeError('private-secret-C:/SDK')))
+        unavailable = Mock(collect=Mock(side_effect=RuntimeError('private-secret-C:/SDK')))
         loader = self.builder._load
         out, err = StringIO(), StringIO()
-        with patch.object(self.builder, '_load', side_effect=lambda name: unavailable if name in {'native_evidence', 'openssl_selection'} else loader(name)):
+        with patch.object(self.builder, '_load', side_effect=lambda name: unavailable if name == 'native_evidence' else loader(name)):
             with redirect_stdout(out), redirect_stderr(err), self.assertRaisesRegex(ValueError, '^Missing reviewed native notices: build/native-material/native.json; Windows qualification is pending$'):
                 self.execute(default_native=True)
         reports = [path for path in prior.parent.glob('unqualified-native-*.json') if path != prior]
@@ -178,7 +147,7 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(report['packaged_smoke'], {'status': 'passed'})
         self.assertEqual(report['native_evidence'], {name: {'sha256': digest, 'status': 'unavailable'}
                                                     for name, digest in report['native_files'].items()})
-        self.assertEqual(report['openssl_selection'], {'status': 'unavailable'})
+        self.assertNotIn('openssl_selection', report)
         self.assertEqual(out.getvalue(), '')
         self.assertRegex(err.getvalue(), r'^Unqualified diagnostic: build/unqualified-native-[\w-]+\.json\n$')
         self.assertNotIn('private-secret', reports[0].read_text())

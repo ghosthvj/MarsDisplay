@@ -155,7 +155,7 @@ def collect_native(runtime, inventory, material_root):
     return components, {'native/native.json': raw, **{'native/' + name: data for name, data in texts.items()}}
 
 
-def retain_diagnostic(work, inventory, runtime, phase, smoke_status, selection_path=None):
+def retain_diagnostic(work, inventory, runtime, phase, smoke_status):
     """Retain metadata only, never approval evidence or raw failure messages."""
     def version(value):
         return isinstance(value, str) and re.fullmatch(r'v?[0-9][A-Za-z0-9.!+_-]*', value)
@@ -194,11 +194,6 @@ def retain_diagnostic(work, inventory, runtime, phase, smoke_status, selection_p
         # Supplemental diagnostics must never replace the original native error.
         report['native_evidence'] = {name: {'sha256': digest, 'status': 'unavailable'}
                                      for name, digest in report['native_files'].items()}
-    if selection_path is not None:
-        try:
-            report['openssl_selection'] = _load('openssl_selection').read(selection_path, runtime)
-        except Exception:
-            report['openssl_selection'] = {'status': 'unavailable'}
     data = (json.dumps(report, indent=2, sort_keys=True) + '\n').encode('utf-8')
     # mkstemp-backed exclusive creation; never overwrite a prior diagnostic.
     with tempfile.NamedTemporaryFile(prefix='unqualified-native-', suffix='.json', dir=work, delete=False) as stream:
@@ -271,8 +266,7 @@ def build(repo, *, run=None, qualify=None, smoke_check=None):
             if payload.collect_source(repo) != source:
                 raise ValueError('Source changed during build; nothing published')
         except Exception:
-            retain_diagnostic(work, inventory, runtime, phase, smoke_status,
-                              stage / 'openssl-selection.json')
+            retain_diagnostic(work, inventory, runtime, phase, smoke_status)
             raise
         return payload.assemble(output, version, runtime, source, material, inventory)
 
