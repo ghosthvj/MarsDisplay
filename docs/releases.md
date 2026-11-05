@@ -73,6 +73,14 @@ not from working-tree line endings. `.gitattributes` preserves the hash-pinned
 `core.autocrlf=true`. Do not normalize retained bytes, regenerate pins or skip
 Windows tests to compensate for checkout conversion.
 
+Windows packaging uses the pinned FireDaemon OpenSSL 3.5.9 prebuilt x64 pair.
+The workflow prepares it after the source gate: fixed ZIP/DLL hashes and Windows
+Authenticode checks must pass before packaging. A local QtNetwork hook preserves
+normal Qt traversal but replaces ambient OpenSSL collection with this exact pair.
+OpenSSL is not compiled; the experimental candidate option and its expanded timeout
+have been removed. Normal native qualification and metadata-only failure handling
+remain enforced. See [prebuilt preparation and source association](windows-openssl-prebuilt.md).
+
 ## Combined Linux publication boundary
 
 `publish --artifacts WINDOWS_DIR --linux-artifacts LINUX_DIR --tag vX.Y.Z`

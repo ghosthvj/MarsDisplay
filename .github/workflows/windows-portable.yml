@@ -81,6 +81,9 @@ jobs:
             build/windows-layout-diagnostics/test-result.json
           if-no-files-found: error
           retention-days: 7
+      - name: Prepare pinned prebuilt OpenSSL (no compilation)
+        if: ${{ !inputs.layout_diagnostics }}
+        run: python -B packaging/openssl_prebuilt.py
       # Native notices must be qualified from the actual Windows SDK/payload.
       # Without qualification, retain/upload metadata only, never binaries.
       - name: Native build and isolated packaged smoke

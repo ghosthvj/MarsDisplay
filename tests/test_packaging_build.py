@@ -147,6 +147,7 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(report['packaged_smoke'], {'status': 'passed'})
         self.assertEqual(report['native_evidence'], {name: {'sha256': digest, 'status': 'unavailable'}
                                                     for name, digest in report['native_files'].items()})
+        self.assertNotIn('openssl_selection', report)
         self.assertEqual(out.getvalue(), '')
         self.assertRegex(err.getvalue(), r'^Unqualified diagnostic: build/unqualified-native-[\w-]+\.json\n$')
         self.assertNotIn('private-secret', reports[0].read_text())

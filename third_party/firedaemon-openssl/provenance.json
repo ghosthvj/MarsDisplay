@@ -1,0 +1,31 @@
+{
+  "binary_url": "https://download.firedaemon.com/FireDaemon-OpenSSL/openssl-3.5.9.zip",
+  "documentation_url": "https://kb.firedaemon.com/support/solutions/articles/4000121705",
+  "files": {
+    "50-win-hybridcrt.conf": {
+      "sha256": "cbb47e10d8d965de3af2538b8551126ccc57f8628d29a034bc4ce6a506b5d341",
+      "size": 1699
+    },
+    "LICENSE.txt": {
+      "sha256": "ed72ce2b51ee58f117e5a021e2e04af158857f40269fbc03491f0b2a99dbcc96",
+      "size": 10352
+    },
+    "mkopenssl-35.cmd": {
+      "sha256": "5599f9c7ea79d9b147fd382e340b05bbb8b2d85ec50b5a70f6208b16b0f52c5d",
+      "size": 7422
+    },
+    "version.txt": {
+      "sha256": "f71367348a5816aec9e30fc30d605041fedf08a5fa1409a81056fa4f0f789ef0",
+      "size": 28
+    }
+  },
+  "measured_scripts_zip_sha256": "8f12145e3fe430709e6ead4f974960546d8ff06a19acbcd513e6540922863316",
+  "provider": "FireDaemon Technologies Limited",
+  "published_binary_sha256": "76da391395be029b44794857b9ff380255e02a0960a98314cd3f6a6816d82696",
+  "release": "3.5.9",
+  "scripts_url": "https://download.firedaemon.com/FireDaemon-OpenSSL/mkopenssl.zip",
+  "snapshot_limitation": "Mutable provider recipe snapshot; not proven historical inputs, reproducibility, empty historical patches, or provider test execution. No additional license is asserted for the custom configuration.",
+  "source_commit": "45e844fa2a14ec92d146bd8f5778ac130b6625fb",
+  "source_sha256": "f54250b21795bb01240f3f9b42c384868d04460e339e39275aaaf93487f2d903",
+  "source_url": "https://github.com/openssl/openssl/archive/45e844fa2a14ec92d146bd8f5778ac130b6625fb.tar.gz"
+}

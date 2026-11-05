@@ -14,6 +14,7 @@ class GroupingWorkflowTests(unittest.TestCase):
         self.assertIn('  workflow_dispatch:\n', workflow)
         self.assertIn('permissions:\n  contents: read\n', workflow)
         self.assertIn('r.wasSuccessful() and not r.skipped', workflow)
+        self.assertIn('QT_QPA_PLATFORM: offscreen\n          QT_QPA_FONTDIR: C:/Windows/Fonts', workflow)
         self.assertIn('if: ${{ success() }}', workflow)
         self.assertNotIn('pull_request:', workflow)
         self.assertNotIn('schedule:', workflow)
