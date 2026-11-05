@@ -19,8 +19,9 @@ and you decide when capture runs. No scraping, no screen capture, no vendor app.
   bytes per frame over the panel's standard USB-serial interface — no vendor software.
 - **Brightness you control.** 20 / 40 / 60 / 80 / 100 %, saved and applied at Start,
   adjustable live while the panel is running.
-- **Tray-first, quiet.** Status / Settings, Start, Stop, Exit. One fixed-height window
-  that scrolls, not a pile of dialogs. A single instance owns the panel at a time.
+- **Tray-first, quiet.** Status / Settings, Start, Stop, Exit. One fixed-size settings window
+  (650 pixels wide, height fitted to the desktop) that scrolls, without resizing,
+  maximizing or fullscreen on Windows and Linux. A single instance owns the panel at a time.
 - **Opt-in automation.** Start capturing whenever the app opens, and start the app when
   you sign in to Windows. Both off by default, both one click to undo.
 - **Honest state.** Live-connected and stale flags, lifetime frame count, native timing

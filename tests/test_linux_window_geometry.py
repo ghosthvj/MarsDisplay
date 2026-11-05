@@ -27,17 +27,17 @@ class WindowGeometryTests(unittest.TestCase):
                 dialog = self.dialog("linux", backend)
                 # Qt encodes its default 16777215 maximum as zero in xdg-shell.
                 # COSMIC mishandles that zero paired with a fixed height.
-                self.assertEqual(dialog.maximumWidth(), 32767)
+                self.assertEqual(dialog.maximumWidth(), 650)
                 self.assertEqual(dialog.minimumWidth(), 650)
                 self.assertEqual(dialog.minimumHeight(), 760)
                 self.assertEqual(dialog.maximumHeight(), 760)
                 dialog.show()
                 APP.processEvents()
-                self.assertEqual(dialog.windowHandle().maximumWidth(), 32767)
+                self.assertEqual(dialog.windowHandle().maximumWidth(), 650)
                 self.assertEqual(dialog.windowHandle().maximumHeight(), 760)
                 dialog.close()
 
-    def test_wayland_hint_keeps_compact_running_form_and_manual_resize(self):
+    def test_wayland_hint_keeps_compact_running_form_and_fixed_size(self):
         dialog = self.dialog("linux", "wayland")
         dialog.start_with_windows.hide()
         dialog.windows_startup_hint.hide()
@@ -56,7 +56,7 @@ class WindowGeometryTests(unittest.TestCase):
             for width in (900, 650):
                 dialog.resize(width, 760)
                 APP.processEvents()
-                self.assertEqual((dialog.width(), dialog.height()), (width, 760))
+                self.assertEqual((dialog.width(), dialog.height()), (650, 760))
                 self.assertEqual(dialog.scroll_area.horizontalScrollBar().maximum(), 0)
                 for label in (dialog.output, dialog.device, dialog.hint):
                     self.assertGreaterEqual(label.height(), label.heightForWidth(label.width()))
@@ -75,7 +75,7 @@ class WindowGeometryTests(unittest.TestCase):
                     dialog.show()
                     APP.processEvents()
                     self.assertEqual((dialog.width(), dialog.height()), (650, 552))
-                    for requested, expected in ((400, 650), (1280, 1280), (650, 650)):
+                    for requested, expected in ((400, 650), (1280, 650), (650, 650)):
                         dialog.resize(requested, 900)
                         APP.processEvents()
                         self.assertEqual((dialog.width(), dialog.height()), (expected, 552))
@@ -92,12 +92,12 @@ class WindowGeometryTests(unittest.TestCase):
                     dialog.logs_window.close()
                     dialog.close()
 
-    def test_windows_and_other_backends_keep_existing_size_limits(self):
+    def test_windows_and_other_backends_keep_fixed_size_limits(self):
         for host, backend in (("win32", "windows"), ("linux", "xcb"),
                               ("linux", "offscreen"), ("win32", "wayland")):
             with self.subTest(host=host, backend=backend):
                 dialog = self.dialog(host, backend)
-                self.assertEqual(dialog.maximumWidth(), 16777215)
+                self.assertEqual(dialog.maximumWidth(), 650)
                 self.assertEqual(dialog.minimumWidth(), 650)
                 self.assertEqual((dialog.width(), dialog.height()), (650, 760))
                 self.assertEqual(dialog.minimumHeight(), dialog.maximumHeight())

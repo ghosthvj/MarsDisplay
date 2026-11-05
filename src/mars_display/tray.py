@@ -1,9 +1,8 @@
 """Injectable Qt tray shell. No application entry point, browser, or USB I/O."""
 from collections.abc import Callable
 from dataclasses import replace
-import sys
 
-from PySide6.QtCore import QLockFile, QObject, QTimer, Qt
+from PySide6.QtCore import QEvent, QLockFile, QObject, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDialog, QFileDialog, QFrame, QGridLayout, QHBoxLayout,
@@ -142,22 +141,16 @@ class NativeTimingDialog(QDialog):
 
 
 class SettingsDialog(QDialog):
-    """Fixed-height form with overflow scrolling and a persistent action footer."""
+    """Fixed-size form with overflow scrolling and a persistent action footer."""
 
     def __init__(self, configured: Settings | None):
         super().__init__()
         self.setWindowTitle("MarsDisplay — Status / Settings")
         self.setWindowIcon(_icon())
         self.setObjectName("statusWindow")
-        self.setMinimumWidth(650)
-        if sys.platform == "linux" and QApplication.platformName().startswith("wayland"):
-            # Qt sends an unlimited width as zero in xdg-shell. COSMIC can
-            # mis-size a window when that zero is paired with a fixed height
-            # (cosmic-comp#2999). Keep resizing, but use a finite maximum hint.
-            self.setMaximumWidth(32767)
+        self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False)
         height = min(760, self.screen().availableGeometry().height() - 48)
-        self.resize(650, height)
-        self.setFixedHeight(height)
+        self.setFixedSize(650, height)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
@@ -329,6 +322,14 @@ class SettingsDialog(QDialog):
         footer_row.addLayout(actions)
         outer.addWidget(self.footer)
         self.set_dark_mode(False)
+
+    def changeEvent(self, event):
+        if event.type() == QEvent.Type.WindowStateChange:
+            forbidden = Qt.WindowState.WindowMaximized | Qt.WindowState.WindowFullScreen
+            if self.windowState() & forbidden:
+                # Linux window managers can request these states without a titlebar button.
+                self.setWindowState(self.windowState() & ~forbidden)
+        super().changeEvent(event)
 
     def load_configuration(self, configured):
         self.url.setText(configured.mars_url if configured else "")
