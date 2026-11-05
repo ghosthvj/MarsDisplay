@@ -27,6 +27,8 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: '0'
           PYTHONPATH: src;tests
         run: python -B -c "import unittest; r=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('tests')); raise SystemExit(0 if r.wasSuccessful() and not r.skipped else 1)"
+      - name: Prepare pinned prebuilt OpenSSL (no compilation)
+        run: python -B packaging/openssl_prebuilt.py
       - name: Independent console build and native no-device qualification
         shell: pwsh
         run: |

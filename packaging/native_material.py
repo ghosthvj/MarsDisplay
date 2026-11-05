@@ -7,7 +7,7 @@ import posixpath
 import re
 
 REGISTRY_SHA256 = '3543f2d2017e9a05de1fec4a1b580876d45b6db890f8aebd7a3e39bd8124ad06'
-POLICY_SHA256 = 'a93efb59277880545494b5c8cee9b544df4b641f8f86be1de050055ec561f15a'
+POLICY_SHA256 = 'bddb483b32c51e5ca7e4beb63ca83e2729c40b0131abdb6c83aeafdaadf30c7f'
 PREFIX = '_internal/PySide6/'
 
 
@@ -196,6 +196,8 @@ def source_access(bundle, *, profile='portable'):
                   'Qt/PySide source association is the reviewed policy, NOT inferred from owner/PE versions.',
                   'Full-module notices are conservative: not every optional feature is compiled.',
                   'Supplemental Shiboken/OpenSSL inventory: notices/native/supplemental.json.',
+                  'FireDaemon OpenSSL distribution/build-configuration association and snapshots:',
+                  'source/third_party/firedaemon-openssl/ (not upstream OpenSSL registry blobs).',
                   'Other runtime sources and notices: inventory.json and notices/; CPython, Node,',
                   'Chromium, FFmpeg, winldd, Python packages and PyInstaller remain separately covered.',
                   'Redistributors: provide equivalent source access alongside the binary under GPLv3',

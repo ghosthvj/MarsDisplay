@@ -89,13 +89,13 @@ GitHub logs. It is restricted to manual GitHub-hosted Windows runs; reusable
 release builds cannot enable it. It never dumps PATH, environment values or
 application data, and does not change the redacted artifact or native gate.
 
-The manual `openssl_candidate` option (default **false**) instead builds two
-controlled OpenSSL candidates and uploads only `candidate.json`, always marked
-`UNQUALIFIED`. It cannot be combined with `release_tag`, `layout_diagnostics` or
-`trace_openssl_origins`; conflicting input fails before SDK installation. It runs
-the Windows source gate but skips application packaging and binary uploads. A
-successful comparison does not admit DLLs or publish a release. See
-[the controlled recipe and remaining qualification requirements](windows-openssl-build.md).
+Windows packaging uses the pinned FireDaemon OpenSSL 3.5.9 prebuilt x64 pair.
+The workflow prepares it after the source gate: fixed ZIP/DLL hashes and Windows
+Authenticode checks must pass before packaging. A local QtNetwork hook preserves
+normal Qt traversal but replaces ambient OpenSSL collection with this exact pair.
+OpenSSL is not compiled; the experimental candidate option and its expanded timeout
+have been removed. Normal native qualification and metadata-only failure handling
+remain enforced. See [prebuilt preparation and source association](windows-openssl-prebuilt.md).
 
 ## Combined Linux publication boundary
 

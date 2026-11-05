@@ -4,7 +4,7 @@ The default builder validates this root before compiling; it no longer consumes
 manually populated build/native-material. Primary provenance/raw inputs are
 unchanged. The exact registry and reviewed policy SHA256 are pinned in
 packaging/native_material.py; changing either requires explicit source review.
-No downloader, automatic legal approval or public override exists.
+No downloader, automatic legal approval or public override exists in this policy loader.
 
 ## Reviewed associations
 
@@ -14,12 +14,17 @@ No downloader, automatic legal approval or public override exists.
 | 4 imageformat plugins | qt/qtimageformats dc13f2fbff1d579cfb2eb2d9092e3563b4d05b8e |
 | 18 Qt libraries/plugins | qt/qtbase 025bdad181de241e81bf853c8a2d7bf3d19261a9 |
 | Supplemental Shiboken, 2 files | Same full PySide source, including Shiboken copyrights/terms |
-| Supplemental outer SSL/crypto, 4 DLLs | OpenSSL3.5.5 67b5686b4419b4cb8caa502711c41815f5279751 and 3.5.9 45e844fa2a14ec92d146bd8f5778ac130b6625fb |
+| Supplemental outer SSL/crypto, 4 DLLs | OpenSSL3.5.9 45e844fa2a14ec92d146bd8f5778ac130b6625fb; FireDaemon suffixed pair and unchanged CPython unsuffixed pair |
 
 Each Qt/PySide6.12.0 source claim has a genuine annotated-tag commit reference.
 OpenSSL release references and VERSION.dat are retained separately from licenses.
 Explicit policy paths/hashes/PE facts/RECORD associations were curated from the
-old actual Windows39038363658 inventory. No builder code reads that diagnostic;
+old actual Windows39038363658 inventory, except the suffixed OpenSSL pair now
+associated with the reviewed FireDaemon 3.5.9 distribution. Its checksum, source
+declaration, version/license and custom configuration are recorded separately in
+[the provider association](../firedaemon-openssl/README.md); none is disguised as
+an upstream raw Git blob. All other binary expectations are unchanged.
+No builder code reads that diagnostic;
 every build must measure current facts independently, then the v2 gate measures
 again. A basename or wheel owner version is not upstream version proof.
 

@@ -160,6 +160,12 @@ def collect_source(root):
         spec.loader.exec_module(reader)
         material = reader.read_inputs(root)['files']
         files.update({'third_party/native-material/' + name: data for name, data in material.items()})
+    if (root / 'packaging/openssl_prebuilt.py').is_file():
+        # Exact reviewed provider files, including configuration; no third_party glob.
+        provider_names = ('README.md', 'provenance.json', 'LICENSE.txt', 'version.txt',
+                          'mkopenssl-35.cmd', '50-win-hybridcrt.conf')
+        material = read_tree(root / 'third_party/firedaemon-openssl', provider_names)
+        files.update({'third_party/firedaemon-openssl/' + name: data for name, data in material.items()})
     if (root / 'src/mars_display/usb_worker.py').is_file():
         # Only the known P3 rebuild/test assets, never tools/ or a workspace glob.
         fixtures = ['tools/windows-usb-probe/' + name for name in

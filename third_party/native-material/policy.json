@@ -424,20 +424,20 @@
     }
   ],
   "qt_release": "6.12.0",
-  "qualification": "Reviewed source association policy for the exact external-Microsoft-runtime, optional-Mesa-free profile: Qt base/imageformats and PySide6 6.12.0 pinned full module sources, release proofs, original copyrights and complete module notice supersets. GPL-3.0 source-access route for this GPL-3.0 application; retain upstream alternative terms and third-party conditions, not a commercial-license grant. Full-module conditional attributions do not assert every optional feature was compiled. SDK byte/RECORD/PE expectations were curated from Windows run 39038363658, never used as fresh verification. Supplemental Shiboken and OpenSSL 3.5.5/3.5.9 are separate from the Qt gate; unknown owners elsewhere are not thereby unlicensed. Mechanical binding does not certify legal completeness or ongoing equivalent source availability; distributor must maintain the documented source access. No Microsoft DLL redistribution and no Mesa source-version inference.",
+  "qualification": "Reviewed source association policy for the exact external-Microsoft-runtime, optional-Mesa-free profile: Qt base/imageformats and PySide6 6.12.0 pinned full module sources, release proofs, original copyrights and complete module notice supersets. GPL-3.0 source-access route for this GPL-3.0 application; retain upstream alternative terms and third-party conditions, not a commercial-license grant. Full-module conditional attributions do not assert every optional feature was compiled. SDK byte/RECORD/PE expectations were curated from Windows run 39038363658, never used as fresh verification. Supplemental Shiboken and OpenSSL 3.5.9 are separate from the Qt gate; unknown owners elsewhere are not thereby unlicensed. Mechanical binding does not certify legal completeness or ongoing equivalent source availability; distributor must maintain the documented source access. No Microsoft DLL redistribution and no Mesa source-version inference. The suffixed OpenSSL pair is separately curated from FireDaemon 3.5.9 ZIP SHA256 76da391395be029b44794857b9ff380255e02a0960a98314cd3f6a6816d82696, provider release/source declaration and reviewed configuration snapshot; see source/third_party/firedaemon-openssl/. This is supplier/source association, not independently reproduced vendor binaries or a claim of provider test execution. CPython unsuffixed DLL expectations are unchanged.",
   "registry_sha256": "3543f2d2017e9a05de1fec4a1b580876d45b6db890f8aebd7a3e39bd8124ad06",
   "schema": "marsdisplay-native-source-policy-v1",
   "supplemental": [
     {
-      "module": "openssl-3.5.5",
+      "module": "openssl-3.5.9",
       "owner": null,
       "path": "_internal/libcrypto-3-x64.dll",
       "pe": {
-        "file_version": "3.5.5.0",
-        "product_version": "3.5.5.0",
+        "file_version": "3.5.9.0",
+        "product_version": "3.5.9.0",
         "status": "measured"
       },
-      "sha256": "cc15784f3aea86a526fa3d74e1fe1df94293e96d0888fbaacf4ed9f8e24ea2e0"
+      "sha256": "5268a29c9a5e353770b894f3dbd148ee8c60971aa1620713c54d8e56563d0aca"
     },
     {
       "module": "openssl-3.5.9",
@@ -451,15 +451,15 @@
       "sha256": "75495fe0e079ab00d49be740d3c710a0b94e3f74f9648cb7cc9f768fc7f52319"
     },
     {
-      "module": "openssl-3.5.5",
+      "module": "openssl-3.5.9",
       "owner": null,
       "path": "_internal/libssl-3-x64.dll",
       "pe": {
-        "file_version": "3.5.5.0",
-        "product_version": "3.5.5.0",
+        "file_version": "3.5.9.0",
+        "product_version": "3.5.9.0",
         "status": "measured"
       },
-      "sha256": "6de9ca3242fb130ee489f22cdef58f48b458afdc9636ca9c9c6ed57a921408d9"
+      "sha256": "00520a8ca63ec624969742aa04e7db2af94ba0d3f5fe204cbd114b4ec1f24752"
     },
     {
       "module": "openssl-3.5.9",
