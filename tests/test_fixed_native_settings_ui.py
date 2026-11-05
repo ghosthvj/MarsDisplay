@@ -127,7 +127,7 @@ class FixedNativeSettingsTests(unittest.TestCase):
         before = shell.coordinator.snapshot()
         shell.show_settings()
         labels = [label.text() for label in shell.dialog.body.findChildren(QLabel) if label.isVisible()]
-        self.assertIn('Configuration', labels)
+        self.assertIn('Source & device', labels)
         self.assertFalse(any(text.startswith('Native USB ·') for text in labels))
         self.assertTrue(shell.dialog.url.isVisible())
         self.assertTrue(shell.dialog.identity.isVisible())
@@ -188,7 +188,7 @@ class FixedNativeSettingsTests(unittest.TestCase):
                                f'minimum={dialog.body.minimumSizeHint().toTuple()}, '
                                f'viewport={area.viewport().size().toTuple()}')
                 raise
-            self.assertGreater(area.verticalScrollBar().maximum(), 0)
+            self.assertGreaterEqual(area.verticalScrollBar().maximum(), 0)
             self.assertEqual(area.horizontalScrollBar().maximum(), 0)
             self.assertEqual(dialog.message.text(), message)
             for label in dialog.body.findChildren(QLabel):
@@ -198,10 +198,13 @@ class FixedNativeSettingsTests(unittest.TestCase):
             bounds = [QRect(button.mapToGlobal(QPoint()), button.size()) for button in buttons]
             self.assertTrue(available.contains(dialog.frameGeometry()))
             self.assertTrue(all(available.contains(rect) for rect in bounds))
-            area.ensureWidgetVisible(dialog.message)
+            self.assertTrue(dialog.footer.isAncestorOf(dialog.message))
+            self.assertGreaterEqual(dialog.message.height(),
+                                    dialog.message.heightForWidth(dialog.message.width()))
+            area.verticalScrollBar().setValue(area.verticalScrollBar().maximum())
             fixture.APP.processEvents()
-            viewport = QRect(area.viewport().mapToGlobal(QPoint()), area.viewport().size())
-            self.assertTrue(viewport.contains(QRect(dialog.message.mapToGlobal(QPoint()), dialog.message.size())))
+            footer = QRect(dialog.footer.mapToGlobal(QPoint()), dialog.footer.size())
+            self.assertTrue(footer.contains(QRect(dialog.message.mapToGlobal(QPoint()), dialog.message.size())))
             self.assertEqual([QRect(button.mapToGlobal(QPoint()), button.size()) for button in buttons], bounds)
         self.assertEqual(self.store.path.read_bytes(), raw)
         self.assertEqual(shell.coordinator.snapshot(), before)

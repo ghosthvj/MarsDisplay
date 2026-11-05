@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "comments": [
+    {
+      "id": "nzmu765z",
+      "file": "03-compact-console.html",
+      "selector": "body",
+      "excerpt": "03 · Compact console Demo state Stopped Running Recoverable error Brightness disabled No device Platform Linux Windows ◈ MarsDisplay Dark mode Status / Settings Your MARS dashboard, on your USB display. Capture Stopped Start capture Nothing loads until you start capture. 01Source & device MARS URL H",
+      "comment": "Este diseño se ve bien, pero creo que introduciría un scroll permanente. Puedes preparar una version de este dividiendo esta venta en pestañas donde se agrupen opciones comunes?",
+      "createdAt": "2026-11-05T22:23:34.025Z",
+      "status": "resolved",
+      "sentAt": "2026-11-05T22:23:34.080Z",
+      "resolvedAt": "2026-11-05T22:25:43.036Z"
+    },
+    {
+      "id": "lmtz57al",
+      "file": "03-compact-console.html",
+      "selector": "#brightness",
+      "excerpt": "02Display brightness Native USB brightness 100% 20% 40% 60% 80% 100% Saved with configuration; applied at Start.",
+      "comment": "Este componente ocupa todo el ancho disponible y no me gusta. Hazlo más estrecho y centralo en el espacio disponible",
+      "createdAt": "2026-11-05T22:28:26.370Z",
+      "status": "resolved",
+      "sentAt": "2026-11-05T22:28:26.430Z",
+      "resolvedAt": "2026-11-05T22:28:45.284Z"
+    }
+  ]
+}

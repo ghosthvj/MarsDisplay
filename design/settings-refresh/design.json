@@ -1,0 +1,27 @@
+{
+  "title": "MarsDisplay \u00b7 Settings refresh",
+  "brief": "Three settings alternatives using existing Qt tokens and controls. Preserve 650px desktop width, explicit save and device selection, runtime locking and honest host-completion wording. HTML mockups only; production unchanged.",
+  "artboards": [
+    {
+      "file": "01-clear-sections.html",
+      "title": "Clear sections",
+      "tradeoff": "Familiar numbered groups. Easy to learn; more vertical scrolling.",
+      "width": 850,
+      "height": 900
+    },
+    {
+      "file": "02-task-navigation.html",
+      "title": "Task navigation",
+      "tradeoff": "Separate setup, startup and diagnostics. Less clutter; another click to reach some settings.",
+      "width": 850,
+      "height": 900
+    },
+    {
+      "file": "03-compact-console.html",
+      "title": "Compact console",
+      "tradeoff": "Settings and capture health together. Fast to scan; denser and less room for guidance.",
+      "width": 850,
+      "height": 900
+    }
+  ]
+}

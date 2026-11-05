@@ -232,6 +232,8 @@ class TrayTests(unittest.TestCase):
         dialog.resize(600, 480)
         APP.processEvents()
         self.assertTrue(dialog.save.isVisible())
+        dialog.body.setCurrentIndex(3)
+        APP.processEvents()
         self.assertGreaterEqual(dialog.output.width(), 200)
         self.assertGreaterEqual(dialog.metadata.width(), 200)
         self.assertLessEqual(dialog.footer.geometry().bottom(), dialog.height())

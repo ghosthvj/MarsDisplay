@@ -43,6 +43,34 @@ def window_stylesheet(dark: bool) -> str:
             color: %(muted)s;
         }
         QPushButton#themeSwitch { color: %(accent)s; }
+        QDialog#statusWindow QWidget#settingsPage {
+            background: %(background)s;
+        }
+        QDialog#statusWindow QTabWidget#settingsTabs::pane {
+            border: none;
+            border-top: 1px solid %(border)s;
+        }
+        QDialog#statusWindow QTabWidget#settingsTabs::tab-bar { left: 22px; }
+        QDialog#statusWindow QTabBar::tab {
+            background: %(field)s;
+            color: %(foreground)s;
+            border: 1px solid %(border)s;
+            border-radius: 7px;
+            padding: 8px 14px;
+            margin: 4px 6px 8px 0;
+        }
+        QDialog#statusWindow QTabBar::tab:selected {
+            background: %(subtle)s;
+            color: %(accent)s;
+            border-color: %(accent)s;
+        }
+        QDialog#statusWindow QTabBar::tab:hover { border-color: %(accent)s; }
+        QDialog#statusWindow QTabBar::tab:selected:focus { border: 2px solid %(accent)s; }
+        QDialog#statusWindow QPushButton#primarySave:enabled {
+            background: %(accent)s;
+            color: %(background)s;
+            border-color: %(accent)s;
+        }
         QLineEdit {
             background: %(field)s;
             border: 1px solid %(border)s;
