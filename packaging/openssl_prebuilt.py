@@ -124,8 +124,11 @@ foreach ($name in @('libcrypto-3-x64.dll', 'libssl-3-x64.dll')) {
 }
 """
     executable = Path(os.environ.get('SystemRoot', 'C:/Windows')) / 'System32/WindowsPowerShell/v1.0/powershell.exe'
+    # Python inherits PS7 paths; let Windows PowerShell rebuild its own module path.
+    env = {key: value for key, value in os.environ.items() if key.upper() != 'PSMODULEPATH'}
+    env['MARSDISPLAY_OPENSSL_VERIFY_ROOT'] = str(directory)
     result = subprocess.run([str(executable), '-NoProfile', '-NonInteractive', '-Command', script],
-                            env=dict(os.environ, MARSDISPLAY_OPENSSL_VERIFY_ROOT=str(directory)),
+                            env=env,
                             capture_output=True, timeout=120, check=False)
     if result.returncode:
         statuses = ('Valid', 'NotSigned', 'HashMismatch', 'NotTrusted', 'UnknownError',

@@ -18,6 +18,10 @@ fixed 43 MB vendor ZIP, verifies its published SHA256,
 then checks and extracts only `x64/bin/libcrypto-3-x64.dll` and
 `x64/bin/libssl-3-x64.dll`. Windows Authenticode must report `Valid` with signer
 `FireDaemon Technologies Limited`; merely parsing a certificate is insufficient.
+The Windows PowerShell child omits inherited `PSModulePath` so it reconstructs its
+own compatible module paths. This follows Microsoft's guidance for
+[PowerShell 7 → Python → Windows PowerShell launches](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_psmodulepath#starting-windows-powershell-from-powershell-7).
+The parent environment, PATH and signature/trust requirements remain unchanged.
 An existing output directory is never overwritten. Reuse a successfully prepared
 directory for subsequent builds: the hook rechecks both DLL hashes each time.
 

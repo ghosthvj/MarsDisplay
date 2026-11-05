@@ -228,6 +228,25 @@ class PrebuiltOpenSSLTests(unittest.TestCase):
         for profile in ('portable', 'usb-grouping-v1'):
             self.assertIn(b'source/third_party/firedaemon-openssl/', material.source_access(bundle, profile=profile))
 
+    def test_signature_child_rebuilds_legacy_module_path_without_mutating_parent(self):
+        self.fixture()
+        self.module.prepare(self.archive, self.destination)
+        overrides = {'PSModulePath': 'PRIVATE/CoreModules', 'PSMODULEPATH': 'PRIVATE/OtherCore',
+                     'PsModulePath': 'PRIVATE/MixedCase', 'MARSDISPLAY_TEST_KEEP': 'unchanged'}
+        with (patch.dict(self.module.os.environ, overrides),
+              patch.object(self.module.subprocess, 'run', return_value=Mock(returncode=0)) as run):
+            before = dict(self.module.os.environ)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                self.module.verify_signatures(self.destination)
+            child = run.call_args.kwargs['env']
+            expected = {key: value for key, value in before.items() if key.upper() != 'PSMODULEPATH'}
+            expected['MARSDISPLAY_OPENSSL_VERIFY_ROOT'] = str(self.destination)
+            self.assertEqual(child, expected)
+            self.assertEqual(dict(self.module.os.environ), before)
+            self.assertEqual((out.getvalue(), err.getvalue()), ('', ''))
+            self.assertEqual({p.name: p.read_bytes() for p in self.destination.iterdir()}, self.data)
+
     def test_signature_check_requires_valid_expected_signer(self):
         self.fixture()
         self.module.prepare(self.archive, self.destination)
