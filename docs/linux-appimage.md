@@ -129,10 +129,78 @@ withheld release with exit 2 and no data connection. It never sends a valid pane
 identity, so the production protocol rejects before resolver/serial access.
 Source tests exercise this runner but do **not** qualify frozen execution.
 
-**Separate next boundary:** a verification-only frozen `smoke_probe.py` importing
-Qt offscreen and bundled `BrowserSession`, serving controlled loopback HTML,
-asserting an RGB frame and cleanup with Chromium sandbox enabled. It is not yet
-implemented. Actual Wayland/XCB/offscreen plugin loading, native dependencies,
-browser sandbox/cleanup, COSMIC and hardware remain unverified. A successful
-private-worker smoke does not establish those properties or AppImage support.
-AppRun/AppDir, license manifest and pinned AppImage tools remain T5c.
+## T5b2: test-only frozen Qt/browser probe
+
+This optional, nonshipping helper is **not qualified**. Successful frozen
+qualification is not a production build or release prerequisite; production
+source collection does not require the probe files. No production spec/CLI or
+workflow changes are involved. **Never ship SmokeProbe in MarsDisplay or an
+AppImage**.
+
+Historical frozen execution reached Qt offscreen, XCB/Wayland dependency loading
+and bundled Node, then Chromium failed with `No usable sandbox`. RGB capture was
+never reached. The historical independent verifier was unavailable due to
+`ENOSPC`; that is not a pass. Source contract tests use fake backends and do not
+establish frozen runtime success or production-payload equivalence.
+
+For a separately authorized future attempt, build this separate onedir in the
+verified builder. Parent-controlled commands (Bash, repository root; no host
+artifact execution):
+
+```sh
+set -o pipefail
+set -C
+mkdir -p build
+{ git ls-files 'src/mars_display/*.py'; printf '%s\n' \
+    packaging/linux/SmokeProbe.spec packaging/linux/smoke_probe.py; } |
+  tar -cf - -T - |
+  sudo -n docker run --rm -i --network=none --cap-drop=ALL --read-only \
+    --tmpfs /work:rw,exec,uid=10001,gid=10001 --tmpfs /tmp:rw,exec,mode=1777 \
+    marsdisplay-linux-build:t5a bash -euc '
+      tar -xf -
+      export PYINSTALLER_CONFIG_DIR=/work/build/pyinstaller-config
+      timeout 600 python -m PyInstaller --noconfirm \
+        --workpath build/work --distpath build/dist packaging/linux/SmokeProbe.spec >&2
+      tar -cf - build/dist/SmokeProbe
+    ' > build/linux-probe.tar
+sudo -n docker run --rm -i --network=none --cap-drop=ALL --read-only \
+  --tmpfs /work:rw,exec,uid=10001,gid=10001 --tmpfs /tmp:rw,exec,mode=1777 \
+  marsdisplay-linux-build:t5a bash -euc '
+    tar -xf -
+    timeout -k 5 45 build/dist/SmokeProbe/SmokeProbe
+  ' < build/linux-probe.tar
+```
+
+The image user is nonroot 10001. No mounts, policy overrides, sandbox-disabling
+flags, remote dashboards, serial devices or host displays are permitted. A
+sandbox/namespace denial is a failure, not a skip or permission to weaken policy.
+The 30-second Python watchdog attempts `finally` cleanup; the external timeout
+bounds native hangs and container removal is the final containment boundary.
+HOME/XDG/tmp are isolated; a settings sentinel must remain unchanged.
+
+`SmokeProbe --help` is passive and prints exactly:
+
+```text
+Usage: SmokeProbe [--help]
+Test-only Linux nonroot Qt/browser qualification; no devices.
+```
+
+Unsupported/root execution returns 2 with stderr `FAIL: Linux nonroot required`.
+Success returns 0 with stdout `PASS: Qt offscreen, platform dlopen, Node, sandboxed RGB capture, direct-child cleanup`.
+Other failures return 1 with stderr prefixed `FAIL:`. Public Playwright diagnostic
+launch errors distinguish permission/sandbox, package/dependencies, and unclassified
+failures; their backend detail is retained. Actual BrowserSession then captures
+loopback HTML as exactly 320×480 RGB(17,34,51), and closes in `finally`.
+Direct-child observations cover this process's threads, not reparented descendants.
+XCB/Wayland `dlopen` checks dependency resolution, **not compositor connections**.
+
+Before attributing probe results to production, parent must compare archive member
+SHA256 values for shared Qt libraries/plugins, Playwright driver/Node/Chromium and
+native dependencies against `build/linux-onedir.tar`; also record source revision
+and Python package provenance. Standard hooks alone do not prove byte identity.
+No frozen runtime pass or production-payload equivalence is claimed by source
+tests. This standalone packaging recipe is risk item 5 for parent verification;
+independent verification remains pending. COSMIC, hardware and native Windows
+acceptance are outside this helper's qualification. See
+[Linux release assembly](linux-release-assembly.md) for the separate production
+AppDir/AppImage path; this probe does not gate it.
