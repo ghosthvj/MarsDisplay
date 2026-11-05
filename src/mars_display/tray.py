@@ -170,7 +170,7 @@ class SettingsDialog(QDialog):
         self.setWindowIcon(_icon())
         self.setObjectName("statusWindow")
         self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False)
-        height = min(760, self.screen().availableGeometry().height() - 48)
+        height = min(560, self.screen().availableGeometry().height() - 48)
         self.setFixedSize(650, height)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)

@@ -20,7 +20,7 @@ and you decide when capture runs. No scraping, no screen capture, no vendor app.
 - **Brightness you control.** 20 / 40 / 60 / 80 / 100 %, saved and applied at Start,
   adjustable live while the panel is running.
 - **Tray-first, quiet.** Status / Settings, Start, Stop, Exit. One fixed-size settings window
-  (650 pixels wide, height fitted to the desktop) with Connection, Display, Startup and
+  (650×560 pixels, reduced in height to fit smaller desktops) with Connection, Display, Startup and
   Diagnostics tabs. Each page scrolls independently; capture controls and footer messages
   stay visible. No resizing, maximizing or fullscreen on Windows and Linux.
   A single instance owns the panel at a time.
