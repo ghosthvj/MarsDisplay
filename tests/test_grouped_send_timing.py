@@ -2,6 +2,7 @@
 import struct
 import time
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from mars_display import usb_ipc as ipc, usb_worker as worker
@@ -18,17 +19,20 @@ class GroupedTimingTests(unittest.TestCase):
         body = struct.pack('!B8d', 0, *range(1, 9))
         self.assertEqual(ipc.encode_grouped_timing(detail), body)
         self.assertEqual(ipc.decode_grouped_timing(body), detail)
-        for kind, payload in ((ipc.GROUPED_REPLY, body),
-                              (ipc.GROUPED_FRAME, ipc.encode_frame(session.FRAME))):
-            peer = framing.BytesPeer()
-            ipc.send_packet(peer, kind, 2, payload, time.monotonic()+1)
-            self.assertEqual(ipc.receive_packet(framing.BytesPeer(peer.sent), time.monotonic()+1),
-                             (kind, 2, payload))
-            for size in (0, 1, len(payload)-1, len(payload)+1, 2**32-1):
-                peer = framing.BytesPeer(ipc.HEADER.pack(b'MUSB', 1, kind, 0, 2, size)+b'untouched')
-                with self.assertRaises(ipc.ProtocolError):
-                    ipc.receive_packet(peer, time.monotonic()+1)
-                self.assertEqual(peer.data, b'untouched')
+        # This checks fragmented framing, not performance or deadline enforcement.
+        with patch.object(ipc, 'time', SimpleNamespace(monotonic=lambda: 0.0)):
+            deadline = 1.0
+            for kind, payload in ((ipc.GROUPED_REPLY, body),
+                                  (ipc.GROUPED_FRAME, ipc.encode_frame(session.FRAME))):
+                peer = framing.BytesPeer()
+                ipc.send_packet(peer, kind, 2, payload, deadline)
+                self.assertEqual(ipc.receive_packet(framing.BytesPeer(peer.sent), deadline),
+                                 (kind, 2, payload))
+                for size in (0, 1, len(payload)-1, len(payload)+1, 2**32-1):
+                    peer = framing.BytesPeer(ipc.HEADER.pack(b'MUSB', 1, kind, 0, 2, size)+b'untouched')
+                    with self.assertRaises(ipc.ProtocolError):
+                        ipc.receive_packet(peer, deadline)
+                    self.assertEqual(peer.data, b'untouched')
         for slot in range(8):
             for value in (-1, float('nan'), float('inf'), -float('inf')):
                 values = [0.] * 8
