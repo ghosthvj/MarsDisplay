@@ -13,7 +13,8 @@ python -B packaging/openssl_prebuilt.py
 python packaging/build_portable.py
 ```
 
-Preparation downloads the fixed 43 MB vendor ZIP, verifies its published SHA256,
+Preparation identifies its HTTP client as `MarsDisplay-build/1.0`, downloads the
+fixed 43 MB vendor ZIP, verifies its published SHA256,
 then checks and extracts only `x64/bin/libcrypto-3-x64.dll` and
 `x64/bin/libssl-3-x64.dll`. Windows Authenticode must report `Valid` with signer
 `FireDaemon Technologies Limited`; merely parsing a certificate is insufficient.
@@ -24,7 +25,10 @@ For an already downloaded ZIP, use `--archive PATH`; the same size/hash checks
 apply. `--output PATH` selects a new preparation directory; normal builders use
 only the default project directory `build/openssl-prebuilt`. No ambient fallback,
 DLL renaming or global PATH modification is performed. A preparation failure
-returns nonzero; do not proceed to packaging after it.
+returns nonzero; do not proceed to packaging after it. Failure messages identify
+only a fixed operation phase, exception type and HTTP status when available.
+Signature failures may report allowlisted DLL/status pairs, never raw subprocess
+errors, certificate subjects, private paths or environment contents.
 
 Both portable and USB grouping workflows prepare this input before PyInstaller.
 The builder commands themselves still perform no downloads. The local QtNetwork

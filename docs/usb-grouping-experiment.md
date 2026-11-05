@@ -120,7 +120,9 @@ An inventory is not a signature or hardware approval.
 Native Windows x64 only: install the existing pinned `.[build]` SDK, prepare the
 [pinned prebuilt OpenSSL pair](windows-openssl-prebuilt.md) with
 `python -B packaging/openssl_prebuilt.py`, then run
-`python -B packaging/build_grouping_experiment.py`. The dedicated manual-only
+`python -B packaging/build_grouping_experiment.py`. Windows offscreen source tests
+use `QT_QPA_FONTDIR=C:/Windows/Fonts`, matching the portable workflow; font/glyph
+assertions and the zero-skip gate remain required. The dedicated manual-only
 `.github/workflows/windows-usb-grouping.yml` supports manual dispatch from the
 registered workflow. Its historical feature-branch bootstrap trigger has been
 retired; no branch/tag push starts the experiment. The normal portable and

@@ -90,6 +90,10 @@ class PrebuiltOpenSSLTests(unittest.TestCase):
         with patch.object(self.module.urllib.request, 'build_opener', return_value=opener):
             self.module.fetch(target)
             self.assertEqual(target.read_bytes(), raw)
+            request = opener.open.call_args.args[0]
+            self.assertIsInstance(request, urllib.request.Request)
+            self.assertEqual(request.full_url, self.module.URL)
+            self.assertEqual(request.get_header('User-agent'), 'MarsDisplay-build/1.0')
             opener.reset_mock()
             with self.assertRaises(FileExistsError):
                 self.module.fetch(target)
@@ -116,13 +120,43 @@ class PrebuiltOpenSSLTests(unittest.TestCase):
             self.assertEqual(stdout.getvalue(), 'Prepared verified FireDaemon OpenSSL 3.5.9 (x64).\n' if success else '')
             self.assertEqual(stderr.getvalue(), '' if success else
                              ('OpenSSL preparation requires Windows.\n' if platform == 'linux'
-                              else 'OpenSSL preparation failed.\n'))
+                              else 'OpenSSL preparation failed (signatures; ValueError).\n'))
             self.assertEqual(signatures.call_count, 0 if platform == 'linux' else 1)
             self.assertEqual(self.archive.read_bytes(), raw)
             if platform == 'linux':
                 self.assertFalse(destination.exists())
             else:
                 self.assertEqual({p.name: p.read_bytes() for p in destination.iterdir()}, self.data)
+
+    def test_default_cli_failure_identifies_phase_without_private_error_text(self):
+        raw = self.fixture()
+        for phase in ('output', 'download', 'archive', 'signatures'):
+            destination = self.root / ('failed-' + phase)
+            calls = []
+            def operation(name, result=None):
+                def invoke(*args):
+                    calls.append(name)
+                    if phase == name:
+                        if name == 'download':
+                            raise self.module.urllib.error.HTTPError('https://private.invalid/secret', 403, 'PRIVATE', {}, None)
+                        raise ValueError('PRIVATE C:/private/settings.json')
+                    return result
+                return invoke
+            out, err = io.StringIO(), io.StringIO()
+            with (patch.object(self.module.sys, 'platform', 'win32'),
+                  patch.object(self.module, '_plain', side_effect=operation('output', destination)),
+                  patch.object(self.module, 'fetch', side_effect=operation('download', self.archive)),
+                  patch.object(self.module, 'prepare', side_effect=operation('archive')),
+                  patch.object(self.module, 'verify_signatures', side_effect=operation('signatures')),
+                  contextlib.redirect_stdout(out), contextlib.redirect_stderr(err)):
+                result = self.module.main(['--output', str(destination)])
+            self.assertEqual(result, 1)
+            self.assertEqual(out.getvalue(), '')
+            detail = 'HTTPError; HTTP 403' if phase == 'download' else 'ValueError'
+            self.assertEqual(err.getvalue(), 'OpenSSL preparation failed (' + phase + '; ' + detail + ').\n')
+            self.assertEqual(calls, list(('output', 'download', 'archive', 'signatures'))[:list(('output', 'download', 'archive', 'signatures')).index(phase) + 1])
+            self.assertFalse(destination.exists())
+            self.assertEqual(self.archive.read_bytes(), raw)
 
     def test_hook_preserves_qt_traversal_without_ambient_collection(self):
         hook = Path('packaging/hooks/hook-PySide6.QtNetwork.py').resolve()
@@ -198,7 +232,10 @@ class PrebuiltOpenSSLTests(unittest.TestCase):
         self.fixture()
         self.module.prepare(self.archive, self.destination)
         for code in (0, 1):
-            with patch.object(self.module.subprocess, 'run', return_value=Mock(returncode=code)) as run:
+            stderr = io.StringIO()
+            with (patch.object(self.module.subprocess, 'run', return_value=Mock(returncode=code,
+                    stdout=b'libcrypto-3-x64.dll:NotTrusted\nPRIVATE C:/private/settings.json\n')) as run,
+                  contextlib.redirect_stderr(stderr)):
                 if code:
                     with self.assertRaisesRegex(ValueError, '^OpenSSL Authenticode verification failed$'):
                         self.module.verify_signatures(self.destination)
@@ -207,4 +244,5 @@ class PrebuiltOpenSSLTests(unittest.TestCase):
                 command = run.call_args.args[0]
                 self.assertIn("$signature.Status -ne 'Valid'", command[-1])
                 self.assertIn('FireDaemon Technologies Limited', command[-1])
+                self.assertEqual(stderr.getvalue(), 'OpenSSL signature libcrypto-3-x64.dll:NotTrusted\n' if code else '')
                 self.assertEqual(run.call_args.kwargs['env']['MARSDISPLAY_OPENSSL_VERIFY_ROOT'], str(self.destination))

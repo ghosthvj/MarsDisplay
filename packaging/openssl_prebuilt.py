@@ -8,6 +8,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
@@ -53,7 +54,8 @@ def fetch(destination):
     if destination.exists():
         raise FileExistsError('OpenSSL archive output already exists')
     opener = urllib.request.build_opener(HTTPSRedirect())
-    with opener.open(URL, timeout=60) as response:
+    request = urllib.request.Request(URL, headers={'User-Agent': 'MarsDisplay-build/1.0'})
+    with opener.open(request, timeout=60) as response:
         data = response.read(ARCHIVE_SIZE + 1)
     if not _matches(data, {'size': ARCHIVE_SIZE, 'sha256': ARCHIVE_SHA256}):
         raise ValueError('Pinned OpenSSL archive mismatch')
@@ -115,9 +117,10 @@ def verify_signatures(directory):
     script = """$ErrorActionPreference = 'Stop'
 foreach ($name in @('libcrypto-3-x64.dll', 'libssl-3-x64.dll')) {
     $signature = Get-AuthenticodeSignature -LiteralPath (Join-Path $env:MARSDISPLAY_OPENSSL_VERIFY_ROOT $name)
+    Write-Output ($name + ':' + [string]$signature.Status)
     if ($signature.Status -ne 'Valid' -or $null -eq $signature.SignerCertificate) { exit 1 }
     $signer = $signature.SignerCertificate.GetNameInfo([System.Security.Cryptography.X509Certificates.X509NameType]::SimpleName, $false)
-    if ($signer -ne 'FireDaemon Technologies Limited') { exit 1 }
+    if ($signer -ne 'FireDaemon Technologies Limited') { Write-Output ($name + ':UnexpectedSigner'); exit 1 }
 }
 """
     executable = Path(os.environ.get('SystemRoot', 'C:/Windows')) / 'System32/WindowsPowerShell/v1.0/powershell.exe'
@@ -125,6 +128,12 @@ foreach ($name in @('libcrypto-3-x64.dll', 'libssl-3-x64.dll')) {
                             env=dict(os.environ, MARSDISPLAY_OPENSSL_VERIFY_ROOT=str(directory)),
                             capture_output=True, timeout=120, check=False)
     if result.returncode:
+        statuses = ('Valid', 'NotSigned', 'HashMismatch', 'NotTrusted', 'UnknownError',
+                    'NotSupportedFileFormat', 'Incompatible', 'UnexpectedSigner')
+        allowed = {(name + ':' + status).encode('ascii') for name in DLLS for status in statuses}
+        for line in result.stdout.splitlines():
+            if line in allowed:
+                print('OpenSSL signature ' + line.decode('ascii'), file=sys.stderr)
         raise ValueError('OpenSSL Authenticode verification failed')
 
 
@@ -137,6 +146,7 @@ def main(argv=None):
     if sys.platform != 'win32':
         print('OpenSSL preparation requires Windows.', file=sys.stderr)
         return 1
+    phase = 'output'
     try:
         destination = _plain(args.output)
         if destination.exists():
@@ -144,12 +154,20 @@ def main(argv=None):
         destination.parent.mkdir(parents=True, exist_ok=True)
         if args.archive is None:
             with tempfile.TemporaryDirectory(prefix='openssl-fetch-', dir=destination.parent) as temporary:
-                prepare(fetch(Path(temporary) / 'openssl.zip'), destination)
+                phase = 'download'
+                archive = fetch(Path(temporary) / 'openssl.zip')
+                phase = 'archive'
+                prepare(archive, destination)
         else:
+            phase = 'archive'
             prepare(args.archive, destination)
+        phase = 'signatures'
         verify_signatures(destination)
-    except (OSError, ValueError, zipfile.BadZipFile, subprocess.SubprocessError):
-        print('OpenSSL preparation failed.', file=sys.stderr)
+    except (OSError, ValueError, zipfile.BadZipFile, subprocess.SubprocessError) as error:
+        detail = phase + '; ' + type(error).__name__
+        if isinstance(error, urllib.error.HTTPError) and type(error.code) is int and 100 <= error.code <= 599:
+            detail += '; HTTP ' + str(error.code)
+        print('OpenSSL preparation failed (' + detail + ').', file=sys.stderr)
         return 1
     print('Prepared verified FireDaemon OpenSSL 3.5.9 (x64).')
     return 0
