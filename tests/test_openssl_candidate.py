@@ -36,6 +36,8 @@ class OpenSSLCandidateTests(unittest.TestCase):
         self.assertNotIn('OPENSSL_CONF', env)
         self.assertEqual(env['SOURCE_DATE_EPOCH'], '1790640000')
         self.assertIn('/Brepro', env['_CL_'])
+        self.assertIn('/Z7', env['_CL_'])
+        self.assertIn('/experimental:deterministic', env['_CL_'])
         self.assertIn('/PDBALTPATH:openssl.pdb', env['LDFLAGS'])
         self.assertIn('--reproducible', env['ASFLAGS'])
 
@@ -138,6 +140,7 @@ class OpenSSLCandidateTests(unittest.TestCase):
                 self.assertEqual(code, 0 if mode == 'success' else 1)
                 self.assertEqual(report['completed'], mode == 'success')
                 self.assertEqual(report['status'], 'UNQUALIFIED')
+                self.assertIn('/experimental:deterministic', report['flags']['compiler'])
                 self.assertEqual(built.call_count, 1 if mode == 'build_error' else 2)
                 self.assertEqual(stdout.getvalue(), 'OpenSSL controlled candidate: ' +
                                  json.dumps(report, sort_keys=True) + '\n')

@@ -75,7 +75,9 @@ overrides. Portable NASM takes precedence over Strawberry's different bundled co
 
 Two independent source/build trees use `VC-WIN64A shared`, the source release-date
 epoch, explicit compiler path normalization, `/Brepro`, `/Z7`, a stable PDB reference
-and NASM reproducibility flags. Each runs `nmake` and `nmake test`; source/tool input
+and NASM reproducibility flags. MSVC requires `/experimental:deterministic` for
+`/pathmap`; without it the observed compiler emits D9007 and ignores the mapping.
+Both the effective compiler environment and candidate metadata include this prerequisite. Each runs `nmake` and `nmake test`; source/tool input
 changes or unequal DLL hashes fail. These flags are a candidate recipe, **not yet
 observed Windows reproducibility evidence**. Upstream test output remains in the
 job log; an upstream pass is not a claim that every optional upstream test ran.

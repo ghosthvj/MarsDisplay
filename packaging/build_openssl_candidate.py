@@ -88,7 +88,8 @@ def environment(layout, work):
                                    for name in ('ucrt', 'um')]]
     # _CL_ appends to upstream flags. Keep path-dependent flags out of buildinf.h;
     # the recipe records the normalization template, not an ambient environment.
-    flags = ['/Z7', '/Brepro', f'/pathmap:{work}=C:\\openssl-build']
+    flags = ['/Z7', '/Brepro', '/experimental:deterministic',
+             f'/pathmap:{work}=C:\\openssl-build']
     return {'SystemRoot': str(system), 'COMSPEC': str(system / 'System32/cmd.exe'),
             'PATH': ';'.join(map(str, path)), 'PATHEXT': '.COM;.EXE;.BAT;.CMD',
             'INCLUDE': ';'.join(map(str, includes)), 'LIB': ';'.join(map(str, libraries)),
@@ -192,7 +193,8 @@ def candidate(input_directory, output):
         probe = output / 'probe'
         (probe / 'tmp').mkdir(parents=True)
         report['tool_versions'] = identify(layout, environment(layout, probe))
-        report['flags'] = {'compiler': ['/Z7', '/Brepro', '/pathmap:<build-root>=C:\\openssl-build'],
+        report['flags'] = {'compiler': ['/Z7', '/Brepro', '/experimental:deterministic',
+                                        '/pathmap:<build-root>=C:\\openssl-build'],
                            'assembler': '-g --reproducible',
                            'linker': environment(layout, probe)['LDFLAGS']}
         recipe = hashlib.sha256()
