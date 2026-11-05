@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "chosen": "03-compact-console.html",
+  "handoffs": {
+    "03-compact-console.html": {
+      "status": "implemented",
+      "queued": false,
+      "sentAt": "2026-11-05T22:30:38.937Z",
+      "startedAt": "2026-11-05T22:36:33.954Z",
+      "implementedAt": "2026-11-05T22:42:52.487Z",
+      "note": "Implemented in native Qt: four tabs, persistent capture/footer, centered 320px brightness, keyboard navigation and validation focus. Full suite: 712 tests, OK, 4 Windows-only skips; 80 focused tests passed. No commits. Native Qt app has no loopback preview URL. Offscreen geometry checked; no manual visual inspection."
+    }
+  }
+}

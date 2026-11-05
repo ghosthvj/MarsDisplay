@@ -7,7 +7,7 @@ from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDialog, QFileDialog, QFrame, QGridLayout, QHBoxLayout,
     QLabel, QLineEdit, QMenu, QMessageBox,
-    QPushButton, QScrollArea, QSlider, QSystemTrayIcon, QVBoxLayout, QWidget,
+    QPushButton, QScrollArea, QSlider, QSystemTrayIcon, QTabBar, QTabWidget, QVBoxLayout, QWidget,
 )
 
 from .lifecycle import Coordinator, LifecycleError
@@ -140,6 +140,27 @@ class NativeTimingDialog(QDialog):
         layout.addWidget(self.close_action, 0, Qt.AlignmentFlag.AlignRight)
 
 
+class SettingsTabBar(QTabBar):
+    """Native tabs with the reference's wrapping arrows and endpoint keys."""
+
+    def keyPressEvent(self, event):
+        key = event.key()
+        if key in (Qt.Key.Key_Home, Qt.Key.Key_End, Qt.Key.Key_Left, Qt.Key.Key_Right):
+            if key == Qt.Key.Key_Home:
+                index = 0
+            elif key == Qt.Key.Key_End:
+                index = self.count() - 1
+            else:
+                step = 1 if key == Qt.Key.Key_Right else -1
+                if self.layoutDirection() == Qt.LayoutDirection.RightToLeft:
+                    step = -step
+                index = (self.currentIndex() + step) % self.count()
+            self.setCurrentIndex(index)
+            event.accept()
+        else:
+            super().keyPressEvent(event)
+
+
 class SettingsDialog(QDialog):
     """Fixed-size form with overflow scrolling and a persistent action footer."""
 
@@ -154,9 +175,8 @@ class SettingsDialog(QDialog):
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
-        self.body = QWidget()
-        self.body.setObjectName("body")
-        column = QVBoxLayout(self.body)
+        header = QWidget()
+        column = QVBoxLayout(header)
         column.setContentsMargins(22, 8, 22, 8)
         column.setSpacing(3)
         toolbar = QHBoxLayout()
@@ -193,17 +213,40 @@ class SettingsDialog(QDialog):
         self.error_stop_action.hide()
         self.capture_row.addWidget(self.error_stop_action)
         column.addWidget(self.runtime_card)
+        outer.addWidget(header)
+        self.body = QTabWidget()
+        self.body.setObjectName("settingsTabs")
+        self.body.setTabBar(SettingsTabBar())
+        self.body.tabBar().setAccessibleName("Settings categories")
+        outer.addWidget(self.body, 1)
+        pages = []
+        for title in ("Connection", "Display", "Startup", "Diagnostics"):
+            area = QScrollArea()
+            area.setWidgetResizable(True)
+            area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            page = QWidget()
+            page.setObjectName("settingsPage")
+            layout = QVBoxLayout(page)
+            layout.setContentsMargins(22, 8, 22, 8)
+            layout.setSpacing(3)
+            layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+            area.setWidget(page)
+            self.body.addTab(area, title)
+            pages.append(layout)
+        connection, display, startup, diagnostics = pages
+        self.scroll_area = self.body.widget(0)
+        startup.addWidget(_label("Startup", "sectionHeading"))
         self.start_on_launch = QCheckBox("Start capture when MarsDisplay opens")
-        column.addWidget(self.start_on_launch)
-        column.addWidget(_label("Saved immediately for the next launch; save your configuration first.", "muted"))
+        startup.addWidget(self.start_on_launch)
+        startup.addWidget(_label("Saved immediately for the next launch; save your configuration first.", "muted"))
         self.start_with_windows = QCheckBox("Start MarsDisplay when I sign in to Windows")
-        column.addWidget(self.start_with_windows)
+        startup.addWidget(self.start_with_windows)
         self.windows_startup_hint = _label("", "muted")
-        column.addWidget(self.windows_startup_hint)
+        startup.addWidget(self.windows_startup_hint)
         self.update_startup_path = QPushButton("Update startup path")
         self.update_startup_path.setAutoDefault(False)
         self.update_startup_path.hide()
-        column.addWidget(self.update_startup_path, 0, Qt.AlignmentFlag.AlignLeft)
+        startup.addWidget(self.update_startup_path, 0, Qt.AlignmentFlag.AlignLeft)
         self.source = StatusLabel("stopped", "sourceBadge")
         self.output = _label("Simulated — simulated-closed (no USB output)")
         self.metadata = _label()
@@ -224,7 +267,8 @@ class SettingsDialog(QDialog):
             line.setObjectName("separator")
             line.setFixedHeight(1)
             details.addWidget(line, index * 2 + 1, 0, 1, 2)
-        column.addLayout(details)
+        diagnostics.addWidget(_label("Capture details", "sectionHeading"))
+        diagnostics.addLayout(details)
         self.logs_window = NativeTimingDialog(self)
         self.native_timing = self.logs_window.timing
         self.preview_action = QPushButton("Preview")
@@ -233,11 +277,12 @@ class SettingsDialog(QDialog):
         self.logs_action = QPushButton("Logs")
         self.logs_action.setAutoDefault(False)
         self.logs_action.setAccessibleName("Show native timing logs")
-        column.addWidget(_label("Native USB brightness", "sectionHeading"))
         brightness_control = QWidget()
-        brightness_control.setFixedWidth(320)
+        brightness_control.setMaximumWidth(320)
         brightness_layout = QVBoxLayout(brightness_control)
         brightness_layout.setContentsMargins(0, 0, 0, 0)
+        brightness_layout.addWidget(_label("Display brightness", "sectionHeading"))
+        brightness_layout.addWidget(_label("Native USB brightness"))
         self.brightness = QSlider(Qt.Orientation.Horizontal)
         self.brightness.setAccessibleName("Brightness percentage")
         self.brightness.setRange(0, len(BRIGHTNESS_LEVELS) - 1)
@@ -255,19 +300,25 @@ class SettingsDialog(QDialog):
             if percent != BRIGHTNESS_LEVELS[-1]:
                 levels.addStretch(1)
         brightness_layout.addLayout(levels)
-        column.addWidget(brightness_control, 0, Qt.AlignmentFlag.AlignHCenter)
+        brightness_row = QHBoxLayout()
+        brightness_row.addStretch(1)
+        brightness_row.addWidget(brightness_control, 100)
+        brightness_row.addStretch(1)
+        display.addLayout(brightness_row)
+        brightness_layout.addWidget(_label(
+            "Saved immediately, independently of Save. Applied at Start and live while running.", "muted"))
         self.enable_brightness = QPushButton("Enable Brightness")
         self.enable_brightness.setAutoDefault(False)
-        column.addWidget(self.enable_brightness, 0, Qt.AlignmentFlag.AlignLeft)
+        brightness_layout.addWidget(self.enable_brightness, 0, Qt.AlignmentFlag.AlignLeft)
         # Retain the guarded recovery binding without exposing another UI control.
         self.restore_brightness = QPushButton("Restore settings from before brightness…", self)
         self.restore_brightness.setAutoDefault(False)
         self.restore_brightness.hide()
-        column.addWidget(_label("Configuration", "sectionHeading"))
-        column.addWidget(_label("MARS URL"))
+        connection.addWidget(_label("Source & device", "sectionHeading"))
+        connection.addWidget(_label("MARS URL"))
         self.url = QLineEdit(configured.mars_url if configured else "")
         self.url.setAccessibleName("MARS URL")
-        column.addWidget(self.url)
+        connection.addWidget(self.url)
         device_card = QFrame()
         device_card.setObjectName("deviceCard")
         device_layout = QHBoxLayout(device_card)
@@ -276,7 +327,7 @@ class SettingsDialog(QDialog):
         self.device = _label(configured.device_identity if configured and configured.device_identity
                              else "Not selected (hardware identification pending)")
         device_layout.addWidget(self.device, 1)
-        column.addWidget(device_card)
+        connection.addWidget(device_card)
         self.identity = QComboBox()
         self.identity.setAccessibleName("Opaque USB identity")
         self.identity.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
@@ -287,7 +338,7 @@ class SettingsDialog(QDialog):
         usb_row.setSpacing(12)
         usb_row.addWidget(self.identity, 1)
         usb_row.addWidget(self.refresh_devices)
-        column.addLayout(usb_row)
+        connection.addLayout(usb_row)
         # Keep explicit recovery/export functions, but omit their controls from the form.
         self.export_settings = QPushButton("Export schema-1 settings…", self)
         self.restore_settings = QPushButton("Restore preserved schema-1 backup…", self)
@@ -298,21 +349,18 @@ class SettingsDialog(QDialog):
         self.message = _label()
         self.message_kind = ""
         self.message.hide()
-        column.addWidget(self.message)
-        column.addStretch()
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.scroll_area.setWidget(self.body)
-        outer.addWidget(self.scroll_area, 1)
         self.footer = QFrame()
         self.footer.setObjectName("footer")
-        footer_row = QHBoxLayout(self.footer)
-        footer_row.setContentsMargins(22, 8, 22, 8)
+        footer_column = QVBoxLayout(self.footer)
+        footer_column.setContentsMargins(22, 8, 22, 8)
+        footer_column.setSpacing(6)
+        footer_column.addWidget(self.message)
+        footer_row = QHBoxLayout()
+        footer_column.addLayout(footer_row)
         self.hint = _label("Settings can be saved only while capture is stopped.", "hint")
         footer_row.addWidget(self.hint, 1)
         self.save = QPushButton("Save")
+        self.save.setObjectName("primarySave")
         actions = QHBoxLayout()
         actions.setSpacing(6)
         actions.addWidget(self.logs_action)
@@ -655,12 +703,15 @@ class TrayShell(QObject):
         self.refresh()
 
     def _save(self):
+        validation_target = None
         try:
             # Coordinator remains the stopped-only authority even if a stale Qt
             # action was queued just before Start.
             self._configuration_guard()
+            validation_target = self.dialog.url
             settings = (replace(self.configured, mars_url=self.dialog.url.text())
                         if self.configured is not None else Settings(self.dialog.url.text()))
+            validation_target = self.dialog.identity
             identity = self.dialog.identity.currentData()
             if self._inventory is not None or identity is None:
                 select_device(self._inventory or (), identity)
@@ -681,6 +732,11 @@ class TrayShell(QObject):
                 self.coordinator.save_settings(settings)
         except (SettingsError, LifecycleError, DeviceSelectionError) as error:
             self.dialog.show_message(str(error))
+            if (validation_target is self.dialog.url and isinstance(error, SettingsError)
+                    or isinstance(error, DeviceSelectionError)):
+                self.dialog.body.setCurrentIndex(0)
+                self.dialog.scroll_area.ensureWidgetVisible(validation_target)
+                validation_target.setFocus(Qt.FocusReason.OtherFocusReason)
         else:
             self.configured = settings
             self.dialog.device.setText(settings.device_identity or "Not selected (hardware identification pending)")

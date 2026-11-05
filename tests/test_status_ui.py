@@ -62,12 +62,15 @@ class StatusUITests(unittest.TestCase):
                 QTest.qWait(110)
                 second = label.grab().toImage()
                 self.assertEqual(first == second, icon != 'Loading')
+        # Source icons animate only while their Diagnostics page is visible.
+        shell.dialog.body.setCurrentIndex(3)
         for state, icon in (('ready', 'Check'), ('empty', 'Empty'), ('loading', 'Loading')):
             with self.subTest(source=state), patch.object(
                     shell.coordinator, 'snapshot', return_value=replace(before, source_state=state)):
                 shell.refresh()
                 label = shell.dialog.source
                 fixture.APP.processEvents()
+                self.assertTrue(label.isVisible())
                 self.assertEqual(label.accessibleDescription(), icon + ' icon')
                 first = label.grab().toImage()
                 QTest.qWait(110)

@@ -31,6 +31,7 @@ class BrightnessUiTests(unittest.TestCase):
         self.shell = create_shell(fixture.APP, self.store, lambda: Coordinator(
             self.store, lambda _: Source(), transport_context_factory=lambda _: self.output,
             inventory_provider=lambda: (device(),), wait=self.gate))
+        self.shell.dialog.body.setCurrentIndex(1)
         return self.shell
 
     def enable(self):
@@ -45,7 +46,8 @@ class BrightnessUiTests(unittest.TestCase):
         fixture.APP.processEvents()
         slider = shell.dialog.brightness
         self.assertLessEqual(slider.width(), 320)
-        self.assertLess(slider.width(), shell.dialog.body.width() / 2)
+        self.assertEqual(slider.parentWidget().width(), 320)
+        self.assertTrue(slider.parentWidget().isAncestorOf(shell.dialog.enable_brightness))
         container = slider.parentWidget()
         self.assertLessEqual(abs(container.geometry().center().x()
                                  - container.parentWidget().rect().center().x()), 1)

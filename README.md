@@ -20,8 +20,10 @@ and you decide when capture runs. No scraping, no screen capture, no vendor app.
 - **Brightness you control.** 20 / 40 / 60 / 80 / 100 %, saved and applied at Start,
   adjustable live while the panel is running.
 - **Tray-first, quiet.** Status / Settings, Start, Stop, Exit. One fixed-size settings window
-  (650 pixels wide, height fitted to the desktop) that scrolls, without resizing,
-  maximizing or fullscreen on Windows and Linux. A single instance owns the panel at a time.
+  (650 pixels wide, height fitted to the desktop) with Connection, Display, Startup and
+  Diagnostics tabs. Each page scrolls independently; capture controls and footer messages
+  stay visible. No resizing, maximizing or fullscreen on Windows and Linux.
+  A single instance owns the panel at a time.
 - **Opt-in automation.** Start capturing whenever the app opens, and start the app when
   you sign in to Windows. Both off by default, both one click to undo.
 - **Honest state.** Live-connected and stale flags, lifetime frame count, native timing
@@ -40,7 +42,7 @@ and you decide when capture runs. No scraping, no screen capture, no vendor app.
 1. Download the [latest release](https://github.com/ghosthvj/MarsDisplay/releases/latest)
    ZIP and extract the **whole archive** into a new folder.
 2. Run `MarsDisplay.exe`. It waits in the tray, stopped and unconfigured.
-3. Tray → **Status / Settings**: enter the **MARS URL**, click **Refresh USB identities**,
+3. Tray → **Status / Settings** → **Connection**: enter the **MARS URL**, click **Refresh USB identities**,
    choose your screen explicitly, then **Save**.
 4. **Start.** The panel shows your dashboard and the tray reports frames and live state.
 
@@ -49,15 +51,15 @@ and you decide when capture runs. No scraping, no screen capture, no vendor app.
 On Windows, settings are stored in `%LOCALAPPDATA%\MarsDisplay\settings.json`. The first save also
 keeps a schema-1 backup beside it, so an older build can always read your setup back.
 
-**MARS URL** — the HTTPS page to display. Nothing loads until you press Start.
+**MARS URL** — the HTTP(S) page to display. Nothing loads until you press Start.
 
 **Screen selection** — Refresh lists available identities and you pick one. Missing,
 duplicate or unhealthy devices are refused rather than guessed, and the saved identity
 is displayed read-only afterwards.
 
 **Brightness** — while stopped, **Enable Brightness** turns on saved brightness and
-backs up your current settings first; from then on the slider sets the level at Start
-and changes it live while running.
+backs up your current settings first. In **Display**, slider changes save immediately,
+independently of Save, even while stopped. The level is applied at Start and live while running.
 
 **Startup** — *Start capture when MarsDisplay opens* saves the moment you toggle it and
 applies to every later launch until you turn it off (*save your configuration first*).
