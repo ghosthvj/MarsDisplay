@@ -222,13 +222,30 @@ class FixedNativeSettingsTests(unittest.TestCase):
             self.assertTrue(button.fontMetrics().inFontUcs4(ord(character)), character)
         self.assertFalse(self.session.opened.is_set())
 
-    def test_roomy_desktop_keeps_scrollbar_hidden(self):
+    def test_roomy_desktop_uses_compact_height_without_scrolling_any_tab(self):
         with patch.object(QScreen, 'availableGeometry', return_value=QRect(0, 0, 1920, 1080)):
             shell = self.make()
             shell.show_settings()
-        fixture.APP.processEvents()
-        self.assertEqual(shell.dialog.scroll_area.verticalScrollBar().maximum(), 0)
-        self.assertFalse(shell.dialog.scroll_area.verticalScrollBar().isVisible())
+        dialog = shell.dialog
+        raw = self.store.path.read_bytes()
+        before = shell.coordinator.snapshot()
+        self.assertEqual(dialog.size().toTuple(), (650, 560))
+        self.assertEqual(dialog.minimumSize(), dialog.maximumSize())
+        for index in range(dialog.body.count()):
+            with self.subTest(tab=dialog.body.tabText(index)):
+                dialog.body.setCurrentIndex(index)
+                fixture.APP.processEvents()
+                area = dialog.body.widget(index)
+                fixture.until(lambda: area.verticalScrollBar().maximum() == 0)
+                self.assertFalse(area.verticalScrollBar().isVisible())
+                self.assertEqual(area.horizontalScrollBar().maximum(), 0)
+                for button in (dialog.capture_action, dialog.logs_action,
+                               dialog.preview_action, dialog.save):
+                    bounds = QRect(button.mapTo(dialog, QPoint()), button.size())
+                    self.assertTrue(button.isVisible())
+                    self.assertTrue(dialog.rect().contains(bounds))
+        self.assertEqual(self.store.path.read_bytes(), raw)
+        self.assertEqual(shell.coordinator.snapshot(), before)
         self.assertFalse(self.session.opened.is_set())
 
     def test_fixed_height_keeps_configuration_footer_and_error_readable_with_fallback(self):

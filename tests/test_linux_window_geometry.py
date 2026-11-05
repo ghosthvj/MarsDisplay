@@ -29,12 +29,12 @@ class WindowGeometryTests(unittest.TestCase):
                 # COSMIC mishandles that zero paired with a fixed height.
                 self.assertEqual(dialog.maximumWidth(), 650)
                 self.assertEqual(dialog.minimumWidth(), 650)
-                self.assertEqual(dialog.minimumHeight(), 760)
-                self.assertEqual(dialog.maximumHeight(), 760)
+                self.assertEqual(dialog.minimumHeight(), 560)
+                self.assertEqual(dialog.maximumHeight(), 560)
                 dialog.show()
                 APP.processEvents()
                 self.assertEqual(dialog.windowHandle().maximumWidth(), 650)
-                self.assertEqual(dialog.windowHandle().maximumHeight(), 760)
+                self.assertEqual(dialog.windowHandle().maximumHeight(), 560)
                 dialog.close()
 
     def test_wayland_hint_keeps_compact_running_form_and_fixed_size(self):
@@ -50,13 +50,13 @@ class WindowGeometryTests(unittest.TestCase):
         dialog.hint.setText("Capture is running. Stop capture to save changes.")
         dialog.show()
         APP.processEvents()
-        self.assertEqual((dialog.width(), dialog.height()), (650, 760))
+        self.assertEqual((dialog.width(), dialog.height()), (650, 560))
         for dark in (False, True):
             dialog.set_dark_mode(dark)
             for width in (900, 650):
                 dialog.resize(width, 760)
                 APP.processEvents()
-                self.assertEqual((dialog.width(), dialog.height()), (650, 760))
+                self.assertEqual((dialog.width(), dialog.height()), (650, 560))
                 self.assertEqual(dialog.scroll_area.horizontalScrollBar().maximum(), 0)
                 for label in (dialog.output, dialog.device, dialog.hint):
                     self.assertGreaterEqual(label.height(), label.heightForWidth(label.width()))
@@ -99,5 +99,5 @@ class WindowGeometryTests(unittest.TestCase):
                 dialog = self.dialog(host, backend)
                 self.assertEqual(dialog.maximumWidth(), 650)
                 self.assertEqual(dialog.minimumWidth(), 650)
-                self.assertEqual((dialog.width(), dialog.height()), (650, 760))
+                self.assertEqual((dialog.width(), dialog.height()), (650, 560))
                 self.assertEqual(dialog.minimumHeight(), dialog.maximumHeight())
