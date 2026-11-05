@@ -131,6 +131,36 @@ class TrayTests(unittest.TestCase):
         until(self.waiting.is_set)
         until(lambda: self.shell.dialog.frames.text() == "1")
 
+    def test_settings_rejects_resize_maximize_and_fullscreen(self):
+        shell = self.make()
+        dialog = shell.dialog
+        original = self.store.path.read_bytes()
+        before = shell.coordinator.snapshot()
+        shell.show_settings()
+        expected = dialog.size()
+        self.assertEqual(expected.width(), 650)
+        self.assertEqual(dialog.minimumSize(), dialog.maximumSize())
+        self.assertFalse(dialog.windowFlags() & Qt.WindowType.WindowMaximizeButtonHint)
+        for width, height in ((900, 1000), (400, 300)):
+            dialog.resize(width, height)
+            APP.processEvents()
+            self.assertEqual(dialog.size(), expected)
+        for request in (dialog.showMaximized, dialog.showFullScreen):
+            request()
+            APP.processEvents()
+            self.assertFalse(dialog.isMaximized())
+            self.assertFalse(dialog.isFullScreen())
+            self.assertEqual(dialog.size(), expected)
+        dialog.theme_switch.click()
+        dialog.close()
+        shell.show_settings()
+        APP.processEvents()
+        self.assertEqual(dialog.size(), expected)
+        self.assertTrue(dialog.isVisible())
+        self.assertEqual(shell.coordinator.snapshot(), before)
+        self.assertEqual(self.store.path.read_bytes(), original)
+        self.assertFalse(self.session.opened.is_set())
+
     def test_light_dark_theme_is_local_and_does_not_persist_or_start_capture(self):
         shell = self.make()
         dialog = shell.dialog
